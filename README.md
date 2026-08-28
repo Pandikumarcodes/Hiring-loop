@@ -10,6 +10,14 @@ Repository structure:
 
 Current development strategy:
 
+Shared Codex context is kept in synchronized reference copies under each application's `docs-shared/` directory. The authoritative documentation lives at the repository root and in root `docs/` directories.
+
+Synchronize the approved shared files with:
+
+```text
+node scripts/sync-shared-docs.js
+```
+
 Software Engineering
 → Production stabilization
 → AI Engineering later
