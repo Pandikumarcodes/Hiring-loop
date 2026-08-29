@@ -26,7 +26,8 @@ The repository currently has no local PRD file. PRD traceability below uses only
 - `ARCH-05 — Quality Attributes & Non-Functional Requirements` — **DONE**
 - `ARCH-06 — Phase 00 Final Review / Closure` — **DONE**
 - `Phase 00 — Product & Architecture Planning` — **COMPLETE**
-- `Phase 01 — Project Foundation` — **NOT STARTED / NEXT**
+- `Phase 01 — Project Foundation` — **COMPLETE**
+- `Phase 02 — Database Foundation` — **NOT STARTED / NEXT**
 
 The historical task detail below remains the ordered roadmap definition. Its original Phase 00 in-progress label is superseded by this closure status after ARCH-06 acceptance.
 
@@ -173,7 +174,7 @@ Software Engineering must be completed before AI Engineering starts.
 
 All ordered tasks are complete, required planning documents are reviewed, the roadmap and state agree, and a repository-local PRD gap is either closed or explicitly accepted as a follow-up. No application framework or product feature is implemented.
 
-## Phase 01 — Project Foundation — NOT STARTED
+## Phase 01 — Project Foundation — COMPLETE
 
 - **Objective:** initialize the separate frontend and backend applications with minimal, reproducible development foundations.
 - **Features/sub-features:** framework setup; independent package/config files; environment conventions; linting/formatting; health endpoint/shell; baseline scripts.
