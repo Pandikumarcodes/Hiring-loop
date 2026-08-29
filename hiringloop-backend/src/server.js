@@ -1,7 +1,6 @@
+import { config } from './config/env.js';
 import app from './app.js';
 
-const port = Number(process.env.PORT) || 3000;
-
-app.listen(port, () => {
-  console.log(`HiringLoop backend listening on port ${port}`);
+app.listen(config.port, () => {
+  console.log(`HiringLoop backend listening on port ${config.port}`);
 });

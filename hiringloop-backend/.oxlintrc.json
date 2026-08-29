@@ -1,0 +1,12 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "env": {
+    "node": true,
+    "es2022": true
+  },
+  "plugins": ["node", "import"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error"
+  }
+}
