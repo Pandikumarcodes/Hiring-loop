@@ -1,32 +1,80 @@
-# React + TypeScript + Vite
+# HiringLoop frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+This directory contains the HiringLoop frontend application. It is a separate
+Node.js application from `hiringloop-backend/` and currently provides the
+minimal Phase 01 application shell and developer tooling.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- React
+- TypeScript
+- Vite
+- Oxlint and Prettier
+- Vitest with Testing Library
 
-## React Compiler
+## Prerequisites
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Use a current Node.js release and npm. The repository has been verified with
+Node.js 24.x and npm 11.x. No `.nvmrc` or other version-manager policy is
+currently defined; introducing one should be deferred until the repository
+establishes a shared runtime policy.
 
-## Expanding the Oxlint configuration
+## Install and run
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+From this directory:
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```sh
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Vite uses its normal default port and may select another available port if
+needed. The development server supports hot module replacement.
+
+## Build and quality commands
+
+```sh
+npm run build
+npm run lint
+npm run format
+npm run format:check
+npm run typecheck
+npm run verify
+```
+
+`verify` is the non-interactive frontend quality gate. It runs linting, format
+checking, type checking, tests, and the production build in sequence, stopping
+when a command fails. `format` writes formatting changes; use
+`format:check` for a read-only check.
+
+## Tests
+
+```sh
+npm run test            # one non-interactive test run
+npm run test:watch      # watch tests during development
+npm run test:coverage   # one test run with coverage output
+```
+
+## Environment
+
+For local frontend configuration, a developer may create `.env.local` from
+`.env.example`:
+
+```sh
+copy .env.example .env.local
+```
+
+Do not commit `.env.local` or add real secret values. Any `VITE_*` variable is
+embedded into the browser bundle and is therefore publicly visible; it must
+never contain backend credentials or other secrets. `VITE_API_BASE_URL` is
+optional at the current foundation stage. Backend credentials belong to the
+separate backend application and are not configured here.
+
+## Current scope
+
+Phase 01 is limited to project foundations: the minimal frontend shell,
+environment conventions, code quality, testing, and developer workflow. Product
+features, authentication, routing, API integration, and application
+architecture are deferred to later phases. See `docs-shared/` for the shared
+project instructions, roadmap, architecture principles, and non-functional
+requirements.
