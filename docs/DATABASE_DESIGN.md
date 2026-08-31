@@ -1572,3 +1572,223 @@ Potential dependency cycles, especially Application -> FormVersion -> Form -> Jo
 The physical plan is ready for a focused key/constraint/index review. It is not approval to create Prisma files or migrations until the remaining implementation choices above are accepted.
 
 Resolve the inventory's blocking product/domain questions—especially duplicate Applications, form/template versioning, offer/Hire semantics, retention/deletion, role scope, and Talent Pool definition—then produce a reviewed logical model with explicit key/foreign-key/nullability/ownership decisions. Only after that review should the backend add Prisma/PostgreSQL setup, migration conventions, seed/test-database strategy, and repository smoke tests.
+
+## Key and Constraint Review
+
+This section is the focused key, constraint, tenant-integrity, lifecycle, and structural-index review requested for the physical design. It is still a design artifact: it contains no Prisma schema, executable SQL, migration, or application implementation.
+
+### Primary key decision
+
+The preferred strategy remains native PostgreSQL `uuid` columns populated by the application with UUIDv7 values. PostgreSQL should not generate IDs for the initial model. Application generation gives the modular monolith, workers, import paths, and future distributed writers one consistent identity boundary and permits IDs to be allocated before persistence. Database-generated UUIDs are not prohibited forever, but adopting them later would require an explicit convention change and compatibility review; they are not a second default.
+
+All major persisted entities use UUID primary keys, including roots, join records, version rows, history rows, and idempotency records. No current immutable lookup-like entity justifies a different strategy: roles/permissions are not approved as physical reference tables, and small vocabularies are controlled values. A future internal metric or append-only technical table may use a numeric key only after a separate workload review; it would not change core domain identity.
+
+UUIDv7 ordering is a locality optimization, not a chronological truth. Values created in the same timestamp range can be reordered by clock skew, concurrent writers, batching, or random bits; queries must use explicit timestamps for business ordering. The strategy is acceptable because it improves expected insertion locality over UUIDv4 without making identifiers enumerable, but it must not be used to infer event order.
+
+The future JavaScript generator must:
+
+- emit RFC 9562 UUIDv7 values with correct version and variant bits;
+- use a trustworthy wall-clock millisecond source and tolerate clock rollback without producing invalid or misleading ordering guarantees;
+- preserve sufficient monotonicity for same-process same-millisecond generation, or document the collision/order behavior if it does not;
+- use cryptographically strong randomness for the non-time bits;
+- return canonical lowercase hyphenated UUID text accepted by PostgreSQL `uuid` and Prisma's UUID scalar;
+- be safe under concurrent asynchronous calls and worker processes;
+- fail closed rather than silently falling back to predictable IDs;
+- be covered by tests for format, version/variant bits, uniqueness under burst generation, rollback behavior, and independent process generation.
+
+UUIDv4 remains the documented compatibility fallback if the supported Node runtime cannot meet these criteria. No package is selected in this review.
+
+### Composite Tenant Parent Keys
+
+A composite parent key is required only where a dependent relationship must be protected by a database-level same-tenant foreign key. A parent primary key alone is sufficient for global parents or relationships whose tenant alignment is deliberately a service rule.
+
+| Parent Entity | Composite Candidate Key Needed? | Dependent Relationships | Reason |
+|---|---|---|---|
+| Membership | Yes: `(id, organizationId)` | HiringTeamMember, InterviewParticipant, actor/evaluator/creator membership references where tenant-bearing | User is global; membership context is tenant-owned. The pair prevents a tenant row from reusing another organization's membership. |
+| Job | Yes: `(id, organizationId)` | Pipeline, Application, ApplicationForm, ApplicationSubmissionDeduplication | Job is a tenant root and is a high-risk cross-tenant boundary. |
+| Pipeline | Yes: `(id, organizationId)` | PipelineStage, Application pipeline, stage history | Keeps workflow configuration and application placement in one organization. |
+| PipelineStage | Yes, with pipeline context: `(id, pipelineId, organizationId)` where used | Application current stage, stage history | Stage identity alone is insufficient to prove that it belongs to the application's selected pipeline. |
+| ApplicationForm | Yes: `(id, organizationId)` | ApplicationFormVersion | Form is tenant-owned through Job and is independently referenced by versions. |
+| ApplicationFormVersion | Yes, with Job context: `(id, organizationId, jobId)` where used | Application exact version; question lineage through version | The Job context is needed to prevent selecting a version belonging to another Job's form. |
+| Candidate | Yes: `(id, organizationId)` | Application, CandidateDocument, TalentPoolMember | Candidate identity is tenant-scoped and reusable only within its organization. |
+| Application | Yes: `(id, organizationId)` | Interview, Offer, answers, stage/outcome history, submission result | Application is the tenant-owned lifecycle root for several sensitive records. |
+| Interview | Yes: `(id, organizationId)` | InterviewParticipant, Scorecard | Prevents participants and feedback from crossing application/organization boundaries. |
+| ScorecardTemplateVersion | Yes: `(id, organizationId)`; include Job context if template scope is Job-specific | Scorecard | A scorecard must retain the exact tenant-owned template version used for evaluation. |
+| Offer | Yes: `(id, organizationId)` | OfferVersion | Offer terms are confidential historical records and must remain tenant-aligned. |
+| TalentPool | Yes: `(id, organizationId)` | TalentPoolMember | Pool membership is a tenant-scoped relationship to a candidate. |
+| Integration | Yes: `(id, organizationId)` | ExternalReference, IntegrationEvent, provider-owned communication references | Provider callbacks and external identities must resolve through the correct tenant connection. |
+
+The extra context columns in the table are intentional denormalized integrity columns, not general query indexes. Do not add a composite unique merely because an entity has `organizationId`; add it when a dependent composite FK targets it.
+
+### Application Integrity Constraint Map
+
+`Application.organizationId` is required. Candidate, Job, and Pipeline relationships use same-tenant composite FKs. `currentPipelineStageId` is nullable until the Application is placed; when present, the application stores/uses the selected `pipelineId` and references a stage with matching `(stageId, pipelineId, organizationId)`. This prevents a stage from a different pipeline or tenant from being selected. A stage transition also validates that the pipeline is a configuration allowed for the Application's Job.
+
+`formVersionId` is nullable for sources that do not submit through an application form, if that source policy is approved. When present, it uses a same-tenant FK carrying Job context so the exact version belongs to the Application's Job and its logical ApplicationForm. A simple `organizationId -> Organization` FK remains useful as a root check, but it is not sufficient by itself.
+
+The database can enforce organization alignment, Candidate/Job/Pipeline identity, stage-to-pipeline identity, and form-version tenant/Job identity when the context columns are present. The service/transaction must additionally enforce that the selected Pipeline is associated with the Job, that a stage transition is legal, that the form version is published/usable for the submission source, and that concurrent current-state updates do not lose a change. Authorization still derives tenant context from the authenticated Membership rather than trusting a request-supplied organization ID.
+
+### Pipeline Constraint Map
+
+- A Job may have zero Pipelines while it is Draft when product policy permits it.
+- There is at most one `ACTIVE` Pipeline per Job: use a partial unique index on the Job identity for rows whose status is `ACTIVE`.
+- Retired Pipeline rows remain addressable so existing Applications and history retain their configuration context. Applications must reference the Pipeline used for their placement, not dynamically resolve the Job's newest active Pipeline.
+- PipelineStage has a positive integer `position` and ordinary unique `(pipelineId, position)`; the same-tenant parent key is used where the stage is referenced with tenant context.
+- Stage name/key uniqueness within a Pipeline is a UX/data-quality policy, not a required integrity invariant. If product later approves it, normalize a stable stage key and add ordinary scoped uniqueness.
+- Used stages are retired/deactivated, not destructively removed. Referential restriction protects current and historical references.
+- The database can enforce stage ownership and order; service transactions enforce legal transitions, allowed active-pipeline changes, and preservation of referenced stages.
+
+Multiple retired Pipelines do not create Application ambiguity because the Application stores its selected Pipeline context. The active-per-Job rule concerns future configuration, not historical Application interpretation.
+
+### Form Constraint Map
+
+- `ApplicationForm` has one logical row per Job: ordinary unique `(jobId)` (or `(organizationId, jobId)` if the direct tenant key participates in the chosen composite design).
+- `ApplicationFormVersion` has positive `versionNumber` and ordinary unique `(formId, versionNumber)`.
+- At most one version is published/current for a form. Prefer a partial unique index over the published/current state when the version table retains all historical rows. A parent `currentPublishedVersionId` pointer is optional convenience state, not the historical authority, and requires a guarded transaction update if used.
+- `ApplicationFormQuestion` has positive `position` and ordinary unique `(formVersionId, position)`. A stable question key is unique within a version if needed to identify answers, but display text is not a key.
+- `ApplicationAnswer` has ordinary unique `(applicationId, questionId)`. The answer's Question must belong to the exact form version selected by the Application; this requires a composite/version-lineage FK strategy or a transaction/service validation when the ORM cannot express the full relationship.
+- Published or submitted form versions and their questions are immutable. Publication, submission, and any later correction workflow are service/transaction rules.
+
+### Membership and Invitation Constraints
+
+Use one persistent Membership row per `(organizationId, userId)`. Status and role change on that row; inactive/removed history belongs in membership/audit history rather than duplicate Membership rows. This gives one unambiguous authorization context and ordinary unique `(organizationId, userId)`. Role is a fixed required field, initially CHECK-constrained text. Active status is required by authorization and assignment services, not encoded by allowing duplicate rows.
+
+Invitation stores a deterministically normalized invitation email plus the original/display form according to the privacy policy. History rows remain after acceptance, expiry, or revocation. Enforce one active/pending invitation per `(organizationId, normalizedEmail)` with a partial unique index covering the active state set. Acceptance must be transactional: consume the invitation, create or reuse the persistent Membership, and reject an already-consumed invitation. Expiry/revocation transitions are service rules; the index protects the race between concurrent invitations.
+
+### Candidate Constraints
+
+Candidate identity is tenant-scoped through `(id, organizationId)`. Email is nullable, normalized when supplied, indexed later for lookup, and never unique. Multiple candidates may share an email, and a candidate may exist before any Application. Archival/anonymization is a controlled workflow that preserves required relationships and replaces/redacts PII according to the future privacy field map. CandidateDocument uses a same-tenant composite relationship to Candidate; optional Application/Offer associations require their own context validation and must not weaken Candidate ownership.
+
+### Interview / Participant Constraints
+
+Interview uses a same-tenant composite FK to Application. InterviewParticipant uses same-tenant composite FKs to Interview and Membership, plus ordinary unique `(interviewId, membershipId)` to prevent duplicate assignment. Initially only internal Membership participants are modeled; external participants remain a product decision.
+
+The database can prove Interview/Application and participant/Membership tenant alignment and assignment uniqueness. It cannot by itself decide whether a Membership is active, whether the participant is permitted to see the Interview, or whether an actor may schedule/cancel/edit it. Those are authorization/resource-policy and service rules. Scorecard eligibility may additionally require the evaluator to be a current InterviewParticipant; that is covered below.
+
+### Scorecard Constraints
+
+Use ordinary unique `(interviewId, evaluatorMembershipId)` for one current Scorecard assignment when the row is persistent and status changes from Draft to Submitted. If superseded/reassigned Scorecards share the same table, replace this with a partial unique index over the active/non-superseded state set. The evaluator Membership and TemplateVersion use same-tenant composite FKs. If templates are Job-scoped, the template version also carries Job context and the Scorecard transaction verifies it matches the Interview's Application Job.
+
+ScorecardResponse has ordinary unique `(scorecardId, criterionId)`. The criterion must belong to the exact TemplateVersion referenced by the Scorecard; use a context-bearing composite relationship where practical and service validation otherwise. Draft responses are mutable. Submitted Scorecards and responses are locked by service/transaction rules; any correction must preserve the submitted record and require an explicit, authorized amendment workflow. The evaluator-must-be-assigned-participant rule is a service/authorization rule even when a database relationship can record the assignment.
+
+### Offer Constraints
+
+Offer uses a same-tenant composite FK to Application and has at most one active Offer per Application through a partial unique index over the approved active state set. Multiple historical or superseded Offer attempts remain. OfferVersion has positive `versionNumber` and ordinary unique `(offerId, versionNumber)`. A current/latest version pointer is not required for correctness; it is derivable as the latest valid version or may be retained as a guarded convenience pointer if reads justify it. Issued versions are immutable. Issue, withdraw, accept, supersede, reissue, and the rule that an accepted Offer is not a Hire are service/transaction/domain rules, not ordinary FK constraints.
+
+### Talent Pool Constraints
+
+TalentPool name uniqueness is not required for relational integrity; recommend ordinary unique `(organizationId, normalizedName)` only if the product wants duplicate-name prevention as a UX rule. TalentPoolMember uses same-tenant composite FKs to TalentPool and Candidate and ordinary unique `(talentPoolId, candidateId)`. The initial model is current-state only: membership is removed/deactivated intentionally, without inventing a history table. Archived Candidates may remain in a pool so historical organization curation is not silently lost; service policy controls whether they are hidden from active views.
+
+### Idempotency Constraints
+
+`ApplicationSubmissionDeduplication` requires `organizationId`, `source/surface`, and an opaque `submissionKey`. The minimum candidate key is `(organizationId, sourceOrSurface, submissionKey)`; include `jobId` only if the product defines keys as Job-local. Although `organizationId` is technically derivable from Job, retaining it is desirable for safe cleanup, tenant-scoped operations, and a direct composite boundary. `jobId` therefore uses a same-tenant FK.
+
+`applicationId` is nullable while processing and becomes non-null when completion creates the Application. If a completed row has an Application, the result must be same-tenant. Processing status is required and should have a CHECK-constrained allowed set such as pending/completed/failed; retryability and terminal semantics remain service rules. Add a structural cleanup-support index on expiration/created time only if the table is retained for cleanup; exact TTL is deliberately not decided here. This mechanism is separate from IntegrationEvent and must not share identity rules.
+
+IntegrationEvent idempotency is scoped to the tenant-owned Integration/provider boundary. The candidate uniqueness is `(integrationId, providerEventId)` or `(organizationId, providerKind, externalEventId)` when events arrive before a connection can be resolved; the final form depends on the callback contract. IntegrationEvent must have a same-tenant relationship to Integration and retain processing outcome for duplicate callback protection. ExternalReference is a separate identity relation, scoped by Integration plus provider object type/external ID; it must not be merged with event identity.
+
+### Partial Unique Index Matrix
+
+| Invariant | Preferred Enforcement | Why | Prisma-native? | Custom PostgreSQL migration later? |
+|---|---|---|---|---|
+| One ACTIVE Pipeline per Job | Partial unique index | Retired configurations remain in the same table and only ACTIVE is exclusive | No general portable declaration | Yes |
+| One published/current FormVersion per Form | Partial unique index | Historical versions remain and only one can be published | No | Yes |
+| One active/pending Invitation per organization/email | Partial unique index | Terminal invitation history must remain | No | Yes |
+| One active Scorecard per Interview/evaluator | Ordinary unique if rows are current assignment rows; partial unique if superseded rows share the table | Avoid a partial index unless historical row shape requires it | Ordinary unique: yes; partial: no | Partial form: yes |
+| One active Offer per Application | Partial unique index | Multiple historical offer attempts are explicitly allowed | No | Yes |
+| One active TalentPoolMember per Pool/Candidate | Ordinary unique `(poolId, candidateId)` | Initial membership is current-state only; no historical duplicate rows | Yes | No |
+| Current Integration/provider reference | No generic invariant yet | Provider current-reference semantics are not approved; enforce per provider when known | Depends on final shape | Only if a provider-specific rule is approved |
+
+Partial indexes are justified only where retained historical rows coexist with an exclusive active subset. Ordinary uniqueness is simpler for current-state-only relationships. Application transactions must still handle unique violations as concurrency outcomes.
+
+### CHECK vs Enum Decision Matrix
+
+HiringLoop's consistent default is CHECK-constrained text for controlled business values. This keeps lifecycle evolution reviewable and avoids PostgreSQL enum alteration choreography. Arbitrary CHECK constraints are not fully represented by Prisma and will require custom migration SQL later; application validation remains necessary for useful errors and transition guards.
+
+| Vocabulary | Classification | Decision |
+|---|---|---|
+| Membership role | CHECK-constrained text | Fixed initial roles, with room for policy evolution. |
+| Invitation status | CHECK-constrained text | Lifecycle values and active-state predicate need migration-level visibility. |
+| Job status | CHECK-constrained text | Product lifecycle may expand; transitions are service-owned. |
+| Pipeline status | CHECK-constrained text | Supports active/retired configuration lifecycle. |
+| Application status | CHECK-constrained text | State values need storage protection while transitions stay in services. |
+| Scorecard status | CHECK-constrained text | Draft/submitted locking is not reducible to a type. |
+| Offer status | CHECK-constrained text | Workflow and reissue states may evolve. |
+| Communication status | CHECK-constrained text | Delivery states and provider behavior evolve. |
+| Document type/status | CHECK-constrained text | Resume/document lifecycle is controlled but not a stable reference taxonomy. |
+| Integration/provider type | CHECK-constrained text after initial provider set is approved | Mechanism is consistent; exact allowed values remain provider-scope work. |
+
+PRISMA ENUM is not recommended for the current controlled vocabularies. Reference tables are deferred because no current requirement needs tenant-configurable vocabulary, localized labels, or metadata-bearing states. DEFER means the exact value set/provider catalog, not the default storage mechanism.
+
+### NULL, UNIQUE, and Partial-Index Semantics
+
+PostgreSQL permits multiple NULLs in ordinary unique constraints. This is correct for nullable Candidate email, nullable Application formVersionId for non-form sources, nullable in-process `applicationId`, optional provider IDs, and optional current pointers. No uniqueness rule may rely on NULL to mean “only one absent value.” If “one current value” is required, use a non-null pointer with guarded service updates or a partial unique index on rows where the value/state is present.
+
+Invitation normalized email is required for invitation creation; a missing email cannot participate in the active-invitation invariant. Optional provider identifiers are unique only when non-null and only within their Integration/provider/object scope. A candidate's absent email does not create a global or tenant-wide uniqueness claim.
+
+### Referential Action Matrix
+
+| Relationship | Preferred action | Rationale |
+|---|---|---|
+| Organization -> Membership, Job, Candidate | RESTRICT / NO ACTION | Close/archive/anonymize the tenant; never cascade recruiting history. |
+| User -> Membership and actor/evaluator references | RESTRICT; SET NULL only for explicitly nullable non-account attribution | Deactivate identities while preserving accountability. |
+| Organization -> Invitation | RESTRICT / archive | Security history is retained. |
+| Job -> Pipeline, ApplicationForm, Application | RESTRICT | Jobs close/archive; their history remains addressable. |
+| Pipeline -> PipelineStage | RESTRICT | Retire stages; preserve references. |
+| Candidate -> Application, CandidateDocument, TalentPoolMember | RESTRICT | Controlled anonymization preserves history. |
+| Application -> StageHistory, Answers, Interview, Offer | RESTRICT | Do not erase recruiting history through a parent delete. |
+| ApplicationFormVersion -> submitted Application | RESTRICT | Exact submitted version must remain reproducible. |
+| Interview -> Participants, Scorecards | RESTRICT | Cancellation is not deletion of assignment or feedback history. |
+| Scorecard -> Responses | RESTRICT | Submitted feedback must not disappear. |
+| Offer -> OfferVersion | RESTRICT | Issued terms are immutable evidence. |
+| TalentPool -> TalentPoolMember | RESTRICT or controlled deactivation | Membership changes are explicit. |
+| Integration -> ExternalReference/Event | RESTRICT or archive | Provider reconciliation history remains available. |
+| Optional actor Membership/User reference | SET NULL only when approved by attribution policy | Preserve the record if the actor can no longer be retained. |
+
+CASCADE is reserved for narrowly owned disposable dependents that are not authoritative business history. No update cascade is needed because UUID identities are immutable.
+
+### Structural Index Matrix
+
+| Index class | Decision | Scope |
+|---|---|---|
+| Required for identity | Required | Primary-key indexes and ordinary unique indexes, including all composite parent keys targeted by composite FKs. |
+| Required for exclusive lifecycle invariant | Required | The partial unique indexes listed above for active Pipeline, published FormVersion, active Invitation, and active Offer; Scorecard only when its history shape requires it. |
+| Required for provider idempotency | Required | Integration/provider external-event and external-reference uniqueness indexes once provider scope is finalized. |
+| Recommended for FK maintenance | Recommended selectively | Child-side indexes for high-volume composite relationships and controlled parent archive/restrict checks, especially Application `(organizationId, candidateId/jobId/pipelineId)`, history/interview/offer `(organizationId, applicationId)`, stage/form/interview/scorecard/pool/integration children by their parent context. |
+| Cleanup support | Recommended if cleanup is scheduled | Deduplication expiration/createdAt support index; exact predicate and TTL are deferred. |
+| Query-performance indexes | Defer | Search, list ordering, pagination, dashboard, reporting, covering, expression, and full-text indexes belong to the later query-pattern review. |
+
+PostgreSQL does not automatically create indexes on referencing columns. Child-side indexes are therefore recommended where parent updates/deletes, tenant-scoped joins, or high-volume relationship maintenance would otherwise scan a large child table. They are not an “index every FK” rule: small/low-write relationships can defer until measured query and write/storage costs justify them.
+
+### Prisma / PostgreSQL / Service Enforcement Matrix
+
+| Approved constraint/rule | Prisma schema direct | Custom PostgreSQL migration | Service/transaction rule | Authorization policy |
+|---|---:|---:|---:|---:|
+| UUID scalar PK and ordinary FK | Yes | No normally | ID generation and friendly error mapping | Tenant/resource checks still required |
+| Ordinary composite unique | Yes | No normally | Validate conflict and tenant context | No |
+| Ordinary composite same-tenant FK | Representable, requiring a Prisma proof-of-concept | Review exact generated constraint/action | Supply trusted tenant context | Defense in depth only |
+| Partial unique index | No general portable form | Yes | Handle race/unique violation | No |
+| CHECK-constrained text | Not fully portable | Yes | Validate values and transitions | No |
+| Positive position/version number | Basic scalar direct; bound check needs migration | Yes for CHECK | Reorder/version transaction | No |
+| Stage belongs to Application Pipeline | Not as a simple independent FK | Possible only with full denormalized context key | Yes, including Job/Pipeline lifecycle | Resource authorization also applies |
+| FormVersion belongs to Application Job and Question matches exact version | Partial relation shape only | Possible with context-bearing keys | Yes for source/publication/submission state | Tenant access policy |
+| Submitted Scorecard immutability | No | Trigger not recommended initially | Yes, guarded state transition and amendment workflow | Evaluator/visibility policy |
+| Evaluator must be InterviewParticipant | Relationship uniqueness can be direct | Not generally sufficient without complex assertion | Yes | Yes, resource assignment authorization |
+| Offer state transitions and accepted Offer != Hire | No | No generic FK | Yes | Confidential offer policy |
+| Cross-tenant access prevention | No | Composite FKs reinforce data integrity | Yes on every repository/use case | Yes, authoritative boundary |
+| Delete/archive/anonymization policy | Relation actions are representable | Exact actions may need migration review | Yes, controlled workflow | Yes, privileged operation policy |
+
+### Final Constraint Readiness Review
+
+- Entity keys: sufficiently defined; UUID PKs and business unique keys are separated.
+- Tenant composite keys: sufficiently defined for high-risk dependent relationships; redundant keys are explicitly rejected.
+- FK relationships: sufficiently defined, including Application context and exact form/stage lineage.
+- Uniqueness: sufficiently defined for membership, versions, positions, answers, participants, responses, offers, pools, and provider scopes.
+- Partial indexes: sufficiently defined for active/published/pending semantics, with ordinary unique alternatives where simpler.
+- CHECK/enum decisions: sufficiently defined; CHECK text is the project default and Prisma migration work is visible.
+- Delete actions: sufficiently defined around restrictive history preservation, controlled SET NULL, and no broad cascades.
+- Structural indexes: sufficiently defined as required identity indexes, selective FK-maintenance indexes, and deferred query indexes.
+
+Remaining pre-Prisma decisions are the UUID generator/runtime proof, exact approved status values, manual/import form nullability, provider callback scope, final direct-context columns for lower-risk children, Note target shape, offer terms representation, and the anonymization/retention field map. These can be resolved during Prisma implementation planning without changing the reviewed integrity principles. Product decisions that would materially change duplicate Applications, external participants, or retention must be accepted before those feature schemas are implemented.
+
+This review approves proceeding to the separate QUERY PATTERN + PERFORMANCE INDEX design task. It does not mark Phase 02 complete and does not approve creating Prisma files, migrations, SQL, or application database code.
