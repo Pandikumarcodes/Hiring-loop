@@ -487,6 +487,8 @@ Attribute lists below are intentionally limited to logical concepts. “Required
 
 ## Entity Inventory
 
+**Historical/superseded note:** this first reviewed table predates the schema-blocking resolution addendum. Its phase labels and relationship wording are retained for review traceability only. Where it conflicts with the later “Logical Entity Simplification Review,” “Physical PostgreSQL Design Plan,” “Key and Constraint Review,” or this final review, the later decision wins. In particular, `PipelineStagePlacement` is removed, `Resume` is merged into `CandidateDocument`, configurable Role/Permission entities are removed, `Comment` and `CommunicationTemplate` are deferred, and generic `IdempotencyRecord` is not a current shared entity.
+
 The following inventory gives each entity’s purpose, scope, aggregate context, identity concept, important logical attributes, relationships, mutability/history, preliminary constraints, integrity questions, and phase placement.
 
 | Entity | Purpose and aggregate context | Scope and identity | Important logical attributes | Relationships and cardinality | Current/history and constraints | Phase |
@@ -1792,3 +1794,694 @@ PostgreSQL does not automatically create indexes on referencing columns. Child-s
 Remaining pre-Prisma decisions are the UUID generator/runtime proof, exact approved status values, manual/import form nullability, provider callback scope, final direct-context columns for lower-risk children, Note target shape, offer terms representation, and the anonymization/retention field map. These can be resolved during Prisma implementation planning without changing the reviewed integrity principles. Product decisions that would materially change duplicate Applications, external participants, or retention must be accepted before those feature schemas are implemented.
 
 This review approves proceeding to the separate QUERY PATTERN + PERFORMANCE INDEX design task. It does not mark Phase 02 complete and does not approve creating Prisma files, migrations, SQL, or application database code.
+
+## Query Pattern + Performance Index Design
+
+### Scope and status
+
+This section is the Phase 02 query-pattern and performance-index review. It is documentation only. It does not define executable SQL, Prisma models, migrations, repositories, API pagination, caching, or application behavior. PostgreSQL remains the authoritative source of truth; caching is not part of this task.
+
+The repository currently has no implemented product repositories or query builders. The patterns below are therefore derived from the approved domain model, module boundaries, authorization rules, roadmap feature scopes, and the physical design above. “Approve now” means reserve the design for the initial physical schema when the corresponding table is implemented, not that an index is proven by a production plan.
+
+### Query-design rules
+
+1. Every protected read begins with the authenticated organization context. A caller-supplied resource ID is never a substitute for a tenant predicate. Public reads are also scoped to the intended organization/public workspace and Job.
+2. Every collection read has an explicit bound. Detail reads may load one aggregate; list reads select only fields required for the view and use bounded child reads or aggregates.
+3. Ordering is deterministic. Time-ordered lists use `createdAt, id` or `updatedAt, id`; schedule lists use `startAt, id`; pipeline stages use `position, id` when a tie-breaker is needed.
+4. Filters and sort requirements are designed together. Equality predicates normally precede range or ordering columns in a composite index. A low-cardinality status is included only when the exact filtered list is a supported, frequent workflow.
+5. Offset pagination is acceptable for small initial lists. Keyset/cursor pagination is preferred for growing timelines, audit history, communications, and high-volume Applications. A cursor must contain the complete deterministic ordering tuple.
+6. Avoid N+1 relation loading. Use one bounded parent query plus batched child queries, a bounded join, or a grouped aggregate. Do not load an unbounded relation merely because the ORM can include it.
+7. Read queries and transaction queries have different goals. A transaction should lock or re-read only the rows needed for the invariant and should use structural uniqueness to resolve races. Read indexes must not be added solely to make a write transaction convenient.
+8. Indexes have write, storage, vacuum, and cache costs. High-write tables receive a small initial index budget. Optional UI sorts, dashboards, investigative audit filters, and speculative covering indexes wait for measured evidence.
+
+### Tenant-scoped query rules
+
+The normal shape is `organizationId = authenticatedTenant` plus resource predicates. Composite same-tenant keys reinforce integrity but do not authorize a request. Public Job and application-form queries remain intentionally public only after the public surface, Job, and Organization relationship has been resolved and validated. Do not create global candidate or email indexes that enable cross-organization search.
+
+A tenant predicate is especially important for polymorphic or event-like records such as ActivityRecord, AuditRecord, Communication, and IntegrationEvent. Where the table has a direct organization column, use it in the query even if the organization can be reached through a parent. Query plans must not rely on an accidental join path to provide isolation.
+
+### Membership query patterns
+
+| Query | Predicate and sort | Existing structural coverage | Decision |
+|---|---|---|---|
+| Memberships for authenticated User | `userId = ?`, optionally active, ordered by organization or membership identity | `(organizationId, userId)` is the reverse direction and is not sufficient for a User-first lookup | **APPROVE NOW:** `(userId, organizationId)` |
+| Members in active Organization | `organizationId = ? AND status = ACTIVE`, stable member/user order, bounded page | `(organizationId, userId)` scopes the tenant but does not filter status | **DEFER TO FEATURE PHASE** unless the member directory is implemented at initial schema time |
+| Active members by role | tenant + active status + role, bounded page | No exact structural index | **DEFER TO FEATURE PHASE**; add `(organizationId, status, role, userId)` only when the role-filtered directory is a confirmed workflow |
+| Membership by organization + user | equality lookup | Ordinary unique `(organizationId, userId)` | **ALREADY REQUIRED STRUCTURAL INDEX** |
+| Pending invitation by normalized email | tenant + normalized email + active/pending state | Partial unique active-invitation index | **ALREADY REQUIRED STRUCTURAL INDEX**; no duplicate read index |
+| Invitation by token/identifier | exact opaque identifier, if later approved | Token identity is not an approved authentication/session table design | **DEFER TO FEATURE PHASE**; make the identifier unique and scoped when its contract is approved |
+
+Do not design authentication/session tables here. Inactive Membership rows remain queryable for authorization/audit decisions but need not receive speculative status-only indexes.
+
+### Job and Career Site queries
+
+Recruiter Job lists use `organizationId = ?`, optionally a confirmed lifecycle filter, and deterministic `createdAt, id` ordering with a bound. The initial default list is best served by **APPROVE NOW** `(organizationId, createdAt, id)`, which supports newest and oldest scans in either direction. A status filter can be applied after tenant narrowing initially; a separate status composite is **DEFER UNTIL MEASURED** unless status-filtered lists become a dominant query.
+
+The public Career Site pattern is `organizationId = publicWorkspace AND status = published/open`, ordered by the public display rule (initially newest, unless product requirements choose another stable order), with a bound. **APPROVE NOW** `(organizationId, status, createdAt, id)` because this is a narrow, tenant-scoped public workflow rather than an invented slug/search requirement. It is not a replacement for a future unique tenant-scoped slug index; no slug index is proposed because repository evidence does not approve a Job slug.
+
+Job detail is a tenant-scoped primary-key lookup. Pipeline, form, and team detail should be bounded child reads. JobHiringTeamMember assignment lookup is covered by its relationship uniqueness for exact membership; assigned-Job lists are **DEFER TO FEATURE PHASE** until the roadmap confirms that filter.
+
+### Candidate query patterns
+
+Candidate lists use `organizationId = ?`, optional approved active/archive filtering, and `createdAt, id` or `updatedAt, id` ordering with a bound. **APPROVE NOW** `(organizationId, createdAt, id)` supports the stable initial directory. Recently updated sorting and alphabetical sorting are **DEFER UNTIL MEASURED**; they should not create one index per optional UI sort.
+
+Candidate detail is a tenant-scoped primary-key lookup. Candidate Applications use Application-owned indexes described below; do not load all Applications as an implicit Candidate detail relation.
+
+Normalized email is nullable, non-unique, tenant-scoped, and used for duplicate-warning/matching review—not identity. **APPROVE NOW** a non-unique `(organizationId, normalizedEmail)` lookup index when the normalized signal is materialized. PostgreSQL’s nullable behavior is acceptable: null candidates are not searched by email. Do not create a global email index or a unique email constraint. Name search is **DEFER TO FEATURE PHASE**; start with bounded, tenant-scoped exact/prefix capability at feature implementation and choose ILIKE/trigram/full-text only after real predicates and volumes exist.
+
+### Application and Kanban query patterns
+
+Applications are the principal high-volume read surface. Initial query contracts should be:
+
+| Workflow | Tenant predicate + filters | Sort/pagination | Decision |
+|---|---|---|---|
+| Organization Application list | `organizationId = ?`, optional confirmed outcome/status/source filters | `createdAt, id`; bounded page, cursor preferred as volume grows | **APPROVE NOW:** `(organizationId, createdAt, id)` |
+| Applications for one Job | tenant + `jobId = ?` | `createdAt, id`; bounded page | **APPROVE NOW:** `(organizationId, jobId, createdAt, id)` |
+| Applications for one Candidate | tenant + `candidateId = ?` | `createdAt, id`; bounded history page | **APPROVE NOW:** `(organizationId, candidateId, createdAt, id)` |
+| Job Kanban by current stage | tenant + `jobId = ? AND currentPipelineStageId = ?` | `createdAt, id` or a confirmed board order; bounded per stage | **APPROVE NOW:** `(organizationId, jobId, currentPipelineStageId, createdAt, id)` |
+| Application by current status/outcome | tenant + status/outcome | usually newest first | **DEFER TO FEATURE PHASE**; add status after tenant only when the list is confirmed and measured |
+| Candidate + Job history | tenant + candidate + job | newest first, small bounded history | **DEFER UNTIL MEASURED**; the Candidate and Job indexes may be sufficient initially |
+| Application detail | tenant + application ID | one row, selective related reads | Primary key plus tenant validation; no extra detail index |
+
+The organization index supports tenant-wide recent lists; the Job and Candidate indexes deliberately duplicate the tenant prefix because they support distinct equality access paths. The Kanban index is justified by the approved current-stage model and the likely repeated stage-column/count predicates. Its equality columns precede the ordering tuple; `currentPipelineStageId` is not placed before `jobId` because the board is Job-scoped.
+
+Application status, archived/rejected/withdrawn/hired subsets, and dashboard counts are not separate initial indexes. They are **DEFER UNTIL MEASURED** because status is low-cardinality and the product has not supplied implemented predicates or volume. Current state and outcome remain distinct concepts.
+
+For Kanban retrieval, prefer one bounded Applications query for the Job (optionally constrained to active applications), selecting only board fields, then group by `currentPipelineStageId` in application code. Load active PipelineStage rows in one ordered query. This is preferred over one query per stage because it avoids N+1 stage queries and gives the database one bounded Job-scoped read. If a very large board later needs stage-local windows, the approved stage composite index supports bounded per-stage reads; that is a measured optimization, not the initial behavior.
+
+ApplicationStageHistory uses **APPROVE NOW** `(organizationId, applicationId, createdAt, id)` for recent stage history and chronological keyset pagination. Outcome-event history follows the same append-only principle but receives no separate index until its final table/query shape is approved.
+
+### Public career-site queries and forms
+
+Public Job listing uses the published/open Job index above. Public Job detail is a tenant-scoped Job lookup that must verify the Job is public and belongs to the requested public Organization; no separate ID index is needed. The active/published FormVersion for a Job is served by the existing partial unique index for one published/current version, then Questions are loaded by the existing `(formVersionId, position)` structural index. Answers for a submitted Application use the existing `(applicationId, questionId)` uniqueness/lookup path. Historical form reconstruction uses the version identity and structural question ordering; child sets are expected to be small, so no covering index is justified.
+
+### Interview and Scorecard queries
+
+Interview reads use tenant scope plus one of these paths: Application + `startAt, id`, Organization upcoming/time-window + `startAt, id`, or assigned Membership + time window. **APPROVE NOW** `(organizationId, applicationId, startAt, id)`, `(organizationId, startAt, id)`, and `(organizationId, participantMembershipId, startAt, id)` if the initial physical Interview shape stores the assigned Membership context needed for that query. The first supports Application detail/history, the second supports upcoming organization scheduling, and the third supports an interviewer’s schedule. All are bounded; “upcoming” is a range on `startAt`, with status filtering initially applied after tenant/time narrowing. Unscheduled Interviews are **DEFER UNTIL MEASURED** and should use a partial index only if unscheduled work becomes a frequent queue.
+
+Interview detail loads Participants in one bounded batch. Conflict checks and overlap/exclusion constraints are deferred to scheduling design; Google Calendar queries remain outside this document.
+
+Scorecards for an Interview and exact evaluator assignment are covered by `(interviewId, evaluatorMembershipId)` uniqueness or its approved partial equivalent. Pending Draft scorecards for an evaluator are **APPROVE NOW** with `(organizationId, evaluatorMembershipId, status, createdAt, id)` when the Scorecard table is implemented, because authenticated interviewer work is an explicit workflow. Submitted/reviewer dashboards and response-level filtering are **DEFER TO FEATURE PHASE**. Responses for one Scorecard use existing `(scorecardId, criterionId)` uniqueness; the small child set does not justify an INCLUDE index.
+
+### Offers
+
+Offers for an Application and the active Offer for an Application are covered by the tenant-scoped relationship and the partial unique active-offer index. OfferVersion history uses `(offerId, versionNumber)` structural uniqueness and a bounded parent read. Organization/status dashboards and accepted/declined reporting are **DEFER TO FEATURE PHASE**; no dashboard-specific index is approved without a roadmap query and measurement.
+
+### Talent Pools
+
+TalentPool lists use tenant scope and a bounded stable pool-created/name order; a pool primary key and tenant relationship are initially sufficient, so a pool-list ordering index is **DEFER UNTIL MEASURED**. Forward membership reads by Pool use structural uniqueness `(talentPoolId, candidateId)` and a bounded join. The reverse query—pools containing one Candidate—has a different leftmost prefix and is a real expected workflow. **APPROVE NOW** `(organizationId, candidateId, talentPoolId)` on TalentPoolMember. This is a read index, not a second uniqueness rule. Archived-candidate visibility remains a service policy; do not add an archive partial index yet.
+
+### Activity and Audit query patterns
+
+ActivityRecord is user-facing recruiting history and must not be merged with AuditRecord. **APPROVE NOW** `(organizationId, applicationId, createdAt, id)` for recent Application timelines and `(organizationId, candidateId, createdAt, id)` for Candidate timelines, when those direct target columns are part of the approved physical shape. Job-target activity is **DEFER TO FEATURE PHASE** until Job activity is a confirmed requirement. Chronological reads use keyset pagination over `createdAt, id`; organization-wide recent activity is **DEFER UNTIL MEASURED** because it adds another high-write access path.
+
+AuditRecord’s minimal initial administrative query is tenant + chronological date range: **APPROVE NOW** `(organizationId, createdAt, id)`. Actor, action/event type, resource type/resource ID, and date-range investigative indexes are **DEFER UNTIL MEASURED**. Audit remains protected accountability history, not a recruiter timeline; filters must not expose raw payloads, secrets, or cross-tenant records.
+
+### Communication, document, and integration queries
+
+Communication reads are normally tenant + Application or Candidate, ordered `createdAt, id`, with delivery status shown in a bounded detail/list. **APPROVE NOW** `(organizationId, applicationId, createdAt, id)` and `(organizationId, candidateId, createdAt, id)` only if both direct relationships are present in the approved table. Because Communication is high-write, provider delivery queues, status-only indexes, recipient-only indexes, and retry dashboards are **DEFER TO FEATURE PHASE** or **DEFER UNTIL MEASURED** based on the later worker design.
+
+CandidateDocument detail is a tenant-scoped ID lookup. Documents for one Candidate are expected to be small; `(organizationId, candidateId, type, createdAt, id)` is **DEFER TO FEATURE PHASE** until “latest Resume-like document” is a confirmed, frequent query. Object storage and file-content search are out of scope.
+
+Integration lookup by Organization/provider connection, ExternalReference by provider object identity, and IntegrationEvent duplicate detection are covered by their approved structural/provider identity indexes once the provider contract is finalized. Recent processed/failed event monitoring and retry queues are **DEFER TO FEATURE PHASE**; do not add operational indexes prematurely.
+
+### Search strategy
+
+Phase 02 approves only software-engineering search foundations. Tenant-scoped exact normalized email lookup is approved above. Candidate name and Job title search are feature-phase concerns. Begin with bounded, tenant-filtered predicates and selected columns; do not assume that arbitrary `%term%` ILIKE will scale.
+
+Trigram or PostgreSQL full-text indexes are **DEFER TO FEATURE PHASE** and require an approved search behavior, normalization/locale decision, real query examples, and volume measurement. Semantic search, embeddings, pgvector, AI ranking, and global cross-organization Candidate search are out of scope and not approved.
+
+### Sorting strategy
+
+Newest/oldest lists can use the same B-tree ordering tuple in reverse scan direction. Common approved tuples are `createdAt, id`, `updatedAt, id`, `startAt, id`, and `position, id`. Alphabetical Candidate/Job ordering, arbitrary status/order combinations, relevance ordering, and configurable board ordering are **DEFER UNTIL MEASURED** or feature-specific. PostgreSQL sorting is acceptable for a bounded result after selective tenant/filter predicates; an index is not required for every optional sort.
+
+### Pagination strategy
+
+| Collection | Initial recommendation | Stable keyset tuple later |
+|---|---|---|
+| Jobs | Offset acceptable for small tenant lists; bound every request | `createdAt, id` |
+| Candidates | Offset acceptable initially; cursor preferred as directory grows | `createdAt, id` or confirmed `updatedAt, id` |
+| Applications | Cursor preferred for Job, Candidate, and tenant lists | `createdAt, id` within the selected equality scope |
+| Activity | Cursor preferred from the first timeline implementation | `createdAt, id` |
+| AuditLog | Cursor preferred; always bound date windows where possible | `createdAt, id` |
+| Communications | Cursor preferred for history and delivery feeds | `createdAt, id` |
+| Interviews | Offset acceptable for small admin lists; cursor for schedule windows | `startAt, id` |
+
+The cursor must include both fields and the direction, and the query must repeat the same tenant/equality predicates. Do not expose raw database offsets as a substitute for a bounded query contract.
+
+### N+1 / relation-loading risk matrix
+
+| Risk | Preferred query strategy |
+|---|---|
+| Job list plus application counts | Page Jobs, then one grouped Application count query for the page; do not count per Job |
+| Pipeline stages plus Kanban Applications | One ordered stage query plus one bounded Job Application query; group in application code |
+| Candidate list plus Applications | Page Candidates, then one batched Application query keyed by the page’s candidate IDs; do not include full histories |
+| Interview list plus Participants | Page Interviews, then one batched Participant query |
+| Scorecard list plus Responses | Page Scorecards, then load responses only for the visible page in one batch; never load all responses by default |
+| Talent Pools plus members | Page Pools, then batch membership rows or use a bounded aggregate; avoid one membership query per Pool |
+
+Counts should be explicit aggregate queries with the same tenant and lifecycle predicates as the visible list. Relation loading must preserve authorization and payload bounds; an ORM include/eager-load option is not a performance strategy by itself.
+
+### Query performance index matrix
+
+The following is the conservative initial matrix. Structural indexes are listed so they are not mistaken for new performance indexes.
+
+| Query pattern | Table | Predicate / sort | Existing structural index? | New performance index? | Pagination | Reason | Validate later? |
+|---|---|---|---|---|---|---|---|
+| User’s memberships | OrganizationMembership | user equality | No reverse-direction unique | **APPROVE NOW:** `(userId, organizationId)` | Bounded list | Authenticated user context is User-first | Yes |
+| Tenant Job directory | Job | org; created time | PK only / no ordering path | **APPROVE NOW:** `(organizationId, createdAt, id)` | Offset then cursor | Primary recruiter list | Yes |
+| Public open/published Jobs | Job | org + public status; created time | No exact read path | **APPROVE NOW:** `(organizationId, status, createdAt, id)` | Bounded public page | Explicit Career Site workflow | Yes |
+| Candidate directory | Candidate | org; created time | PK only / no ordering path | **APPROVE NOW:** `(organizationId, createdAt, id)` | Offset then cursor | Primary tenant directory | Yes |
+| Candidate normalized-email warning | Candidate | org + normalized email | No; nullable non-unique | **APPROVE NOW:** `(organizationId, normalizedEmail)` | Single/bounded matches | Explicit duplicate-warning lookup without global search | Yes |
+| Tenant Application feed | Application | org; created time | No exact ordering path | **APPROVE NOW:** `(organizationId, createdAt, id)` | Cursor preferred | High-value recruiter feed | Yes |
+| Job Applications | Application | org + job; created time | FK/identity may not match order | **APPROVE NOW:** `(organizationId, jobId, createdAt, id)` | Cursor preferred | Job detail and pipeline context | Yes |
+| Candidate Applications | Application | org + candidate; created time | FK/identity may not match order | **APPROVE NOW:** `(organizationId, candidateId, createdAt, id)` | Cursor preferred | Candidate history | Yes |
+| Kanban stage column/count | Application | org + job + current stage; created time | No exact read path | **APPROVE NOW:** `(organizationId, jobId, currentPipelineStageId, createdAt, id)` | Bounded per Job/stage | Repeated approved board access path | Yes |
+| Application stage history | ApplicationStageHistory | org + application; chronology | No exact ordering path | **APPROVE NOW:** `(organizationId, applicationId, createdAt, id)` | Cursor | Timeline/history read | Yes |
+| Upcoming organization Interviews | Interview | org + start-time range | No exact ordering path | **APPROVE NOW:** `(organizationId, startAt, id)` | Bounded window/cursor | Initial scheduling workflow | Yes |
+| Application Interviews | Interview | org + application; start time | No exact ordering path | **APPROVE NOW:** `(organizationId, applicationId, startAt, id)` | Bounded/cursor | Detail/history read | Yes |
+| Interviewer schedule | Interview | org + participant Membership; start time | Participant relation uniqueness does not cover schedule | **APPROVE NOW:** `(organizationId, participantMembershipId, startAt, id)` when shape is approved | Bounded time window | Explicit assigned-interviewer workflow | Yes |
+| Evaluator’s pending Draft scorecards | Scorecard | org + evaluator + status; created time | Interview/evaluator uniqueness only | **APPROVE NOW:** `(organizationId, evaluatorMembershipId, status, createdAt, id)` | Bounded/cursor | Authenticated feedback queue | Yes |
+| Reverse Talent Pool lookup | TalentPoolMember | org + candidate | `(talentPoolId, candidateId)` covers forward identity | **APPROVE NOW:** `(organizationId, candidateId, talentPoolId)` | Bounded list | Reverse-direction expected workflow | Yes |
+| Application Activity timeline | ActivityRecord | org + application; chronology | No | **APPROVE NOW:** `(organizationId, applicationId, createdAt, id)` | Cursor | Recruiter-facing history | Yes |
+| Candidate Activity timeline | ActivityRecord | org + candidate; chronology | No | **APPROVE NOW:** `(organizationId, candidateId, createdAt, id)` | Cursor | Recruiter-facing history | Yes |
+| Tenant Audit chronology | AuditRecord | org + date/time; chronology | No | **APPROVE NOW:** `(organizationId, createdAt, id)` | Cursor/window | Minimal administrative history path | Yes |
+| Application/Candidate communications | Communication | org + parent; chronology | Provider identity only | **APPROVE NOW** only when both direct relationships are approved: `(organizationId, applicationId, createdAt, id)` and/or `(organizationId, candidateId, createdAt, id)` | Cursor | Explicit history reads, balanced against write cost | Yes |
+| Active Offer for Application | Offer | tenant + application + active state | Partial unique active-offer index | **ALREADY REQUIRED STRUCTURAL INDEX** | Single row | Integrity index serves primary lookup | Yes |
+| Form questions | ApplicationFormQuestion | form version; position | Unique `(formVersionId, position)` | **ALREADY REQUIRED STRUCTURAL INDEX** | Small bounded set | Deterministic definition order | No separate index |
+| Scorecard responses | ScorecardResponse | scorecard; criterion | Unique `(scorecardId, criterionId)` | **ALREADY REQUIRED STRUCTURAL INDEX** | Small bounded set | Exact child lookup | No separate index |
+| Pending invitations | Invitation | tenant + normalized email + active state | Partial unique active invitation | **ALREADY REQUIRED STRUCTURAL INDEX** | Single/bounded | Integrity and lookup align | No separate index |
+| Status/outcome dashboards | Application/Offer/Interview | tenant + low-cardinality status + time | No exact | **DEFER UNTIL MEASURED** | Cursor/window | Avoid low-selectivity/write-cost indexes without evidence | Yes |
+| Candidate name / Job title search | Candidate/Job | tenant + text predicate | No | **DEFER TO FEATURE PHASE** | Bounded search page | Predicate, normalization, and volume not implemented | Yes |
+| Job slug lookup | Job | tenant/public workspace + slug | No approved slug requirement | **DEFER TO FEATURE PHASE** | Single row | Do not invent identifier | Yes |
+| Unscheduled Interview queue | Interview | tenant + unscheduled subset + time | No | **DEFER UNTIL MEASURED** | Bounded queue | Partial subset frequency unknown | Yes |
+| Audit actor/action/resource investigation | AuditRecord | tenant + investigative filters + time | Chronology only | **DEFER UNTIL MEASURED** | Cursor/window | Secondary investigative use | Yes |
+| Document type/latest lookup | CandidateDocument | tenant + candidate + type/time | Parent identity only | **DEFER TO FEATURE PHASE** | Small bounded set | Candidate child sets expected small | Yes |
+| Integration retry/monitoring feeds | IntegrationEvent | tenant/provider + status/time | Provider idempotency structural path | **DEFER TO FEATURE PHASE** | Bounded queue | Worker/operational contract not implemented | Yes |
+
+### Index column order, INCLUDE, and partial performance review
+
+The approved composite indexes put tenant equality first, then the stable equality scope (`jobId`, `candidateId`, stage, evaluator, or parent), then the range/order tuple. This follows leftmost-prefix behavior and keeps tenant-scoped scans bounded. Reverse B-tree scans support oldest as well as newest ordering. A query that omits an equality column should not be assumed to receive the same benefit; that is why organization-wide and Job-specific Application paths are separate candidates.
+
+`status` appears in an approved index only for the explicit public Job subset and the evaluator Draft queue. Other status columns are low-cardinality and are deferred. Nullable columns such as normalized email naturally omit null matches; no index decision changes Candidate’s non-unique nullable semantics.
+
+No INCLUDE/covering index is approved now. The projected columns, table widths, visibility-map behavior, and actual heap-fetch profile are unknown, and the child sets are mostly small. Revisit INCLUDE only after an implemented read is measured and the index can materially reduce heap access without making writes and vacuum more expensive.
+
+Partial UNIQUE indexes enforce integrity and are already required where documented above. Partial indexes used only for read performance—active Jobs, non-archived Candidates, active Applications, upcoming Interviews—are **DEFER UNTIL MEASURED**. A filtered subset must be both frequent and selective enough to justify predicate maintenance.
+
+### Index budget and write cost
+
+Initial budgets are intentionally conservative: OrganizationMembership 1 new reverse lookup; Job 2 list/public paths; Candidate 2 directory/email paths; Application 4 core paths (tenant feed, Job, Candidate, Kanban); ApplicationStageHistory 1; Interview up to 3 initial schedule/application/participant paths; Scorecard 1 evaluator queue; TalentPoolMember 1 reverse path; ActivityRecord 2 timelines; AuditRecord 1 chronology; Communication no more than the one or two direct parent paths actually implemented. Structural primary, unique, partial-unique, and selectively required FK-maintenance indexes are counted separately but still incur write cost.
+
+Application, ActivityRecord, AuditRecord, Communication, ApplicationStageHistory, and IntegrationEvent are append-heavy or otherwise write-sensitive. Every additional composite index increases insert/update work, storage, vacuum work, and cache pressure; indexes containing mutable status or stage columns also pay update cost when workflow state changes. Do not add dashboard, every-status, every-sort, or every-foreign-key indexes within this phase. Reassess budgets after feature queries exist.
+
+### Future EXPLAIN / EXPLAIN ANALYZE validation plan
+
+No EXPLAIN plan is claimed here because there is no implemented query set, representative PostgreSQL data, or production-like distribution. During database/repository implementation, capture the actual parameterized queries for:
+
+- tenant Job list and public published Job list;
+- Candidate list and normalized-email warning lookup;
+- tenant, Job, Candidate, and Kanban Application reads;
+- ApplicationStageHistory and Activity timelines;
+- upcoming Organization and interviewer Interview windows;
+- evaluator pending Draft Scorecards;
+- reverse TalentPoolMember lookup;
+- tenant Audit chronology;
+- Application/Candidate Communications history.
+
+For each, compare `EXPLAIN` estimates with and without the candidate index, then use `EXPLAIN ANALYZE` only against a safe representative dataset with realistic tenant skew, status distribution, null rate, and page bounds. Verify that the chosen index is actually used, that rows removed by filters are reasonable, that sort and heap-fetch costs improve, and that insert/update timing does not regress materially. Do not benchmark with fabricated plans or tiny uniform data and generalize to production.
+
+After deployment infrastructure supports it, use `pg_stat_statements` to identify high-total-time, high-call-count, and high-I/O queries. Review index usage and write overhead together; an unused index should be a removal candidate after an appropriate observation window, subject to structural-integrity requirements. Cache design remains outside this Phase 02 review.
+
+### Phase 02 query/index decisions and readiness
+
+Approved now are only the explicit tenant-first list, email-warning, Application access-path, Kanban, core history/timeline, initial Interview schedule, evaluator queue, and reverse Talent Pool indexes identified in the matrix. Structural primary/unique/partial-unique indexes remain required for identity and integrity and are not recategorized as performance indexes.
+
+Deferred to feature phases are slug, text search, role-filtered member directory, dashboard/reporting, document-type/latest, Job activity, and integration operational feeds. Deferred until measurement are most status/archival partial indexes, secondary Audit investigative paths, unscheduled Interview queues, alternate sorts, covering indexes, and candidate/job history shortcuts.
+
+The application/Kanban recommendation is one bounded Job Application query plus one ordered active-stage query, grouped in application code, with stage-local queries available only if later measurements require them. Candidate search starts with tenant-scoped exact normalized-email lookup; name/title search waits for the feature contract and measured predicate choice. Interview access uses Application, Organization time-window, and assigned-Membership paths with bounded time ranges. Activity gets separate user-facing timeline indexes; Audit gets only minimal tenant chronology initially. Cursor pagination is preferred for high-volume histories and Applications, with deterministic `createdAt, id` or `startAt, id` tuples.
+
+This task found two repository-control contradictions: `PROJECT_STATE.md` identifies Phase 02 as the current **IN PROGRESS** work, while the roadmap summary still labels Phase 02 **NOT STARTED / NEXT**; and the roadmap’s Phase 00 historical heading still says **IN PROGRESS** despite the current closure summary and Phase 00 handoff. No control file was changed because the requested scope is documentation-only within this database design document. The repository-local PRD is also unavailable, so feature-specific query claims remain deliberately conservative.
+
+The repository is ready for the separate TRANSACTION + CONCURRENCY design task only at the design-readiness level: the query/index review is complete, but Phase 02 remains **IN PROGRESS** and no Prisma, migration, SQL, or application database implementation is approved by this document.
+
+## Transaction + Concurrency Design
+
+### Scope and status
+
+This section is the Phase 02 transaction and concurrency review. It is documentation only. It does not define executable SQL, Prisma models, migrations, repositories, API handlers, workers, queues, external-provider calls, or application behavior. It does not change the database configuration and does not mark Phase 02 complete.
+
+The backend is still a Node.js + Express.js + JavaScript foundation without implemented product repositories. The workflows below are design contracts derived from the approved domain model, tenant/security architecture, ADRs, and physical design. Exact status vocabularies, provider contracts, retention policy, and some entity shapes remain product/feature decisions.
+
+### Transaction design principles
+
+Use a database transaction when multiple writes together establish one business invariant or one authoritative state transition. A transaction is not a default wrapper around every read or single-row write. Keep it short, bounded, and focused on the rows and history records needed for the invariant.
+
+HiringLoop’s transaction rules are:
+
+1. PostgreSQL is the source of truth for business state, tenant relationships, workflow status, history, idempotency records, and provider intent/status.
+2. Derive and validate tenant/resource authorization from trusted authenticated context. Re-check mutable ownership and lifecycle state inside the transaction when a race could invalidate the earlier read.
+3. Keep external network calls, file uploads, email delivery, calendar calls, large imports, analytics scans, and worker waits outside the core database transaction.
+4. Prefer database uniqueness, conditional state changes, and explicit expected-state checks before stronger locking or isolation. A unique violation is a concurrency outcome that must have deliberate application behavior.
+5. Use an idempotency key for retriable commands whose repeat could otherwise create a second business effect. Idempotency records must be tenant/surface scoped and must retain enough outcome state to safely replay or report the first result.
+6. Retry only recognized transient transaction failures and only when the operation is safe to repeat. Never retry validation failures, authorization failures, or an ambiguous external side effect as if it were a database conflict.
+7. Do not use a globally stronger isolation level to compensate for an undefined invariant. Select stronger isolation or row locks only for a specific workflow whose correctness cannot be expressed more simply.
+8. Every transaction has an intentional boundary, a bounded amount of work, a conflict response, and an audit/history decision. Observability logs never determine transaction success.
+
+In HiringLoop terms, ACID means:
+
+- **Atomicity:** a stage change and its required history/activity either commit together or neither becomes authoritative.
+- **Consistency:** foreign keys, tenant alignment, uniqueness, lifecycle checks, and service invariants remain true after commit.
+- **Isolation:** concurrent recruiters, candidates, retries, and workers cannot silently overwrite a protected decision.
+- **Durability:** once PostgreSQL commits authoritative state, a cache, queue, provider, or process restart must not erase it.
+
+### PostgreSQL isolation strategy
+
+`READ COMMITTED` should remain the default PostgreSQL isolation approach. Each statement sees a current committed snapshot, which fits short HiringLoop commands combined with conditional updates, uniqueness constraints, and targeted row locks. No global database or session isolation change is approved.
+
+`REPEATABLE READ` is a possible targeted choice for a multi-read decision that must use one stable snapshot, but it is not the default for ordinary CRUD or workflow commands. A serialization failure remains a conflict and may be retried only when the whole operation is idempotent and has no external side effect.
+
+`SERIALIZABLE` is reserved for a later, measured invariant that cannot be protected by a constraint, expected-state predicate, or narrow lock. It may be justified for a small high-value decision workflow after testing serialization failures and bounded retries. It is not justified for every Application, Interview, or Activity write.
+
+Optimistic expected-state checks are preferable in most initial workflows. A conditional update that requires the caller’s expected current state or revision can detect a stale editor without holding a lock across unrelated work. Row locking is reserved for short read-modify-write sequences where a constraint alone cannot prevent an invalid intermediate decision.
+
+### Application creation transaction
+
+Public, manual, and import Application creation should have one short core transaction covering the tenant-safe resolution of Job and Candidate, the submission-deduplication record, Application creation, exact FormVersion association when applicable, answer rows, initial Pipeline/current Stage assignment, and required ApplicationStageHistory. The first Activity record belongs in the same transaction when it is part of the product-visible creation history. All tenant and Job/Form/Pipeline/Stage relationships are revalidated inside this boundary.
+
+The submission key is the idempotency identity for one request intent, not a lifetime Candidate + Job uniqueness rule. Concurrent requests with the same `(organization, surface/source, submission key)` must converge on the winner: the first committed result is returned/replayed where safe, or a deterministic in-progress/conflict response is returned. A unique violation on the deduplication key is followed by a tenant-safe fetch of the winning record; it is not treated as permission to create another Application.
+
+Candidate lookup/create is a separate race inside the same transaction when the creation request needs a new Candidate. Because normalized email is nullable, non-unique, and not authoritative identity, an email match is only a warning/matching signal. Do not use a check-then-insert email pattern as a uniqueness guarantee. Candidate matching, merge selection, or a future stronger identity rule needs an explicit product workflow and idempotency key; cross-tenant matching is prohibited.
+
+Exact FormVersion, Job, Pipeline, and Stage context must be validated against the public or authenticated resource and lifecycle state. A published form version and its questions must not change while the submission is being associated. A Job without an allowed active Pipeline may accept a source that does not require placement only if the approved source policy permits it; otherwise the transaction rejects the request without partial rows.
+
+Uploads, malware scanning, object-storage finalization, email confirmations, and notifications are outside this core transaction. If a later workflow needs them, commit durable intent/status after the relational facts exist and reconcile independently. A database rollback must not be used to pretend an already-completed external operation was undone.
+
+### Application stage transition concurrency
+
+The transition boundary is one transaction containing: tenant/resource authorization, expected current Application stage/pipeline validation, current-stage update, one transition-history record, and the required Activity record. The target Stage must belong to the Application’s selected valid Pipeline and tenant. A transition request must carry an idempotency/command identity if client retries could repeat the same move.
+
+The recommended initial approach is **optimistic conditional state change**: the update succeeds only when the Application still has the expected current stage (and, when introduced, expected revision). If zero rows match, the caller receives a stale-state conflict and must reload; it must not append history. On success, history records the exact prior and new stage, actor, time, pipeline context, and command identity in the same transaction. A duplicate command identity returns the prior result or a predictable idempotent success.
+
+Option A, an unconstrained read followed by update, is unsafe because another move can occur between statements. Option C, a row lock, is possible for a later high-contention board command, but is not required initially if the conditional update is precise. Option D, an explicit integer revision, is justified for Application once multiple editors or autosave-style workflows exist; expected-stage protection is sufficient for the first stage transition implementation if a revision column has not yet been approved.
+
+### Application outcome transitions
+
+Outcome changes (`Active` to `Rejected`, `Withdrawn`, or `Hired`, plus explicitly authorized reopening) use one transaction for the expected-state check, Application current outcome/status update, append-only ApplicationOutcomeEvent, and required Activity. The transaction must re-check tenant, authorization-relevant resource state, and the expected current outcome. It must never silently convert a concurrent decision into another outcome.
+
+`Hired` is terminal for normal operations. A concurrent Hire and Reject/Withdraw has one winner based on the conditional state transition; the loser receives a conflict and creates no contradictory current-state event. Reopening is a distinct authorized command with its own expected terminal state and event; it is not a generic update that can race with Hire. Offer acceptance remains independent: an Accepted Offer does not create Hired automatically, and a Hire command must remain explicit and auditable.
+
+An idempotent repeated outcome command returns the existing event/result when its command identity matches. A semantically different command against the new state is a user conflict, not an automatic retry. Authorization decides whether the actor may perform the operation; constraints and conditional updates protect integrity but do not grant authority.
+
+### Pipeline configuration concurrency
+
+Create Pipeline and its initial ordered stages in one transaction when they form one usable configuration. Activating a replacement Pipeline, retiring the prior active Pipeline, and updating the Job’s active configuration reference must be one short transaction. The partial unique index allowing only one active Pipeline per Job is the final database race guard: if two activations compete, one commits and the other handles the unique conflict by refetching current configuration or returning a conflict.
+
+Stage reorder is one transaction that validates the full affected set, applies a consistent final ordering, and preserves a deterministic unique `(pipelineId, position)` result. Concurrent reorder/edit operations need an expected Pipeline revision or an equivalent conditional guard; do not mix two editors’ partial order changes silently. Adding/disabling a stage is also configuration work, but a used stage is retired/deactivated rather than deleted.
+
+Applications retain the Pipeline and Stage context used for their history. Retiring a Pipeline or Stage must not invalidate historical Applications or rewrite their meaning. A later feature may use a short configuration row lock while activating/reordering, but broad locks over all Applications are unnecessary and should be avoided.
+
+### Application Form publishing concurrency
+
+Draft FormVersion creation and question editing can be ordinary bounded writes until publish. Publishing a new version is one transaction: verify the draft is still editable and belongs to the Job/Form, freeze the version/questions, retire or supersede the prior published version according to the approved state model, and publish the new version. The partial unique published-version index is the final protection against two simultaneous publishes; the losing transaction returns a conflict or refetches the already-published version according to command semantics.
+
+Published versions and submitted Application references are immutable. A new edit creates a new draft/version; it must not rewrite questions or answers used by a submitted Application. An explicit FormVersion revision/expected-state token is useful for concurrent draft editors, but a revision field is not required for every question row initially if the feature exposes one controlled draft-edit transaction.
+
+### Invitation acceptance and Membership creation
+
+Invitation acceptance is one transaction covering tenant-safe token/process resolution, expiration/revocation/current-state validation, acceptance transition, Membership create-or-activate, and the required security Activity/Audit record. The invitation secret is handled as a secret, not returned or logged. Resend is a separate command and must not create competing active invitations when the approved active-invitation uniqueness rule applies.
+
+Two acceptance requests for the same invitation use a conditional acceptance transition. One consumes the invitation; the other refetches the result and returns idempotent success when it is the same intended recipient, or a predictable already-consumed/conflict result otherwise. If Membership already exists, the transaction uses the `(organizationId, userId)` uniqueness constraint as the final guard and activates or reports the existing Membership according to policy. A concurrent expiry/revocation wins or loses through the same expected-state check; the transaction must not accept a row that was no longer active at the decisive write.
+
+A Membership unique violation is handled by fetching the tenant/user winner and reconciling the invitation result, not by inserting a second Membership. The exact resend target, recipient identity, token rotation, and whether an existing removed Membership may reactivate remain product decisions.
+
+### Membership role and status changes
+
+Role update, deactivate/remove, and reactivate are short tenant-authorized transactions with an expected current status/role or explicit Membership revision when multiple administrators may edit the same row. The first implementation may use expected-current-state conditional updates rather than adding a revision field solely for Membership.
+
+The database must preserve one Membership per `(organizationId, userId)` and historical actor/audit attribution. Whether the final active administrator may be removed is a future product policy. If approved, the transaction must count/check eligible administrators under the same transaction and use a narrowly protected operation; it is not currently a schema-level invariant. Membership deactivation must not erase historical actor/evaluator references.
+
+### Interview scheduling transactions
+
+Creating or editing an Interview and assigning its internal Participants is one core relational transaction when the event and assignments must become visible together. It validates tenant/Application context, schedule fields, participant Membership status/authorization, duplicate participant identity, and any required Activity record. The `(interviewId, membershipId)` uniqueness constraint handles duplicate participant additions; a duplicate add is idempotent if the desired assignment already exists.
+
+Concurrent schedule edits should use expected current schedule/status (or an Interview revision once concurrent calendar editing is demonstrated). A stale reschedule/cancel receives a conflict rather than overwriting a newer decision. Initial scheduling conflict detection is a service/workflow concern. PostgreSQL exclusion constraints for overlapping interviewer calendars are **DEFERRED** until availability semantics, time zones, recurrence, cancellations, and external calendars are approved and measured. Do not hold database locks while calling Google Calendar.
+
+After the internal Interview transaction commits, a later integration work item may synchronize the provider. Provider references, retry state, idempotency, and reconciliation remain PostgreSQL-backed; provider success or failure must not roll back the already-authoritative internal Interview decision.
+
+### Scorecard submission transactions
+
+Draft response edits may be separate short transactions while the Scorecard is Draft. Final submission is one transaction: conditionally change Draft to Submitted, validate evaluator/Interview assignment and required Response completeness, persist or finalize valid Responses, freeze the Scorecard, and write required Activity/Audit history. The one evaluator assignment uniqueness rule prevents duplicate active assignment.
+
+The conditional Draft-to-Submitted transition is the concurrency guard. Two submissions race; one succeeds and the other refetches the submitted result and returns idempotent success when it is the same command, or a predictable already-submitted conflict. A concurrent response edit either commits before submission and is included, or loses against the guarded submission and is rejected; it must not produce a partially submitted set. Submitted responses are immutable in ordinary workflow. Corrections require a separately authorized, append-preserving amendment path.
+
+### Offer creation, versioning, and transitions
+
+Offer creation, initial OfferVersion creation, and required Activity form one transaction when they establish one offer attempt. Two recruiters creating active Offers for the same Application race through the partial unique active-offer index; one wins, and the loser fetches the active Offer or returns a business conflict. Do not rely on a read-then-insert check alone.
+
+Issuing a new OfferVersion and changing the Offer to its issued state are one transaction. An issued version is immutable. Concurrent version issuance uses an expected Offer state/version number or a short Offer row lock so two writers cannot claim the same next version or overwrite terms. OfferVersion uniqueness remains a final guard.
+
+Accept, decline, withdraw, and supersede are conditional state transitions with append-only decision/history and Activity in the same transaction. Accept-versus-withdraw has one state winner; a stale or semantically different command returns a conflict. Candidate-facing repeat actions require a stable idempotency identity, while an ambiguous provider/client retry must not be treated as a new decision. Offer acceptance never changes Application outcome to Hired automatically.
+
+### Hire / reject race with Offer
+
+Offer Accepted, Application Hired, and Application Rejected/Withdrawn are separate state machines. The Offer transaction records only Offer state and offer history. A later explicit Hire command conditionally changes Application outcome and appends its outcome event/activity. Concurrent Hire, Reject, and Withdraw commands use the Application’s expected current outcome as the guard; exactly one valid current outcome wins, and all accepted historical events remain truthful.
+
+If product later permits an accepted offer to be withdrawn or a hire to be corrected, that must be a distinct authorized transition with an append-only correction/reversal event. No cross-table distributed transaction is needed; when one user action intentionally changes both Offer and Application, a single PostgreSQL transaction may cover both rows and their histories, with a consistent lock order.
+
+### Talent Pool membership
+
+Adding or removing a Candidate from a TalentPool is a short tenant-authorized transaction. Ordinary uniqueness `(talentPoolId, candidateId)` is sufficient for duplicate adds: a unique violation fetches the existing membership and becomes idempotent success when the desired state matches. Removal is a conditional delete/deactivate by the exact membership identity; an already-removed row is an idempotent result, not a reason for broad locking.
+
+Simultaneous add/remove commands are resolved by command ordering and expected membership state. Archived Candidate handling is a service policy, not a reason to lock Candidate rows or add a new uniqueness rule. A later membership history requirement would change the transaction’s append-history work but not justify a global lock.
+
+### Candidate anonymization
+
+Anonymization is a controlled, authorized, resumable workflow rather than an assumed single giant transaction. A small transaction first claims/marks the Candidate anonymization operation with an idempotency key and durable progress state. Bounded follow-up transactions redact approved Candidate, Answer, Document metadata, Communication, Offer, Activity/Note, and other PII-bearing records in deterministic batches, recording progress and a protected audit event.
+
+One large transaction is discouraged because a Candidate can have many Applications, answers, documents, communications, and history rows; it would hold locks too long, increase deadlock/rollback cost, and create operational timeout risk. Each batch must be safe to retry, use stable tenant/subject predicates, and tolerate already-redacted values. Partial completion is represented as durable workflow state and resumed, not hidden by an application retry that repeats unbounded work.
+
+Immutable audit evidence preserves the authorized action, actor/system identity, time, tenant, operation outcome, and non-PII structural facts required by the approved policy. Exact legal retention, legal hold, field redaction, provider erasure, and object-byte deletion remain unresolved policy decisions; anonymization must not claim compliance not documented elsewhere.
+
+### Document metadata and object storage
+
+PostgreSQL and private object storage do not participate in a distributed transaction. A staged upload pattern is recommended: create tenant-scoped pending metadata with an opaque object reference and expected state, upload/scan outside the database transaction, then finalize metadata only after the object is confirmed. A database commit failure after upload creates an orphan candidate for reconciliation; an upload failure after pending metadata creates a retryable/failed record. Cleanup/reconciliation must be idempotent and must never delete an object without verifying its ownership/state.
+
+The metadata finalization transaction may include Candidate/Application linkage, availability/quarantine state, and Activity/Audit where required. It must not contain the upload, download, scan-provider, or storage API call. Document bytes remain in private object storage; PostgreSQL remains authoritative for metadata, ownership, state, and access decisions.
+
+### Communication and email
+
+Persist the Communication intent, tenant/recipient linkage, requested content reference, pending state, and required Activity/Audit decision in PostgreSQL, then commit. A later worker/provider adapter sends the message outside the transaction and records provider operation identity, delivery outcome, retry state, and timestamps in PostgreSQL. SendGrid or another provider must never be called while a database transaction is open.
+
+Provider idempotency keys must map a retry to the same intended communication/delivery attempt. A provider timeout is not proof that no email was sent; reconciliation must classify the ambiguous result and avoid an uncontrolled duplicate. BullMQ/Redis is a later infrastructure phase; this section only defines the authoritative transaction boundary and redelivery responsibility.
+
+### Google Calendar integration
+
+The internal Interview create/reschedule/cancel and participant state commit first in PostgreSQL. A durable integration intent/work item is created after or as part of that commit according to the later outbox design; it contains a minimal tenant-scoped internal reference, not secrets or a large payload. A future worker calls Google Calendar outside the transaction, stores provider references and synchronization outcome, retries safe operations with provider idempotency, and reconciles ambiguous failures.
+
+Calendar success cannot be used to make the internal Interview authoritative, and calendar failure cannot roll back a committed internal schedule. Provider callbacks must revalidate tenant, internal resource, expected synchronization version, and provider identity before applying an update.
+
+### Activity and Audit write rules
+
+| Classification | Rule | Examples |
+|---|---|---|
+| Activity MUST be same transaction | Product-visible history is part of the business effect and must describe committed state | Application creation, stage move, outcome transition, Interview change when activity is promised, Scorecard submission, Offer transition |
+| Audit MUST be same transaction | Security/business accountability is required to prove the critical state change | Invitation acceptance, Membership role/status change, anonymization claim/redaction, privileged offer/feedback visibility or correction, critical tenant/security action |
+| Logging may be asynchronous | Supplemental diagnostics or non-authoritative operational detail can lag | Provider attempt detail, reconciliation metrics, worker timing, non-critical notification telemetry |
+| Observability never controls success | Logs, traces, metrics, and console output must not be required for commit or rollback | Request logs, latency metrics, deadlock diagnostics, provider response tracing |
+
+If a workflow promises both Activity and Audit for one action, both records belong in the same transaction as the business state. A failure to write required history fails the transaction. Non-critical logging may be emitted after commit and must tolerate loss. Activity remains user-facing history; Audit remains protected accountability history.
+
+### Optimistic concurrency strategy
+
+Use expected-current-state conditional updates first. They are simple, make stale edits explicit, and avoid holding locks during request processing. `updatedAt` alone is a weak concurrency token because timestamp precision, clock behavior, and same-timestamp updates can make it ambiguous; it may support display but should not be the primary guard for high-value commands.
+
+An explicit integer revision/version is justified initially for Application, Interview, Offer, and Scorecard draft once their editors or concurrent workflow commands are implemented. Pipeline and ApplicationForm draft also benefit when multiple configuration editors or reorder/publish operations exist. Do not add a revision field to every table, append-only history record, child question, response, or membership row without a demonstrated stale-edit problem.
+
+Recommended initial posture:
+
+- Application: expected current stage/outcome now; explicit revision when multiple editors/autosave or broad mutable fields arrive.
+- Pipeline: explicit configuration revision for concurrent stage reorder/activation if feature implementation has multiple editors; otherwise conditional active-state guard plus uniqueness.
+- ApplicationForm draft: revision is justified for concurrent draft editing; publication immutability is the stronger boundary.
+- Interview: expected schedule/status now; revision when calendar/provider edits can race with recruiter edits.
+- Scorecard draft: expected Draft state now; revision is justified for autosave/concurrent evaluator editing.
+- Offer: explicit revision or guarded version number is justified for issue/accept/withdraw/version races.
+
+### Row-locking guidance
+
+| Guidance | Workflows | Rule |
+|---|---|---|
+| **USE** | A short Offer state/version transition; a pipeline activation decision if conditional updates cannot express the full invariant; a narrow administrator-protection check if a final-admin policy is approved | Lock only the authoritative row(s), in a consistent order, and perform no network or unbounded work while locked |
+| **POSSIBLE** | High-contention Application transition, Interview schedule edit, Form publish, Scorecard finalization | Start with conditional state/revision guards; add a targeted row lock only after the race or plan shows it is needed |
+| **AVOID INITIALLY** | Whole-tenant locks, all Applications for a Job, all Candidates for a Pool, every child row during ordinary reads, locks held across uploads/providers | These increase contention and deadlock risk without adding a proven invariant guard |
+
+The conceptual PostgreSQL row-lock operation commonly represented by `SELECT ... FOR UPDATE` is a targeted option, not a blanket repository pattern. Exact lock ordering and behavior belong in implementation tests; no executable SQL is defined here.
+
+### Deadlock avoidance and transaction size
+
+Transactions must acquire multiple rows in a consistent order: tenant/resource parent first, then the directly changing current-state row, then child/history rows, with the exact order documented per workflow. Avoid locking unrelated rows, querying large collections inside a write transaction, or mixing Application/Offer/Interview locks in different orders across modules. Keep transactions short and bounded; do not upload files, send email, call Google APIs, run analytics, or wait for workers while locks are held.
+
+Recognized deadlock or serialization failures may receive a small bounded retry only when the command is idempotent and all work is internal to PostgreSQL. Log tenant, workflow, resource IDs, transaction attempt, expected state/revision, and database error class without logging tokens, PII payloads, secrets, or offer terms. Repeated conflicts surface as a user/system conflict and require investigation; they do not justify an unbounded retry loop.
+
+### Unique-constraint race handling
+
+| Constraint/race | Expected application behavior |
+|---|---|
+| Membership `(organizationId, userId)` | Fetch the existing winner; activate/reconcile if policy permits, otherwise return a deterministic membership conflict |
+| Active Invitation | Fetch the existing active invitation/process; resend/replay only under approved idempotent resend semantics |
+| Active Pipeline per Job | Fetch the active winner or return configuration conflict; do not silently retire a winner from a losing request |
+| Published FormVersion per Form | Fetch the published winner or return publish conflict; preserve both version histories |
+| TalentPool `(poolId, candidateId)` | Treat duplicate add as idempotent success; already-removed membership is a safe repeat result |
+| Interview participant `(interviewId, membershipId)` | Treat duplicate assignment as idempotent success when desired state matches |
+| Scorecard evaluator assignment | Fetch the existing assignment; return it for the same command or a conflict for a different evaluator/assignment |
+| Active Offer per Application | Fetch the active Offer winner or return business conflict; never create two active offers |
+| Application submission key | Fetch the deduplication winner and replay/return its result; do not infer Candidate + Job uniqueness |
+| IntegrationEvent provider identity | Treat duplicate delivery as already processed/in-progress according to durable event state; do not run the business effect twice |
+
+Unique violations are not all equivalent. The repository layer later needs enough context to distinguish an idempotent winner from a genuine business conflict. It must not expose raw database details or use a global lookup that can leak another tenant’s existence.
+
+### Retry strategy
+
+| Failure class | Classification | Initial behavior |
+|---|---|---|
+| Deadlock or targeted serialization failure | SAFE TO RETRY when all writes are internal and command is idempotent | Bounded retry with jitter; re-run the complete transaction and revalidate state |
+| Transient connection/serialization infrastructure failure | SAFE TO RETRY only when commit outcome is known or command has idempotency | Bounded retry or status reconciliation; never blindly duplicate an ambiguous external effect |
+| Unique violation on a known idempotency/relationship key | RETRY ONLY WITH IDEMPOTENCY | Fetch the winner and return idempotent success or a deterministic conflict |
+| Expected-state/revision mismatch | CONFLICT FOR USER | Reload/show current state; no automatic retry that overwrites another actor |
+| Validation or authorization failure | DO NOT AUTOMATICALLY RETRY | Return failure; reauthorization or corrected input is required |
+| External email/calendar/storage failure | RETRY ONLY WITH PROVIDER IDEMPOTENCY | Persist failed/pending state and reconcile outside the DB transaction |
+| Unknown/ambiguous provider outcome | DO NOT AUTOMATICALLY RETRY blindly | Reconcile provider operation identity before another side effect |
+| Observability/logging failure | DO NOT control transaction | Preserve business outcome; emit best-effort diagnostics |
+
+There is no generic retry-everything policy. Every retryable command needs a bounded attempt count, safe idempotency identity, conflict telemetry, and a terminal failure/reconciliation state where external work is involved.
+
+### Transaction / concurrency matrix
+
+| Workflow | Writes | Transaction? | Concurrency risk | Primary guard | Secondary guard | Idempotency? | External side effects? | Retry behavior |
+|---|---|---|---|---|---|---|---|---|
+| Application creation | Dedup record, Candidate resolution/create, Application, FormVersion/answers, initial stage/history, Activity | Yes, core relational writes | Duplicate submission; Candidate resolution; partial failure | Submission-key uniqueness + tenant/context validation | Conditional dedup state and outcome fetch | Required for public/retried commands | Upload/email outside | Winner fetch/replay; transient DB retry only if safe |
+| Stage transition | Application current stage, StageHistory, Activity | Yes | Lost/concurrent move; invalid target | Expected current stage/revision conditional update | Same-tenant Pipeline/Stage integrity | Required for repeatable commands | None in core | Stale conflict; bounded transient retry |
+| Outcome transition | Application outcome, OutcomeEvent, Activity | Yes | Reject/Hire/Withdraw race; reopen race | Expected current outcome conditional update | Authorization + append event identity | Recommended/required for client retries | None in core | Winner replay; different state is conflict |
+| Pipeline activation | Pipeline status, Job active reference, retirement/history | Yes | Two active replacements | Partial unique active-Pipeline index | Conditional Job/configuration revision or narrow lock | Recommended for command retry | None | Fetch winner or conflict; transient retry |
+| Form publish | Version state, publication/retirement, immutable questions/history | Yes | Simultaneous publish/edit | Partial unique published-version index | Draft expected revision and immutability | Recommended | None | Fetch published winner or conflict |
+| Invitation acceptance | Invitation, Membership, Activity/Audit | Yes | Double accept; expiry/revoke; existing Membership | Conditional invitation state + Membership unique key | Token/process tenant validation | Required | Email/resend outside | Winner replay; unique winner fetch |
+| Membership role/status | Membership current state, history/Audit | Yes | Concurrent admin edits; final-admin policy | Expected role/status or revision | Membership uniqueness + policy check | Recommended for commands | None | Stale conflict; no blind retry |
+| Interview scheduling | Interview, Participants, Activity | Yes | Concurrent reschedule/cancel; duplicate participant | Expected schedule/status | Participant uniqueness + tenant/participant validation | Recommended | Calendar outside | Stale conflict; provider reconciliation later |
+| Scorecard submission | Scorecard state, Responses, Activity/Audit | Yes | Concurrent response edit/submit; duplicate submit | Conditional Draft-to-Submitted | Evaluator uniqueness + response uniqueness | Required for repeat submit | None in core | Winner replay; already-submitted conflict |
+| Offer creation | Offer, initial OfferVersion, Activity | Yes | Two active Offers | Partial unique active-Offer index | Application tenant/context validation | Recommended | Delivery outside | Fetch active winner or conflict |
+| Offer transition/version | Offer state, OfferVersion/history, Activity | Yes | Issue/accept/withdraw/version race | Expected Offer state/revision | OfferVersion uniqueness | Required for candidate-facing retries | Provider notification outside | Stale conflict; safe DB retry only |
+| Hire/reject with Offer | Separate Offer or Application transition/history | Yes per business command; one DB transaction if one action intentionally changes both | Contradictory accepted/hired/rejected current state | Separate conditional guards per state machine | Consistent lock order if both rows change | Required for repeat commands | None in core | One winner; no cross-provider retry |
+| TalentPool add/remove | Membership current row/history if approved | Yes, short | Duplicate add; add/remove race | Pool/Candidate uniqueness + expected membership state | Tenant/resource authorization | Recommended | None | Duplicate add idempotent; stale remove safe result |
+| Candidate anonymization | Workflow claim/progress; bounded redaction batches; Audit | Yes per bounded batch | Long locks; partial failure; repeat execution | Idempotent workflow identity/progress | Deterministic batch predicates | Required | Object/provider cleanup outside | Resume safe batches; no giant retry |
+| Document upload/finalize | Pending/final metadata, linkage, availability/history | Yes for metadata only | DB/S3 partial failure; duplicate finalize | Expected metadata state + object reference | Reconciliation/ownership checks | Required for finalize | S3 upload/scan outside | Reconcile pending/orphan; no distributed rollback |
+| Communication send | Communication intent/status/history | Yes for intent | Duplicate send; provider timeout | Intent/provider idempotency identity | Delivery status/reconciliation | Required | SendGrid outside | Provider-idempotent retry/reconcile |
+| Calendar sync | Internal Interview state plus durable integration intent | Yes for internal state/intent | Provider ambiguity/redelivery | Internal expected state + provider idempotency | Provider reference and reconciliation | Required | Google Calendar outside | Retry safe operations; reconcile unknown outcome |
+
+### Prisma transaction feasibility (design classification only)
+
+No Prisma is installed or approved by this task. The following describes likely implementation categories for later review, not Prisma code:
+
+| Operation | Likely category | Later implementation note |
+|---|---|---|
+| Single-row state update with expected current state | Conditional update/updateMany-style guard | Check affected-row count and map zero rows to stale conflict |
+| Application + answers + initial history | Nested-write candidate or interactive transaction candidate | Use interactive form when exact validation, dedup winner handling, and conditional state checks span multiple reads/writes |
+| Stage/outcome transition + history/activity | Interactive transaction candidate with conditional update | All authoritative records commit together |
+| Pipeline activation / Form publish | Interactive transaction candidate | Partial unique indexes remain PostgreSQL guards; handle unique races explicitly |
+| Invitation acceptance + Membership | Interactive transaction candidate | Fetch/reconcile unique Membership winner inside the transaction |
+| Interview + Participants | Nested-write candidate for simple create; interactive transaction for guarded edit | External Calendar remains an external workflow |
+| Scorecard final submission | Interactive transaction candidate | Validate/freeze Responses and conditionally submit Scorecard atomically |
+| Offer/version transition | Interactive transaction candidate; raw PostgreSQL locking potentially required later | Use conditional state/version first; only add vendor-specific locks if measured contention or invariant requires them |
+| TalentPool membership add/remove | Simple atomic write or small transaction | Ordinary uniqueness handles duplicate add |
+| Anonymization | External workflow/outbox candidate plus bounded interactive transactions | Do not place all descendant redaction in one unbounded transaction |
+| Document upload, email, Calendar sync | External workflow/outbox candidate | Database intent/status transaction plus provider operation outside |
+| Deadlock/serialization retry | Transaction wrapper with bounded retry | Only for known safe/idempotent internal operations |
+
+Prisma’s transaction API should be sufficient for ordinary atomic writes, nested child creation, interactive guarded transitions, and bounded history writes. PostgreSQL-specific handling may later be needed for partial unique indexes, exact lock clauses, isolation overrides, advisory/operational decisions if approved, and error classification. No raw SQL or Prisma API usage is introduced here.
+
+### Remaining pre-Prisma questions and final readiness
+
+Major transaction boundaries, high-risk races, default isolation, idempotency responsibilities, external-side-effect separation, optimistic-concurrency candidates, row-locking posture, retry classes, and deadlock/timeout guidance are defined. The remaining questions are:
+
+- final controlled status/outcome values and legal transition graph;
+- final Application submission-key scope, replay response retention, and Candidate matching/reapplication policy;
+- exact Pipeline/Form/Scorecard/Offer revision fields and historical row shapes;
+- final active Offer and active Invitation state sets;
+- whether direct target/context columns exist for Activity/Communication and how required history is represented;
+- final administrator-removal policy and Membership history shape;
+- Interview time-zone/availability/conflict semantics and external participant policy;
+- Scorecard required-response, correction, and visibility rules;
+- anonymization/redaction/retention/legal-hold field map;
+- provider callback identity, outbox/integration-event contract, and ambiguous-result reconciliation;
+- UUID/runtime, migration, test-database, and connection-pool implementation decisions already listed in the physical review.
+
+These questions do not block a final pre-Prisma review of transaction/concurrency design, but several block a complete feature-domain schema: exact status/check constraints, active partial predicates, Application idempotency shape, Offer/Scorecard history shape, and anonymization/provider contracts must be accepted before their tables are implemented. Prisma setup, schema authoring, migrations, SQL, and database code remain outside this task.
+
+This document therefore approves moving to the **FINAL PRE-PRISMA REVIEW** task as a design review gate, not to unrestricted Prisma implementation. Phase 02 remains **IN PROGRESS**.
+
+## Final Pre-Prisma Review
+
+### Review authority and canonical current model
+
+This is the final Phase 02 design gate before limited PostgreSQL/Prisma implementation. Later resolved sections supersede earlier inventory drafts. The canonical model below is the implementation reference; an entity appearing in an earlier table does not make it part of the initial schema.
+
+| Entity | Classification | Current decision |
+|---|---|---|
+| User | IMPLEMENT IN PHASE 02 FOUNDATION | Global identity only; credentials/sessions remain Phase 05 |
+| Organization | IMPLEMENT IN PHASE 02 FOUNDATION | Tenant root and lifecycle |
+| OrganizationMembership | IMPLEMENT IN PHASE 02 FOUNDATION | User–Organization context with fixed role and access status |
+| Invitation | IMPLEMENT IN LATER FEATURE PHASE | Phase 05/07 authentication/team workflow |
+| Job, JobHiringTeamMember | IMPLEMENT IN LATER FEATURE PHASE | Phase 08 Job Management |
+| Pipeline, PipelineStage | IMPLEMENT IN LATER FEATURE PHASE | Phase 09 Pipeline Configuration; no placement table |
+| ApplicationForm, ApplicationFormVersion, ApplicationFormQuestion | IMPLEMENT IN LATER FEATURE PHASE | Phase 10 forms/career site |
+| Candidate, Application | IMPLEMENT IN LATER FEATURE PHASE | Phase 11; requires submission/reapplication decisions |
+| ApplicationAnswer | IMPLEMENT IN LATER FEATURE PHASE | Phase 10/11 after form lineage is fixed |
+| ApplicationStageHistory, ApplicationOutcomeEvent, ActivityRecord | IMPLEMENT IN LATER FEATURE PHASE | Phase 13 workflow/history |
+| CandidateDocument | IMPLEMENT IN LATER FEATURE PHASE | Phase 12; Resume is a document type/category |
+| Interview, InterviewParticipant, Availability | IMPLEMENT IN LATER FEATURE PHASE | Phase 14 scheduling |
+| ScorecardTemplate, ScorecardTemplateVersion, ScorecardCriterion, Scorecard, ScorecardResponse | IMPLEMENT IN LATER FEATURE PHASE | Phase 15 feedback |
+| Note | IMPLEMENT IN LATER FEATURE PHASE | Phase 15 after supported-target design |
+| Communication, CommunicationRecipient, Notification | IMPLEMENT IN LATER FEATURE PHASE | Phase 16 communication/notification workflows |
+| Offer, OfferVersion, TalentPool, TalentPoolMember | IMPLEMENT IN LATER FEATURE PHASE | Phase 17 |
+| AuditRecord | IMPLEMENT IN LATER FEATURE PHASE | Phase 18 protected audit |
+| Integration, ExternalReference, IntegrationEvent | IMPLEMENT IN LATER FEATURE PHASE | Phase 20 provider integration |
+| ApplicationSubmissionDeduplication | IMPLEMENT IN LATER FEATURE PHASE | Phase 10/11 public/import submission contract |
+| CommunicationTemplate | DEFERRED | Template/content policy is later |
+| Generic IdempotencyRecord | DEFERRED | Command-specific idempotency is preferred; no universal table approved |
+| PipelineStagePlacement | REMOVED | Application current stage plus ApplicationStageHistory is authoritative |
+| Resume | REMOVED | Merged into CandidateDocument |
+| Hire | REMOVED | Hiring is an ApplicationOutcomeEvent; no standalone Hire entity |
+| Configurable Role / Permission / RolePermission | REMOVED | Fixed Membership roles plus resource-level authorization |
+| Comment / Mention | DEFERRED | Threaded collaboration and mention requirements are unconfirmed |
+| Analytics facts/read models and AI/vector entities | DEFERRED / OUT OF CURRENT SCOPE | Derived reporting and AI are later, non-authoritative concerns |
+
+Names are normalized here: `OrganizationMembership` is canonical; “Membership” is shorthand only. `ActivityRecord` and `AuditRecord` are canonical; earlier Activity/AuditLog labels are descriptive aliases, not extra tables.
+
+### Phase 02 implementation scope
+
+Phase 02 should implement only the smallest foundation proving PostgreSQL connectivity, migration discipline, UUID/timestamp conventions, tenant ownership, and the User–Organization–OrganizationMembership relationship. It should not create the full product schema.
+
+The foundation slice is:
+
+- `User`: global identity and minimum approved account metadata; no credentials, sessions, or OAuth records.
+- `Organization`: tenant root and minimum approved metadata/lifecycle.
+- `OrganizationMembership`: tenant-scoped relationship, fixed role, access status, required foreign keys, and unique `(organizationId, userId)`.
+
+Invitation is deliberately not in the foundation. Its token, resend, expiry, acceptance, and security-history behavior belongs with Phase 05/07. Do not add Role, Permission, RolePermission, Credentials, Session, or provider-auth tables from conceptual architecture alone.
+
+| Entity | Designed now? | Implement now? | Implementation phase | Reason |
+|---|---:|---:|---|---|
+| User | Yes | Yes | Phase 02 | Global identity is needed for tenant context |
+| Organization | Yes | Yes | Phase 02 | Tenant root |
+| OrganizationMembership | Yes | Yes | Phase 02 | Connects identity to tenant and fixed role |
+| Invitation | Yes | No | Phase 05/07 | Auth/team workflow |
+| Job, JobHiringTeamMember | Yes | No | Phase 08 | Product Job and assignment policy |
+| Pipeline, PipelineStage | Yes | No | Phase 09 | Depends on Job and pipeline lifecycle |
+| Forms, Questions, Answers | Yes | No | Phase 10/11 | Public submission and exact version lineage |
+| Candidate, Application | Yes | No | Phase 11 | Duplicate/reapplication and submission decisions |
+| CandidateDocument | Yes | No | Phase 12 | Storage, scanning, and retention boundary |
+| Stage/outcome history, ActivityRecord | Yes | No | Phase 13 | Depends on Application workflows |
+| Interview family | Yes | No | Phase 14 | Scheduling and conflict semantics |
+| Scorecard family, Note | Yes | No | Phase 15 | Feedback and collaboration policy |
+| Communication/Notification family | Yes | No | Phase 16 | Provider intent/delivery contract |
+| Offer/OfferVersion, Talent Pool family | Yes | No | Phase 17 | Later business policies |
+| AuditRecord | Yes | No | Phase 18 | Protected audit/retention policy |
+| Integration family | Yes | No | Phase 20 | Provider callback and reconciliation contract |
+| Submission deduplication | Yes | No | Phase 10/11 | Exact key/replay policy remains feature-owned |
+| Removed/deferred concepts | Yes, for traceability | No | N/A | Must not become initial tables |
+
+### Initial implementation sequence
+
+Do not use one giant schema or migration:
+
+| Slice | Objective/entities | Constraints and validation | Tests/migration expectations | Dependencies |
+|---|---|---|---|---|
+| 1. Infrastructure contract | Prisma/PostgreSQL conventions only; no tables | Environment/secret/client-lifecycle contract | Configuration safety; no migration | Manual setup |
+| 2. Tenant identity | User, Organization | UUID PKs, timestamps, approved minimum lifecycle | Fresh migration and repository smoke tests | Slice 1 |
+| 3. Membership context | OrganizationMembership | User/Organization FKs, unique tenant/user, fixed role, approved status | Duplicate membership, multi-organization user, role/status, FK, tenant tests | Slice 2 |
+| 4. Foundation review | No new entities | Generated names/constraints/indexes and tenant predicates | Fresh migration, upgrade path, isolated reset, negative tests | Slices 2–3 |
+| 5. Feature migrations | One later feature at a time | Feature-specific invariants, custom indexes, transaction tests | Feature migration/repository/concurrency tests | Foundation + feature decisions |
+
+Each slice has one reviewable migration, minimal deterministic seed needs, and no unrelated feature tables. Production migrations are forward-only; destructive resets are development/test-only and explicitly guarded.
+
+### Tenant foundation, statuses, and direct organizationId
+
+Organization is the tenant root. User is global identity and has no authorization by itself. OrganizationMembership is the tenant context and carries one fixed role: Admin, Recruiter, Hiring Manager, or Interviewer. Configurable Role/Permission tables are not approved.
+
+The domain/security documents do not finalize the exact pre-invitation Membership status values. Before Slice 3, explicitly approve the minimum active and inactive states needed by the foundation. Do not invent Invitation/Pending semantics before Invitation exists. User and Organization lifecycle values are similarly limited to explicitly approved foundation behavior; future suspended/closed/recovery states belong to later decisions.
+
+| Foundation relationship | Direct organizationId | Same-tenant FK | Delete | Update |
+|---|---|---|---|---|
+| User | No; global identity | Not applicable | Restrict while attribution/Membership exists; deactivate later | No update cascade |
+| Organization | Yes; tenant root | Root identity | Restrict/NO ACTION for Memberships; close/archive | No update cascade |
+| OrganizationMembership → Organization | Yes; intrinsic ownership | Direct Organization FK; composite parent key only if a later child needs it | Restrict/NO ACTION | No update cascade |
+| OrganizationMembership → User | Membership has `userId`; User is global | Ordinary User FK | Restrict or controlled deactivation | No update cascade |
+
+Do not add speculative tenant columns to User or future entities in the foundation migration. Future tenant-owned roots/children receive direct organization context in their feature migration when it supports authorization, composite integrity, or an approved query path.
+
+### UUIDv7 and timestamp conventions
+
+Use native PostgreSQL UUID columns with application/domain-supplied, standards-compliant UUIDv7 values. The application supplies IDs; Prisma defaults must not silently produce UUIDv4. UUIDv7 requires a supported Node.js runtime capability or a manually approved package that provides cryptographically secure randomness and standards compliance. Monotonicity across processes is not required for correctness; optional same-process monotonic sequencing is only a locality optimization.
+
+UUID generation belongs in a small backend/domain utility boundary. There is no silent UUIDv4 fallback: if runtime support is absent, implementation pauses for manual runtime/package approval. A temporary explicit v4 mode would preserve correctness but lose locality and must not be mixed invisibly with the v7 contract. No dependency is selected or installed here.
+
+All stored instants use PostgreSQL `timestamptz` and represent UTC instants. Application display may localize time, but APIs, services, tests, comparisons, and migrations use UTC-aware values. Use database-authoritative `createdAt` and `updatedAt` where practical; Prisma-managed `updatedAt` is acceptable only if no competing database writer exists. Use consistent millisecond precision unless a later event requirement proves finer precision necessary. Timestamp precision is never the sole concurrency token.
+
+### Initial structural indexes and custom PostgreSQL requirements
+
+The foundation needs only UUID primary-key indexes and ordinary unique `(organizationId, userId)` on OrganizationMembership. A User-first `(userId, organizationId)` index is justified when authenticated membership resolution is implemented and may be added in that slice; otherwise defer it to authentication. No indexes for future Jobs, Applications, Candidates, Activity, Audit, search, dashboards, or partial subsets belong in the foundation.
+
+Native UUID/FK/PK features and ordinary uniqueness are Prisma-compatible. A fixed role CHECK-constrained text value may need a small custom migration if the chosen Prisma representation cannot express it. Membership status CHECK values are added only after exact values are approved. Partial unique indexes, provider idempotency, active Pipeline/Offer uniqueness, published FormVersion uniqueness, exclusion constraints, triggers, RLS, extensions, generated columns, and feature child indexes are deferred with their feature tables. Any future custom migration SQL requires injection/safety, drift, repeatability, and tenant-integrity review.
+
+### Prisma placement and connection lifecycle
+
+Prisma should live inside `hiringloop-backend`, with a backend-local schema/migration directory fixed in Slice 1. The existing centralized `src/config/env.js` should validate the database URL; it must never reach frontend `VITE_*` configuration.
+
+Use one reusable Prisma Client per process, wrapped by a backend database/infrastructure module. Do not construct a client per request or import Prisma from controllers. Preserve:
+
+`Route -> Middleware -> Controller -> Service / Use Case -> Repository / Data Access -> Prisma -> PostgreSQL`
+
+Repositories own query shape, tenant predicates, transaction participation, and database error translation. Services/use cases own business invariants, authorization collaboration, idempotency, and transaction boundaries. Development hot reload must not create unbounded clients; production starts one client and disconnects during graceful shutdown. Tests use a separate isolated client/database/schema.
+
+### Migration policy and development/test databases
+
+Migrations are committed to Git, named by ordered intent, and treated as forward-only after shared/deployed application. Never casually edit or reorder applied history; create a corrective migration. Development reset is destructive only against an explicitly isolated development database. Every migration is tested against a fresh database and an upgrade path. Custom migration SQL receives review for Prisma drift and recovery implications. Production backup/restore and migration-failure recovery must be validated before production data; a down migration is not assumed to be a safe production rollback.
+
+Local development and automated tests require separate PostgreSQL targets and distinct environment variables extending the existing backend configuration convention. Reset/fixture commands require an explicit test/development guard and must never target production. Docker, local PostgreSQL installation, hosting provider, credentials, and CI provisioning are manual/infrastructure decisions; Codex must not install or provision them.
+
+### Database testing strategy
+
+After implementation, use: (A) Prisma/schema validation; (B) fresh and upgrade migration tests; (C) real-PostgreSQL repository integration tests; (D) PK/FK/unique/status/referential-action constraint tests; (E) tenant-isolation negative tests; and (F) transaction/concurrency tests for each feature workflow.
+
+The initial foundation must verify duplicate Membership rejection, invalid FK rejection, the same User in multiple Organizations, organization-specific roles, inability to use an Organization A Membership as Organization B context, Restrict/NO ACTION deletion behavior, tenant-scoped Membership reads, and preserved actor attribution after deactivation.
+
+### Security and performance review
+
+No frontend-provided organization ID is authorization. Repositories receive verified tenant context derived from authenticated Membership/session context. Every organization-scoped query uses that context even when a direct ID is supplied. Direct UUIDs identify resources but do not authorize access. Composite tenant FKs reinforce integrity but do not replace service authorization or resource policy. Future raw migration SQL is privileged code and must be reviewed. Database URLs, credentials, tokens, and provider secrets are not committed.
+
+The foundation is intentionally not over-indexed: only PK and Membership uniqueness, plus the measured User-first membership lookup if needed. Feature query indexes remain documentation until their tables and queries exist. UUIDv7 supports locality but does not replace indexes or pagination. No caching is introduced.
+
+### Final GO / NO-GO checklist
+
+| Review item | Result | Note |
+|---|---|---|
+| Logical model coherent | PASS | Later simplification decisions are canonical and superseded concepts are marked |
+| Physical model coherent | PASS | UUID/timestamptz, tenant context, constraints, and feature slicing align |
+| Tenant ownership defined | PASS | Organization root; User distinct from OrganizationMembership |
+| PK/FK strategy defined | PASS | Native UUIDs, restrictive actions, same-tenant patterns |
+| Uniqueness defined | PASS | Foundation Membership uniqueness; feature invariants remain feature-scoped |
+| Referential actions defined | PASS | Restrict/NO ACTION default; no history cascade chains |
+| Initial indexes defined | PASS | Foundation-only structural indexes |
+| Transactions/concurrency defined | PASS | Bounded workflows, conditional guards, locks, retries, side-effect boundaries |
+| Migration policy defined | PASS | Git history, forward-only production posture, custom SQL review |
+| Prisma placement/client strategy defined | PASS | Backend wrapper; no controller access; one client/process |
+| Database test strategy defined | PASS | Schema, migration, constraints, tenant, repository, concurrency layers |
+| Security reviewed | PASS | Tenant context, direct-ID, secret, and migration rules |
+| Performance reviewed | PASS | Conservative scope and no premature caching |
+| Initial implementation scope defined | PASS | User, Organization, OrganizationMembership only |
+| Remaining issues non-blocking | DEFERRED-NON-BLOCKING for foundation; BLOCKED for affected features | Membership status and UUID runtime must be fixed before Slice 3; later feature decisions remain with their phases |
+
+### Final Pre-Prisma decision
+
+**GO for the minimal Phase 02 foundation implementation slices only.** The design is coherent and safe enough to begin manual PostgreSQL/Prisma setup and implement User, Organization, and OrganizationMembership in small reviewed migrations, after explicitly fixing the foundation Membership status values and verifying UUIDv7 runtime capability. This is not approval to implement the full product schema or later feature tables.
+
+Recommended next user action: manually provision/select an isolated local PostgreSQL instance and confirm the supported Node.js runtime or manually select an approved UUIDv7 capability, then request the first narrowly scoped Phase 02 implementation slice. Codex must not install dependencies, provision databases, create Prisma files, or generate migrations in this review. Phase 02 remains **IN PROGRESS**.
