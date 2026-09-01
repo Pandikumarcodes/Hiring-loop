@@ -16,14 +16,23 @@ const portSchema = z.preprocess(
     ),
 );
 
+const optionalUrlSchema = z.preprocess(
+  (value) => (value === '' ? undefined : value),
+  z.string().url().optional(),
+);
+
 const environmentInputSchema = z.object({
   NODE_ENV: environmentSchema,
   PORT: portSchema,
+  DATABASE_URL: optionalUrlSchema,
+  TEST_DATABASE_URL: optionalUrlSchema,
 });
 
 const parsedEnvironment = environmentInputSchema.safeParse({
   NODE_ENV: process.env.NODE_ENV,
   PORT: process.env.PORT,
+  DATABASE_URL: process.env.DATABASE_URL,
+  TEST_DATABASE_URL: process.env.TEST_DATABASE_URL,
 });
 
 if (!parsedEnvironment.success) {
@@ -39,4 +48,6 @@ if (!parsedEnvironment.success) {
 export const config = Object.freeze({
   environment: parsedEnvironment.data.NODE_ENV,
   port: parsedEnvironment.data.PORT,
+  databaseUrl: parsedEnvironment.data.DATABASE_URL,
+  testDatabaseUrl: parsedEnvironment.data.TEST_DATABASE_URL,
 });

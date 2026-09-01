@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Phase 02 first tenant foundation slice.
+// IDs are required application inputs generated with UUIDv7 by src/utils/ids.js.
+// The migration task must add a PostgreSQL CHECK for ADMIN, RECRUITER,
+// HIRING_MANAGER, and INTERVIEWER role values.
+
+model User {
+  id                      String                   @id @db.Uuid
+  createdAt               DateTime                 @default(now()) @db.Timestamptz(6)
+  updatedAt               DateTime                 @updatedAt @db.Timestamptz(6)
+  organizationMemberships OrganizationMembership[]
+}
+
+model Organization {
+  id          String                   @id @db.Uuid
+  name        String
+  createdAt   DateTime                 @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime                 @updatedAt @db.Timestamptz(6)
+  memberships OrganizationMembership[]
+}
+
+model OrganizationMembership {
+  id             String   @id @db.Uuid
+  organizationId String   @db.Uuid
+  userId         String   @db.Uuid
+  role           String   @db.VarChar(32)
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+}

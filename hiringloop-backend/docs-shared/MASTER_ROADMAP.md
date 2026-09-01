@@ -27,7 +27,7 @@ The repository currently has no local PRD file. PRD traceability below uses only
 - `ARCH-06 — Phase 00 Final Review / Closure` — **DONE**
 - `Phase 00 — Product & Architecture Planning` — **COMPLETE**
 - `Phase 01 — Project Foundation` — **COMPLETE**
-- `Phase 02 — Database Foundation` — **NOT STARTED / NEXT**
+- `Phase 02 — Database Foundation` — **COMPLETE**
 
 The historical task detail below remains the ordered roadmap definition. Its original Phase 00 in-progress label is superseded by this closure status after ARCH-06 acceptance.
 
@@ -190,7 +190,7 @@ All ordered tasks are complete, required planning documents are reviewed, the ro
 - **Dependencies:** Phase 00 complete.
 - **Definition of Done:** both apps run independently with separate dependencies/configuration and verified baseline scripts; no product features are included.
 
-## Phase 02 — Database Foundation — NOT STARTED
+## Phase 02 — Database Foundation — COMPLETE
 
 - **Objective:** establish the PostgreSQL/Prisma foundation and migration discipline.
 - **Features/sub-features:** Prisma setup; initial conventions; migration workflow; seed strategy; transaction/test database approach.
@@ -205,6 +205,10 @@ All ordered tasks are complete, required planning documents are reviewed, the ro
 - **Documentation outputs:** database conventions and local setup/runbook.
 - **Dependencies:** Phase 01 and Phase 00 domain model.
 - **Definition of Done:** schema changes are reproducible and tested; PostgreSQL remains authoritative; no feature schema is added without an approved feature scope.
+
+Phase 02 handoff: `docs/architecture/PHASE_02_HANDOFF.md`. The database
+foundation is complete; feature-specific schema changes remain deferred to
+their approved phases.
 
 ## Phase 03 — Backend Foundation — NOT STARTED
 
