@@ -11,3 +11,34 @@ describe('GET /health', () => {
     expect(response.body).toEqual({ status: 'ok' });
   });
 });
+
+describe('API v1 route composition', () => {
+  it('mounts the empty product API namespace without adding an endpoint', async () => {
+    const response = await request(app).get('/api/v1');
+
+    expect(response.status).toBe(404);
+    expect(response.body.error.code).toBe('NOT_FOUND');
+  });
+
+  it('does not resolve an unknown path as the health endpoint', async () => {
+    const response = await request(app).get('/not-a-real-route');
+
+    expect(response.status).toBe(404);
+    expect(response.body.error).toEqual({
+      code: 'NOT_FOUND',
+      message: 'Route not found',
+      requestId: response.headers['x-request-id'],
+    });
+  });
+
+  it('returns the same structured error for an unknown versioned path', async () => {
+    const response = await request(app).get('/api/v1/does-not-exist');
+
+    expect(response.status).toBe(404);
+    expect(response.body.error).toEqual({
+      code: 'NOT_FOUND',
+      message: 'Route not found',
+      requestId: response.headers['x-request-id'],
+    });
+  });
+});

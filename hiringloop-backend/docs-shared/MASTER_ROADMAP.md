@@ -28,6 +28,7 @@ The repository currently has no local PRD file. PRD traceability below uses only
 - `Phase 00 — Product & Architecture Planning` — **COMPLETE**
 - `Phase 01 — Project Foundation` — **COMPLETE**
 - `Phase 02 — Database Foundation` — **COMPLETE**
+- `Phase 03 — Backend Foundation` — **COMPLETE**
 
 The historical task detail below remains the ordered roadmap definition. Its original Phase 00 in-progress label is superseded by this closure status after ARCH-06 acceptance.
 
@@ -210,7 +211,7 @@ Phase 02 handoff: `docs/architecture/PHASE_02_HANDOFF.md`. The database
 foundation is complete; feature-specific schema changes remain deferred to
 their approved phases.
 
-## Phase 03 — Backend Foundation — NOT STARTED
+## Phase 03 — Backend Foundation — COMPLETE
 
 - **Objective:** establish the modular-monolith request and application layers.
 - **Features/sub-features:** module layout; routes; middleware pipeline; validation; error model; DTO conventions; repository/service patterns.
@@ -226,7 +227,7 @@ their approved phases.
 - **Dependencies:** Phase 02.
 - **Definition of Done:** a thin-controller, service/use-case, repository, Prisma, PostgreSQL flow is demonstrated without product-specific behavior.
 
-## Phase 04 — Frontend Foundation — NOT STARTED
+## Phase 04 — Frontend Foundation — NEXT / NOT STARTED
 
 - **Objective:** establish an accessible, testable React application shell consuming server state safely.
 - **Features/sub-features:** routing; layout; design primitives; query/cache foundation; form primitives; loading/error/empty states.

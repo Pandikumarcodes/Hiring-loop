@@ -6,19 +6,15 @@ M0 — Architecture and Project Foundation
 
 ## Current Phase
 
-Phase 03 — Backend Foundation
+Phase 04 — Frontend Foundation
 
-## Historical Phase (superseded)
+## Previous Phase
 
-Phase 00 — Product and Engineering Planning
+Phase 03 — Backend Foundation — COMPLETE
 
 ## Phase Status
 
-NOT STARTED
-
-## Historical Status (superseded)
-
-IN PROGRESS
+NEXT / NOT STARTED
 
 ## Completed
 
@@ -27,32 +23,19 @@ IN PROGRESS
 - AI engineering deferred until the software engineering milestone is complete
 - Modular monolith backend architecture selected
 - Separate frontend and backend applications selected
-- Single Git repository selected
-- SETUP-00 repository structure
-- One Git repository
-- Separate frontend and backend directories
-- Shared documentation structure
-- Project-control files established
-- ARCH-01 Core System Architecture Documentation
-- PLAN-01 Authoritative Master Roadmap
-- ARCH-02 Domain Model
-- ARCH-03 Authorization & Security Architecture
-- ARCH-04 Infrastructure Boundaries
-- ARCH-05 Quality Attributes & Non-Functional Requirements
-- ARCH-06 Phase 00 Final Review / Closure
+- Single Git repository and shared documentation structure established
+- Phase 00 planning and architecture documentation — COMPLETE
+- Phase 01 Project Foundation — COMPLETE
 - Phase 02 Database Foundation — COMPLETE
 - Phase 02 handoff: `docs/architecture/PHASE_02_HANDOFF.md`
+- Phase 03 Backend Foundation — COMPLETE
+- Phase 03 handoff: `docs/architecture/PHASE_03_HANDOFF.md`
 
 ## Repository Structure
 
-Frontend:
-hiringloop-frontend/
-
-Backend:
-hiringloop-backend/
-
-Shared documentation:
-docs/
+Frontend: `hiringloop-frontend/`
+Backend: `hiringloop-backend/`
+Authoritative documentation: repository root and `docs/`
 
 ## AI Status
 
@@ -62,93 +45,49 @@ Do not implement AI functionality during the current software engineering phases
 
 ## Architecture Decisions
 
-- Modular monolith confirmed
-- Separate frontend/backend applications confirmed
+- Modular monolith with domain-based backend boundaries
+- Separate frontend/backend applications
 - PostgreSQL source of truth
-- Domain-based backend module boundaries
 - Background workers reserved for justified async workloads
 - AI deferred
 
 ## Current Work
 
-Phase 02 database foundation is COMPLETE. Phase 01 foundation readiness verification, frontend initialization, backend initialization, code quality configuration, environment & configuration foundation, testing foundation, developer experience/scripts, and final review/closure are COMPLETE. Phase 03 Backend Foundation is the next implementation phase and has not started.
+Phase 03 Backend Foundation is COMPLETE. Its verified implementation establishes
+request routing and `/api/v1` composition, bounded JSON parsing, structured errors,
+Zod validation with `request.validated`, layered controller/service/repository
+boundaries, DTO mapping, and request correlation. The formal handoff is recorded
+in `docs/architecture/PHASE_03_HANDOFF.md`.
 
-## Completed Tasks
+## Phase 03 Completion Evidence
 
-01A — Foundation Readiness Verification — COMPLETE
-
-01B — Frontend Initialization — COMPLETE
-
-01C - Backend Initialization - COMPLETE
-
-01D - Code Quality Configuration - COMPLETE
-
-01D-1 - Frontend Code Quality Configuration - COMPLETE
-
-01D-2 - Backend Code Quality Configuration - COMPLETE
-
-01E - Environment & Configuration Foundation - COMPLETE
-
-01E-1 - COMPLETE
-
-01E-2 - COMPLETE
-
-01E-3 - Cross-stack Environment & Configuration Verification - COMPLETE
-
-01F - Testing Foundation - COMPLETE
-
-01F-1 - Frontend Testing Foundation - COMPLETE
-
-01F-2 - Backend Testing Foundation - COMPLETE
-
-01F-3 - Cross-stack Testing Verification - COMPLETE
-
-01G — Developer Experience / Scripts — COMPLETE
-
-01G-1 — Frontend Developer Experience / Scripts — COMPLETE
-
-01G-2 — Backend Developer Experience / Scripts — COMPLETE
-
-01G-3 — Root/Shared Developer Experience Verification — COMPLETE
-
-01H — Phase 01 Final Review / Closure — COMPLETE
+- 6 database-independent test files: 29 tests PASS
+- 1 Phase 02 database integration file: 7 tests PASS
+- `npm run verify` and `npm run verify:db`: PASS
+- Prisma validation/generation: PASS
+- `hiringloop_dev` and `hiringloop_test` migration status: current
+- Health check: HTTP 200, `{ "status": "ok" }`
+- Documentation consistency and `git diff --check`: PASS
 
 ## Next Task
 
-Phase 03 — Backend Foundation
+Phase 04 — Frontend Foundation
 
-Next Phase Status:
+## Next Phase Status
 
-NOT STARTED
+NEXT / NOT STARTED
 
-## Historical Next Task (superseded)
-
-01C — Backend Initialization
-
-## Historical Work (superseded)
-
-Phase 00 architecture planning remains IN PROGRESS.
+Do not begin Phase 04 implementation as part of the Phase 03 handoff.
 
 ## Documentation Gaps
 
-- No repository-local PRD file is currently present. The roadmap records the supplied FR identifiers for traceability and recommends adding the authoritative PRD before feature implementation expands.
+- No repository-local PRD file is currently present. The roadmap records supplied functional requirement identifiers for traceability and recommends adding the authoritative PRD before feature implementation expands.
 
-## Next Work
+## Deferred Work
 
-Phase 03 — Backend Foundation, as defined in MASTER_ROADMAP.md. Do not begin implementation as part of the Phase 02 handoff.
-
-## Historical Next Work (superseded)
-
-ARCH-06 — Phase 00 Final Review / Closure, as defined in MASTER_ROADMAP.md. Do not start it as part of ARCH-05.
-
-## Historical Next Work (superseded)
-
-ARCH-05 — Quality Attributes & Non-Functional Requirements, as defined in MASTER_ROADMAP.md. Do not start it as part of ARCH-04.
-
-## Historical Next Work (superseded)
-
-ARCH-03 — Authorization & Security Architecture, as defined in MASTER_ROADMAP.md. Do not start it as part of ARCH-02.
-
-## Historical Next Work (superseded)
-
-ARCH-02 — Domain Model, as defined in MASTER_ROADMAP.md. This task is not being started by PLAN-01.
+Authentication, authorization/RBAC, tenant resolution, product modules, concrete
+feature repositories, concrete Prisma/PostgreSQL error translation, real
+transactions, AsyncLocalStorage, structured production logging, rate limiting,
+Redis, workers, realtime, full security hardening, and AI remain deferred to
+approved later phases. The Phase 02 Prisma tooling audit debt remains tracked;
+no forced audit fix or package change was made.
