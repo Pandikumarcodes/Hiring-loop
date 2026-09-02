@@ -2,10 +2,11 @@
 
 ## Status and scope
 
-**Status:** IN PROGRESS — implementation complete and ready for final verification
+**Status:** COMPLETE - implementation verification, verify stability, and formal handoff complete
 
 This document records the implemented frontend foundation and its architecture
-boundaries. It is not the Phase 04 handoff and does not mark the phase complete.
+boundaries. The formal completion record is maintained in the Phase 04 handoff
+document.
 It does not implement product workflows, authentication,
 organization switching, authorization/RBAC, Jobs, Candidates, Applications,
 AI, or any later-phase behavior. React, TypeScript, and Vite remain the
@@ -28,8 +29,8 @@ loading/empty/no-results/error states, and has a single tested API boundary with
 request-ID awareness. Baseline component, routing, accessibility-smoke, and
 API-client tests pass; quality scripts pass; no product workflow is included;
 and security/performance review findings are addressed or explicitly deferred.
-Phase 03 remains COMPLETE. This document records the implemented foundation
-and does not claim Phase 04 completion.
+Phase 03 remains COMPLETE. The formal Phase 04 handoff is recorded in
+`docs/architecture/PHASE_04_HANDOFF.md`.
 
 ## Repository evidence
 
@@ -415,8 +416,8 @@ premature optimization—drives any performance change.
 
 Objective: record implementation evidence, remaining deferrals, dependency
 decisions, and next-phase boundary. DoD: handoff accepted and Phase 04 status
-changed to COMPLETE only after all prior criteria pass. This analysis task does
-not perform that handoff.
+changed to COMPLETE only after all prior criteria pass. The formal handoff is
+recorded in `docs/architecture/PHASE_04_HANDOFF.md`.
 
 ## Dependency review
 
@@ -440,8 +441,8 @@ only manually installed Phase 04 runtime foundations beyond React.
 
 ## Contradictions, blockers, and explicit decisions
 
-- `PROJECT_STATE.md` and the roadmap now identify Phase 04 as IN PROGRESS while
-  Phase 03 remains COMPLETE; this is the intended status for this analysis.
+- `PROJECT_STATE.md` and the roadmap identify Phase 04 as COMPLETE while Phase
+  03 remains COMPLETE; Phase 05 is the next phase and remains NOT STARTED.
 - The roadmap's historical Phase 00 section still says IN PROGRESS, but its
   current-status section and project state record Phase 00 COMPLETE. This is a
   historical-label inconsistency, not a Phase 04 blocker.
@@ -455,7 +456,6 @@ only manually installed Phase 04 runtime foundations beyond React.
 
 ## Exact recommended next task
 
-**Phase 04 HANDOFF + COMPLETION.** Record the integrated implementation
-evidence, acceptance matrix, remaining non-blocking deferrals, and next-phase
-boundary. Create `PHASE_04_HANDOFF.md` only in that separate task, after the
-verification decision is accepted; do not add product functionality here.
+**Phase 05 - Authentication.** Begin only in the separately approved Phase 05
+implementation task; do not add authentication or product functionality to the
+Phase 04 foundation handoff.

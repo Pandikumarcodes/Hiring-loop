@@ -227,7 +227,7 @@ their approved phases.
 - **Dependencies:** Phase 02.
 - **Definition of Done:** a thin-controller, service/use-case, repository, Prisma, PostgreSQL flow is demonstrated without product-specific behavior.
 
-## Phase 04 — Frontend Foundation — IN PROGRESS
+## Phase 04 — Frontend Foundation — COMPLETE
 
 - **Objective:** establish an accessible, testable React application shell consuming server state safely.
 - **Features/sub-features:** routing; layout; design primitives; query/cache foundation; form primitives; loading/error/empty states.
