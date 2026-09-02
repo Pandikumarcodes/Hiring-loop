@@ -1,14 +1,115 @@
-.app-shell {
-  display: grid;
+@import './components/feedback/feedback.css';
+@import './components/ui/ui.css';
+
+.site-frame,
+.app-frame {
   min-height: 100vh;
-  place-items: center;
-  padding: 2rem;
+}
+
+.site-frame {
+  display: flex;
+  flex-direction: column;
+}
+
+.site-header,
+.app-header {
+  align-items: center;
+  display: flex;
+  gap: 1.5rem;
+  justify-content: space-between;
+  padding: 1rem clamp(1rem, 4vw, 3rem);
+}
+
+.site-header {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.app-header {
+  background: var(--color-text);
+  color: #fff;
+}
+
+.brand {
+  color: inherit;
+  font-size: 1.125rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+nav a {
+  color: inherit;
+  font-weight: 600;
+}
+
+#main-content {
+  flex: 1;
+  outline: none;
+}
+
+.foundation-page,
+.status-page {
+  margin: 0 auto;
+  max-width: 52rem;
+  padding: clamp(3rem, 10vw, 7rem) clamp(1rem, 5vw, 3rem);
+}
+
+.status-page {
+  max-width: 40rem;
 }
 
 h1 {
   margin: 0;
-  color: #172033;
+  color: var(--color-text);
   font-size: clamp(2rem, 5vw, 3rem);
   font-weight: 700;
   letter-spacing: -0.04em;
+}
+
+.app-header h1,
+.app-header .foundation-page h1 {
+  color: #fff;
+}
+
+.foundation-page p:last-child,
+.status-page p:not(.eyebrow) {
+  color: var(--color-muted);
+  font-size: 1.125rem;
+  line-height: 1.6;
+  max-width: 42rem;
+}
+
+.eyebrow {
+  color: var(--color-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  margin: 0 0 0.75rem;
+  text-transform: uppercase;
+}
+
+.site-footer {
+  border-top: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  padding: 1rem clamp(1rem, 4vw, 3rem);
+}
+
+.skip-link {
+  background: var(--color-surface);
+  color: var(--color-text);
+  left: 1rem;
+  padding: 0.75rem 1rem;
+  position: absolute;
+  top: -5rem;
+  z-index: 1;
+}
+
+.skip-link:focus {
+  top: 1rem;
 }

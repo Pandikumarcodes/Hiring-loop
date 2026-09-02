@@ -1,10 +1,16 @@
 import './App.css'
 
+import { AppErrorBoundary } from './app/AppErrorBoundary'
+import { AppProviders } from './app/AppProviders'
+import { AppRoutes } from './app/routes'
+
 function App() {
   return (
-    <main className="app-shell">
-      <h1>HiringLoop</h1>
-    </main>
+    <AppProviders>
+      <AppErrorBoundary>
+        <AppRoutes />
+      </AppErrorBoundary>
+    </AppProviders>
   )
 }
 
