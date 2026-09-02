@@ -21,11 +21,40 @@ const optionalUrlSchema = z.preprocess(
   z.string().url().optional(),
 );
 
+const optionalSecretSchema = z.preprocess(
+  (value) => (value === '' ? undefined : value),
+  z.string().min(1).optional(),
+);
+
+const optionalEmailSchema = z.preprocess(
+  (value) => (value === '' ? undefined : value),
+  z.string().email().optional(),
+);
+
+const frontendOriginSchema = z.preprocess(
+  (value) => (value === '' ? undefined : value),
+  z
+    .string()
+    .url()
+    .refine(
+      (value) => ['http:', 'https:'].includes(new URL(value).protocol),
+      'must use http or https',
+    )
+    .optional(),
+);
+
 const environmentInputSchema = z.object({
   NODE_ENV: environmentSchema,
   PORT: portSchema,
   DATABASE_URL: optionalUrlSchema,
   TEST_DATABASE_URL: optionalUrlSchema,
+  SENDGRID_API_KEY: optionalSecretSchema,
+  AUTH_EMAIL_FROM: optionalEmailSchema,
+  FRONTEND_ORIGIN: frontendOriginSchema,
+  AUTH_CSRF_SECRET: optionalSecretSchema,
+  GOOGLE_OIDC_CLIENT_ID: optionalSecretSchema,
+  GOOGLE_OIDC_CLIENT_SECRET: optionalSecretSchema,
+  GOOGLE_OIDC_REDIRECT_URI: optionalUrlSchema,
 });
 
 const parsedEnvironment = environmentInputSchema.safeParse({
@@ -33,6 +62,13 @@ const parsedEnvironment = environmentInputSchema.safeParse({
   PORT: process.env.PORT,
   DATABASE_URL: process.env.DATABASE_URL,
   TEST_DATABASE_URL: process.env.TEST_DATABASE_URL,
+  SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,
+  AUTH_EMAIL_FROM: process.env.AUTH_EMAIL_FROM,
+  FRONTEND_ORIGIN: process.env.FRONTEND_ORIGIN,
+  AUTH_CSRF_SECRET: process.env.AUTH_CSRF_SECRET,
+  GOOGLE_OIDC_CLIENT_ID: process.env.GOOGLE_OIDC_CLIENT_ID,
+  GOOGLE_OIDC_CLIENT_SECRET: process.env.GOOGLE_OIDC_CLIENT_SECRET,
+  GOOGLE_OIDC_REDIRECT_URI: process.env.GOOGLE_OIDC_REDIRECT_URI,
 });
 
 if (!parsedEnvironment.success) {
@@ -45,9 +81,78 @@ if (!parsedEnvironment.success) {
   throw new Error(`Configuration error: ${details}`);
 }
 
+const {
+  NODE_ENV,
+  SENDGRID_API_KEY,
+  AUTH_EMAIL_FROM,
+  FRONTEND_ORIGIN,
+  AUTH_CSRF_SECRET,
+  GOOGLE_OIDC_CLIENT_ID,
+  GOOGLE_OIDC_CLIENT_SECRET,
+  GOOGLE_OIDC_REDIRECT_URI,
+} = parsedEnvironment.data;
+const sendGridValues = [SENDGRID_API_KEY, AUTH_EMAIL_FROM, FRONTEND_ORIGIN];
+const sendGridConfigured = sendGridValues.some(Boolean);
+const googleValues = [
+  GOOGLE_OIDC_CLIENT_ID,
+  GOOGLE_OIDC_CLIENT_SECRET,
+  GOOGLE_OIDC_REDIRECT_URI,
+];
+const googleConfigured = googleValues.some(Boolean);
+
+if (
+  (NODE_ENV === 'production' || sendGridConfigured) &&
+  !sendGridValues.every(Boolean)
+) {
+  throw new Error(
+    'Configuration error: SENDGRID_API_KEY, AUTH_EMAIL_FROM, and FRONTEND_ORIGIN are required for SendGrid email delivery',
+  );
+}
+
+if (googleConfigured && !googleValues.every(Boolean)) {
+  throw new Error(
+    'Configuration error: GOOGLE_OIDC_CLIENT_ID, GOOGLE_OIDC_CLIENT_SECRET, and GOOGLE_OIDC_REDIRECT_URI are required for Google authentication',
+  );
+}
+
+if (
+  NODE_ENV === 'production' &&
+  (!AUTH_CSRF_SECRET || AUTH_CSRF_SECRET.length < 32)
+) {
+  throw new Error(
+    'Configuration error: AUTH_CSRF_SECRET must contain at least 32 characters in production',
+  );
+}
+
 export const config = Object.freeze({
-  environment: parsedEnvironment.data.NODE_ENV,
+  environment: NODE_ENV,
   port: parsedEnvironment.data.PORT,
   databaseUrl: parsedEnvironment.data.DATABASE_URL,
   testDatabaseUrl: parsedEnvironment.data.TEST_DATABASE_URL,
+  sendGrid: Object.freeze({
+    enabled: sendGridValues.every(Boolean),
+    apiKey: SENDGRID_API_KEY,
+    from: AUTH_EMAIL_FROM,
+    frontendOrigin: FRONTEND_ORIGIN,
+  }),
+  frontendOrigin: FRONTEND_ORIGIN,
+  authCsrfSecret:
+    AUTH_CSRF_SECRET ??
+    (NODE_ENV === 'test' ? 'test-only-auth-csrf-secret-change-me' : undefined),
+  googleOidc: Object.freeze({
+    enabled: googleValues.every(Boolean),
+    clientId: GOOGLE_OIDC_CLIENT_ID,
+    clientSecret: GOOGLE_OIDC_CLIENT_SECRET,
+    redirectUri: GOOGLE_OIDC_REDIRECT_URI,
+    issuer: 'https://accounts.google.com',
+  }),
+  authSession: Object.freeze({
+    ttlSeconds: 7 * 24 * 60 * 60,
+    cookieName:
+      NODE_ENV === 'production'
+        ? '__Host-hiringloop_session'
+        : 'hiringloop_session',
+    cookieSecure: NODE_ENV === 'production',
+    cookieSameSite: NODE_ENV === 'production' ? 'none' : 'lax',
+  }),
 });

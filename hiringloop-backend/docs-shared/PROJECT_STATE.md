@@ -36,6 +36,16 @@ IN PROGRESS
 - Phase 05B Authentication Database Foundation — COMPLETE
 
 - Phase 05C Authentication Crypto/Domain Utilities — COMPLETE
+- Phase 05D1 Registration + Email Verification Core — COMPLETE
+- Phase 05D2 Email Verification Delivery + Resend — COMPLETE
+- Phase 05E Login + Opaque Session Creation — COMPLETE
+- Phase 05F Authentication Middleware + /auth/me — COMPLETE
+- Phase 05G Logout + Session Revocation/Lifecycle — COMPLETE
+
+- Phase 05H Password Recovery + Password Change — COMPLETE
+- Phase 05I Google OAuth/OIDC Backend — COMPLETE
+- Phase 05J CORS + CSRF Hardening — COMPLETE
+- Phase 05K Authentication Rate Limiting — COMPLETE
 
 ## Repository Structure
 
@@ -59,8 +69,11 @@ Do not implement AI functionality during the current software engineering phases
 
 ## Current Work
 
-Phase 05C authentication crypto/domain utilities are complete. Authentication
-workflows remain unimplemented.
+Phase 05K authentication abuse controls are complete. Browser-side Google UX
+and frontend authentication integration remain unimplemented.
+
+Completed through: 05K Authentication Rate Limiting.
+Next: 05L Frontend Authentication API + TanStack Query Foundation.
 
 Phase 04 Frontend Foundation is COMPLETE. Its verified implementation
 establishes the accessible React/Vite shell, neutral routing and layouts,
@@ -80,9 +93,14 @@ baselines. The formal handoff is recorded in
 - No product workflow, authentication, authorization, database, backend, or AI
   scope introduced
 
+Phase 05J CORS and CSRF hardening is complete. See
+`docs-shared/CORS_CSRF_HARDENING.md` for the browser security contract.
+
 ## Next Task
 
-Phase 05D — Registration + Email Verification
+The next sub-phase is Phase 05L — Frontend Authentication API + TanStack Query Foundation.
+
+Phase 05L — Frontend Authentication API + TanStack Query Foundation
 
 ## Next Phase Status
 
@@ -96,7 +114,7 @@ Phase 05 — Authentication is IN PROGRESS.
 
 Authentication, authorization/RBAC, tenant resolution, product modules, concrete
 feature repositories, concrete Prisma/PostgreSQL error translation, real
-transactions, AsyncLocalStorage, structured production logging, rate limiting,
-Redis, workers, realtime, full security hardening, and AI remain deferred to
+transactions, AsyncLocalStorage, structured production logging, Redis, workers,
+realtime, full security hardening, and AI remain deferred to
 approved later phases. The Phase 02 Prisma tooling audit debt remains tracked;
 no forced audit fix or package change was made.

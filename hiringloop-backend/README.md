@@ -110,8 +110,117 @@ Opaque session, verification, and reset secrets use 32 cryptographically random
 bytes encoded as base64url. Consumers must hash raw secrets with SHA-256 and
 persist only the resulting 64-character lowercase hexadecimal digest, which
 fits the Phase 05B Prisma `String` fields. Password hashing and generated-secret
-hashing intentionally remain separate strategies. No auth workflows, routes,
-cookies, or persistence are implemented by this foundation.
+hashing intentionally remain separate strategies.
+
+### Phase 05D1–05D2 authentication workflow
+
+`POST /api/v1/auth/register` accepts `{ email, password }` with a 12–128
+character password and returns a generic `202` acknowledgement. It creates
+only global `User`, `PasswordCredential`, and a 24-hour
+`EMAIL_VERIFICATION` token; no organization, membership, session, or tenant
+context is created. `POST /api/v1/auth/verify-email` accepts `{ token }` and
+atomically performs single-use verification. Raw tokens are sent through the
+email-delivery port but only their SHA-256 hashes are stored.
+
+Email verification delivery uses the narrow auth email-delivery port and a
+SendGrid adapter in configured development/production-like runtimes. Configure
+`SENDGRID_API_KEY`, `AUTH_EMAIL_FROM`, and `FRONTEND_ORIGIN` together; production
+startup rejects missing or partial SendGrid configuration. Tests use an
+in-memory adapter and never contact SendGrid. Verification links are built from
+the configured frontend URL as `/verify-email?token=...`, and expire after 24
+hours. The request Host and Origin headers are never used to choose the link
+destination.
+
+`POST /api/v1/auth/verification/resend` accepts `{ email }` and always returns
+the same `202` acknowledgement for unknown, verified, and eligible accounts.
+For an unverified account it transactionally consumes active verification tokens
+and creates one fresh 24-hour token, then sends the email after commit. A
+delivery failure returns a safe `EMAIL_DELIVERY_FAILED` response while leaving
+the fresh token valid for a later resend. No user, password credential,
+organization, membership, or session is created or changed by resend.
+
+Verification resend is abuse-sensitive and is protected by the Phase 05K
+authentication rate-limit middleware described in
+[`docs-shared/AUTHENTICATION_RATE_LIMITING.md`](docs-shared/AUTHENTICATION_RATE_LIMITING.md).
+
+`POST /api/v1/auth/login` accepts `{ email, password }`. Email is trimmed and
+lowercased for lookup; the password is passed unchanged to Argon2id, and login
+does not apply registration's minimum-length rule before verification. Unknown
+email, missing password credential, and incorrect password all return `401
+AUTHENTICATION_FAILED` with the same generic message. Unknown-account paths
+verify against a fixed Argon2id dummy hash to reduce timing-based enumeration.
+
+Successful login creates a fresh opaque `AuthSession` containing only the
+SHA-256 hash of a 32-byte random base64url secret. The raw secret is issued
+only in the HttpOnly session cookie and is never persisted. Sessions expire
+absolutely after seven days. Production uses the host-only
+`__Host-hiringloop_session` cookie with `Secure`, `SameSite=None`, `Path=/`,
+and no `Domain`; local development/test uses `hiringloop_session`,
+`Secure=false`, and `SameSite=Lax`. Login returns only a safe user DTO and
+does not resolve organization, membership, role, or permission context. An
+unverified email may authenticate; verification remains a separate state.
+
+Required authentication for protected HTTP routes is provided by the reusable
+`authenticateSession` middleware. It parses the configured cookie, hashes the
+raw secret with SHA-256, and performs one bounded PostgreSQL lookup joining the
+session to the minimal global User identity. Missing, unknown, expired, and
+revoked sessions return `401 UNAUTHENTICATED`; database failures remain `500`
+internal errors. Invalid-session cookies are cleared using the same cookie
+attributes as login.
+
+`POST /api/v1/auth/logout` requires the current authenticated session. It sets
+that session's `revokedAt` timestamp in PostgreSQL using the trusted
+`req.auth.sessionId` and `req.auth.userId`, retains the session row, clears the
+session cookie with the same name, `Path=/`, `HttpOnly`, `SameSite`, and
+environment-specific `Secure` policy, then returns `204 No Content`. Server-side
+revocation is authoritative; clearing a browser cookie alone is not a logout.
+An already revoked or otherwise invalid stale cookie is rejected by the normal
+required-authentication middleware with `401`, and is cleared there. No
+logout-specific optional-authentication path is introduced.
+
+`POST /api/v1/auth/sessions/revoke-all` uses the same required authentication
+boundary and revokes all active sessions for the authenticated global User,
+including the current session. It clears the current browser cookie and returns
+`204 No Content`. Both operations use server time and do not load organization
+or membership data. Requests that completed authentication before revocation
+may finish; requests authenticating after the database revocation must fail.
+Logout and session lifecycle are global identity behavior, not tenant
+authorization behavior.
+
+`GET /api/v1/auth/me` returns the authenticated user as
+`{ data: { user: { id, email, emailVerified } } }`. The trusted request context
+contains `userId`, `sessionId`, and the same safe user DTO. It contains no raw
+secret, session hash, organization, membership, role, or permission data.
+Authentication establishes global identity only; organization and authorization
+resolution remain later phases. Normal required-authentication requests are
+read-only and target one database round trip with no cache or sliding expiry.
+
+### Phase 05H password recovery and change
+
+`POST /api/v1/auth/password/forgot` accepts `{ email }` and always returns a
+generic `202` acknowledgement for unknown, provider-only, unverified, and
+eligible accounts. Only a User with a PasswordCredential gets a fresh
+single-use `PASSWORD_RESET` token. Active reset tokens are invalidated in the
+same transaction as the new token, and the token expires after 30 minutes.
+Only its SHA-256 hash is stored. The reset email is sent after commit through
+the email-delivery port using configured `FRONTEND_ORIGIN`; request Host and
+Origin headers are never used. Delivery failure returns the existing safe
+provider error while leaving the committed token valid.
+
+`POST /api/v1/auth/password/reset` accepts `{ token, newPassword }`. A valid
+token is atomically consumed with the Argon2id credential update, competing
+active reset-token invalidation, and revocation of every active session for the
+User. No new session is created; the user must log in again. Unknown, expired,
+consumed, and wrong-purpose tokens share `AUTH_TOKEN_INVALID` semantics, while
+database failures remain internal errors.
+
+`POST /api/v1/auth/password/change` requires the current opaque session and
+accepts `{ currentPassword, newPassword }`. After Argon2id verification, the
+credential update, `passwordChangedAt`, all-session revocation, and creation of
+a fresh seven-day session are one transaction. The fresh session cookie is
+written only after commit; the response contains only the safe User DTO.
+Password recovery and change use global identity data only and do not load
+Organization, OrganizationMembership, role, permission, or tenant context.
 
 The first migration has been applied to both configured databases: development
 uses `hiringloop_dev`, while isolated database integration tests use
@@ -126,8 +235,9 @@ migrated before integration tests run. Ordinary `npm test` and `npm run verify`
 remain database-independent; `npm run verify:db` runs validation and the
 isolated database integration suite. Migration files are committed to Git as
 part of the database foundation work. Phase 02 is complete. Phase 03 Backend
-Foundation implementation and handoff are complete. Product features and
-authentication remain deferred to their approved phases. See
+Foundation implementation and handoff are complete. Authentication remains
+in progress; password recovery/change and external identity-provider flows are
+deferred to their approved sub-phases. See
 `../docs/architecture/PHASE_03_HANDOFF.md` for the completion evidence.
 
 ## Health endpoint
@@ -142,10 +252,8 @@ HTTP/1.1 200
 { "status": "ok" }
 ```
 
-Product APIs will be mounted under `/api/v1`. The composition point is the empty
-`src/routes/api-v1.js` router, where approved future feature routers may be mounted.
-The current route foundation intentionally adds no product endpoints. `/health`
-remains outside the versioned API namespace.
+Product APIs are mounted under `/api/v1`; authentication routes are composed by
+`src/routes/api-v1.js`. `/health` remains outside the versioned API namespace.
 
 ## Error handling
 
