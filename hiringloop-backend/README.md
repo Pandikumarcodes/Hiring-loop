@@ -96,6 +96,23 @@ reviewed, committed, and applied only to the intended environment; test database
 operations must use
 `TEST_DATABASE_URL` and must never fall back to `DATABASE_URL`.
 
+## Authentication cryptographic foundation
+
+The Phase 05C auth module contains reusable primitives only. Email identity is
+canonicalized by trimming surrounding whitespace and lowercasing the complete
+string; provider-specific rewrites are not performed. Passwords use the
+`passwordHasher` abstraction backed by explicit Argon2id settings: 19,456 KiB
+memory, time cost 2, parallelism 1, and 32-byte output. Password-hash failures
+for malformed stored hashes raise `PasswordHashError` rather than becoming an
+incorrect-password result.
+
+Opaque session, verification, and reset secrets use 32 cryptographically random
+bytes encoded as base64url. Consumers must hash raw secrets with SHA-256 and
+persist only the resulting 64-character lowercase hexadecimal digest, which
+fits the Phase 05B Prisma `String` fields. Password hashing and generated-secret
+hashing intentionally remain separate strategies. No auth workflows, routes,
+cookies, or persistence are implemented by this foundation.
+
 The first migration has been applied to both configured databases: development
 uses `hiringloop_dev`, while isolated database integration tests use
 `hiringloop_test`. `TEST_DATABASE_URL` is required for database integration

@@ -35,6 +35,8 @@ IN PROGRESS
 - Phase 05A Authentication Architecture Decision Freeze — COMPLETE
 - Phase 05B Authentication Database Foundation — COMPLETE
 
+- Phase 05C Authentication Crypto/Domain Utilities — COMPLETE
+
 ## Repository Structure
 
 Frontend: `hiringloop-frontend/`
@@ -57,6 +59,9 @@ Do not implement AI functionality during the current software engineering phases
 
 ## Current Work
 
+Phase 05C authentication crypto/domain utilities are complete. Authentication
+workflows remain unimplemented.
+
 Phase 04 Frontend Foundation is COMPLETE. Its verified implementation
 establishes the accessible React/Vite shell, neutral routing and layouts,
 product-agnostic UI and feedback primitives, safe `/api/v1` API transport and
@@ -77,7 +82,7 @@ baselines. The formal handoff is recorded in
 
 ## Next Task
 
-Phase 05C — Authentication crypto/domain utilities
+Phase 05D — Registration + Email Verification
 
 ## Next Phase Status
 
