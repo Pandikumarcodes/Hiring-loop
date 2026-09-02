@@ -14,7 +14,7 @@ Phase 03 — Backend Foundation — COMPLETE
 
 ## Phase Status
 
-NEXT / NOT STARTED
+IN PROGRESS
 
 ## Completed
 
@@ -75,9 +75,11 @@ Phase 04 — Frontend Foundation
 
 ## Next Phase Status
 
-NEXT / NOT STARTED
+IN PROGRESS — analysis and frontend-foundation design inventory only.
 
-Do not begin Phase 04 implementation as part of the Phase 03 handoff.
+Do not mark Phase 04 complete until its implementation Definition of Done is
+verified. Do not implement product features, authentication, organization
+switching, authorization/RBAC, AI, or later phases as part of this analysis.
 
 ## Documentation Gaps
 
