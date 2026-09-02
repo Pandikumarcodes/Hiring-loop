@@ -4,6 +4,8 @@
 
 This is a design inventory for Phase 02. It is not a physical schema. No Prisma models, SQL, migrations, database packages, or application-code changes are defined here.
 
+The Phase 05 authentication database foundation is now implemented as a separate physical-schema slice in the backend migration history. The original Phase 02 inventory remains the historical design record for the tenant foundation.
+
 Phase 02 logical-model work is **IN PROGRESS** in `PROJECT_STATE.md`. Physical database implementation remains out of scope.
 
 ## Purpose
@@ -2485,3 +2487,23 @@ The foundation is intentionally not over-indexed: only PK and Membership uniquen
 **GO for the minimal Phase 02 foundation implementation slices only.** The design is coherent and safe enough to begin manual PostgreSQL/Prisma setup and implement User, Organization, and OrganizationMembership in small reviewed migrations, after explicitly fixing the foundation Membership status values and verifying UUIDv7 runtime capability. This is not approval to implement the full product schema or later feature tables.
 
 Recommended next user action: manually provision/select an isolated local PostgreSQL instance and confirm the supported Node.js runtime or manually select an approved UUIDv7 capability, then request the first narrowly scoped Phase 02 implementation slice. Codex must not install dependencies, provision databases, create Prisma files, or generate migrations in this review. Phase 02 remains **IN PROGRESS**.
+
+## Phase 05 Authentication Database Foundation
+
+The Phase 05B physical schema extends global `User` with required, database-unique normalized `email` and nullable `emailVerifiedAt`. Application code owns trim-plus-lowercase normalization; Gmail-specific rewriting is not performed.
+
+```text
+User
+├── PasswordCredential (0..1)
+├── AuthSession[]
+├── AuthToken[]
+└── AuthProviderIdentity[]
+
+User
+└── OrganizationMembership[]
+    └── Organization
+```
+
+Authentication records are global identity infrastructure and are not tenant-owned. None contains `organizationId`. `PasswordCredential.userId` is unique; password hashes, session-secret hashes, and one-time token hashes are persisted only as hashes. `AuthTokenPurpose` is limited to `EMAIL_VERIFICATION` and `PASSWORD_RESET`. Google identities use globally unique `(provider, providerSubject)` values.
+
+All four authentication-record foreign keys reference `User.id` with `ON DELETE CASCADE ON UPDATE RESTRICT`, preventing orphaned authentication records while preserving the existing restrictive `OrganizationMembership` behavior. Authentication indexes are limited to unique lookup keys, session `userId`/`expiresAt`, token `(userId, purpose, consumedAt)`/`expiresAt`, and provider-identity `userId`. These support the approved lookup, revocation, active-token invalidation, cleanup, and account-lifecycle queries without speculative indexes.
