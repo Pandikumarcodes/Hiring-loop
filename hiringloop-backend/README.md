@@ -67,13 +67,15 @@ Node environment, Supertest, and the `*.test.js` convention under `tests/`.
 
 ## Database foundation
 
-The first tenant foundation slice is defined in `prisma/schema.prisma` with
-only `User`, `Organization`, and `OrganizationMembership`. `User` is global;
-it has no organization foreign key. `Organization` is the tenant root, and
-`OrganizationMembership` is the first-class User-to-Organization relationship
-with the fixed roles `ADMIN`, `RECRUITER`, `HIRING_MANAGER`, and `INTERVIEWER`.
-Each organization/user pair is unique, and membership deletion behavior is
-restrictive so deleting a User or Organization cannot casually erase history.
+The schema contains the global `User` identity, its Phase 05 authentication
+records (`PasswordCredential`, `AuthSession`, `AuthToken`, and
+`AuthProviderIdentity`), and the tenant foundation (`Organization` and
+`OrganizationMembership`). User has no organization foreign key. Authentication
+records are global identity infrastructure; OrganizationMembership remains the
+first-class User-to-Organization relationship with the fixed roles `ADMIN`,
+`RECRUITER`, `HIRING_MANAGER`, and `INTERVIEWER`. Membership deletion behavior
+is restrictive, while a User deletion cascades only to its authentication
+records so they cannot orphan.
 
 Entity IDs are required application inputs and must be generated as UUIDv7 by
 `src/utils/ids.js`; Prisma does not generate random IDs for these models. The

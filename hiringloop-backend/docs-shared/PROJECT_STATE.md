@@ -6,7 +6,7 @@ M0 — Architecture and Project Foundation
 
 ## Current Phase
 
-Phase 04 — Frontend Foundation
+Phase 05 — Authentication
 
 ## Previous Phase
 
@@ -14,7 +14,7 @@ Phase 03 — Backend Foundation — COMPLETE
 
 ## Phase Status
 
-COMPLETE
+IN PROGRESS
 
 ## Completed
 
@@ -32,6 +32,8 @@ COMPLETE
 - Phase 03 handoff: `docs/architecture/PHASE_03_HANDOFF.md`
 - Phase 04 Frontend Foundation — COMPLETE
 - Phase 04 handoff: `docs/architecture/PHASE_04_HANDOFF.md`
+- Phase 05A Authentication Architecture Decision Freeze — COMPLETE
+- Phase 05B Authentication Database Foundation — COMPLETE
 
 ## Repository Structure
 
@@ -75,12 +77,11 @@ baselines. The formal handoff is recorded in
 
 ## Next Task
 
-Phase 05 — Authentication
+Phase 05C — Authentication crypto/domain utilities
 
 ## Next Phase Status
 
-NOT STARTED — Phase 05 is the next approved phase. Do not begin Phase 05
-implementation as part of the Phase 04 handoff.
+Phase 05 — Authentication is IN PROGRESS.
 
 ## Documentation Gaps
 
