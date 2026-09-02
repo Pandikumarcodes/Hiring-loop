@@ -24,7 +24,9 @@ Status values are **Open**, **Deferred**, or **Accepted Risk**. Owners identify 
 
 | Item | Status | Owner / decision phase | Why deferred | Resolve by |
 |---|---|---|---|---|
-| Session, cookie, and CSRF implementation specifics | Open | Security + Backend / Authentication phase | Architecture direction exists; deployment/session details require implementation review. | Before authentication release. |
+| Session, cookie, and CSRF implementation specifics | Resolved in ADR-007 | Security + Backend / Authentication phase | Opaque PostgreSQL sessions, cookie attributes, credentialed CORS, Origin validation, and synchronizer-token CSRF are frozen for implementation. | Reopen only with technical evidence. |
+| Authentication registration, verification, reset, and rate-limit constants | Open | Product + Security / Authentication phase | The technical model is frozen, but exact UX, delivery behavior, and configured rate values require implementation/product review. | Before authentication release. |
+| Google account-linking UX and initial scope | Resolved in ADR-009; implementation scope open | Product + Security / Authentication phase | Silent email-based linking is prohibited; explicit linking may be deferred if not needed for the initial path. | Before Google account implementation. |
 | Exact permission grants and field-level visibility | Open | Product + Security / Authorization phase | Role descriptions are not a final grant matrix. | Before protected feature release. |
 | Audit visibility, retention, export, and redaction | Open | Security + Product / Audit phase | Audience and retention depend on policy and compliance needs. | Before audit query/export release. |
 | Signed URL expiry and scope | Open | Security + Infrastructure / File phase | Must balance usability, leakage risk, and access patterns. | Before document access implementation. |

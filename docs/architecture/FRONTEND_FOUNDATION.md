@@ -102,7 +102,7 @@ The synchronized `docs-shared/` files were compared with root status files.
 
 ### C. Deferred to later phases (non-blocking)
 
-Authentication, session/cookie/CSRF implementation, organization switching,
+Authentication implementation, organization switching,
 tenant context, RBAC and resource authorization, Jobs, Candidates,
 Applications, Interviews, Offers, analytics, notifications, file/resume
 flows, realtime, AI, product navigation, product-specific forms/tables,
@@ -280,8 +280,10 @@ communicate permission or status by color alone.
 
 Do not render untrusted HTML or introduce `dangerouslySetInnerHTML` without a
 reviewed sanitization boundary. Vite `VITE_*` values are public; no secrets,
-tokens, or credentials belong in them. Token/session storage and CSRF behavior
-remain an authentication-phase decision. Frontend authorization is UX only;
+tokens, or credentials belong in them. The approved authentication architecture
+uses an HttpOnly backend session cookie and server-bound CSRF protection; the
+frontend must not persist session secrets or invent a client-side auth store.
+Frontend authorization is UX only;
 the backend remains authoritative for identity, organization scope, RBAC,
 resource policy, and data exposure. Avoid sensitive PII in URLs, logs,
 notifications, error details, or client caches beyond the approved need. Treat
