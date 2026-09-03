@@ -209,6 +209,20 @@ Security and reliability interact:
 - durable HiringLoop state and workflow intent should be established before or alongside asynchronous work according to the relevant consistency boundary;
 - failed external work must be visible and recoverable without weakening authorization.
 
+## Phase 05 runtime operations
+
+Local browser authentication uses the exact origin pair
+`http://localhost:5173` → `http://localhost:3000`; credentialed CORS never uses
+wildcards. Non-test startup requires `DATABASE_URL`, `FRONTEND_ORIGIN`, and a
+32-character `AUTH_CSRF_SECRET`, and connects PostgreSQL before accepting HTTP
+requests. CSRF tokens are session-bound and memory-only on the frontend.
+
+SendGrid is an optional external boundary for local development. A delivery
+failure after registration may return `503 EMAIL_DELIVERY_FAILED` after the
+User, PasswordCredential, and verification token have committed; this is not a
+login failure. See `docs/architecture/PHASE_05_STABILITY_AUDIT.md` for the
+operator procedure and status interpretation.
+
 ## Deferred and Proposed Decisions
 
 The following require later product/security/implementation decisions:

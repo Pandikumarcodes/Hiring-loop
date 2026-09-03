@@ -158,6 +158,9 @@ deferred. PostgreSQL + Prisma remain the source of truth.
 
 ## 15. Next phase prerequisites
 
+The post-completion runtime hardening and deterministic operator procedure are
+recorded in [`PHASE_05_STABILITY_AUDIT.md`](PHASE_05_STABILITY_AUDIT.md).
+
 Before Phase 06, preserve global identity/session boundaries and add organization
 context only through approved tenant architecture. Do not couple auth sessions
 to organization membership or introduce RBAC/product authorization in Phase 05.

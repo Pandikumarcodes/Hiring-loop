@@ -38,3 +38,11 @@ export function normalizeApiBaseUrl(
 export const frontendConfig: FrontendConfig = {
   apiBaseUrl: normalizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL),
 }
+
+export function assertFrontendConfig(): void {
+  if (import.meta.env.DEV && !frontendConfig.apiBaseUrl) {
+    throw new Error(
+      'VITE_API_BASE_URL is required in development. Copy .env.example to .env.local and restart Vite.',
+    )
+  }
+}

@@ -157,6 +157,18 @@ if (NODE_ENV === 'production' && !FRONTEND_ORIGIN) {
   );
 }
 
+if (NODE_ENV !== 'test' && !FRONTEND_ORIGIN) {
+  throw new Error(
+    'Configuration error: FRONTEND_ORIGIN is required for browser authentication',
+  );
+}
+
+if (NODE_ENV !== 'test' && !parsedEnvironment.data.DATABASE_URL) {
+  throw new Error(
+    'Configuration error: DATABASE_URL is required for the authentication server',
+  );
+}
+
 if (
   NODE_ENV !== 'test' &&
   (!AUTH_CSRF_SECRET || AUTH_CSRF_SECRET.length < 32)

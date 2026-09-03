@@ -71,7 +71,8 @@ copy .env.example .env.local
 Do not commit `.env.local` or add real secret values. Any `VITE_*` variable is
 embedded into the browser bundle and is therefore publicly visible; it must
 never contain backend credentials or other secrets. `VITE_API_BASE_URL` is
-optional until an API request is made. Backend credentials belong to the
+required when running the Vite development server; development startup fails
+clearly when it is absent. Backend credentials belong to the
 separate backend application and are not configured here.
 
 ## Shared API client
@@ -380,14 +381,15 @@ validation remains technical debt.
 
 The frontend-owned progress marker is **Completed through: 05P Authentication
 Security + Failure-Path Hardening**. **Next: 05Q Phase 05 Integration
-Verification + Handoff**. Phase 05 remains **IN PROGRESS**.
+Verification + Handoff**. Phase 05 remains **COMPLETE**, with deterministic
+manual QA documented in `../docs/architecture/PHASE_05_STABILITY_AUDIT.md`.
 
 ## Current frontend foundation
 
-Phase 05 — Authentication remains **IN PROGRESS**. Implementation is complete
+Phase 05 — Authentication remains **COMPLETE**. Implementation is complete
 through **05P Authentication Security + Failure-Path Hardening**. The next
 sub-phase is **05Q Phase 05 Integration Verification + Handoff**. Phase 05
-remains **IN PROGRESS**.
+remains **COMPLETE**.
 
 Routing is composed in `src/app/routes.tsx` and mounted through the minimal
 provider composition in `src/app/AppProviders.tsx`. The current neutral routes

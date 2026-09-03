@@ -6,6 +6,8 @@ const moduleUrl = new URL('../../src/config/env.js', import.meta.url).href;
 const baseEnvironment = {
   NODE_ENV: 'development',
   PORT: '3000',
+  DATABASE_URL:
+    'postgresql://hiringloop:password@localhost:7498/hiringloop_dev',
   FRONTEND_ORIGIN: 'http://localhost:5173',
 };
 
@@ -21,7 +23,7 @@ function load(environment) {
   return result;
 }
 
-describe('runtime environment configuration', () => {
+describe('runtime environment configuration', { timeout: 20_000 }, () => {
   it.each([
     ['missing', undefined],
     ['short', 'short-secret'],

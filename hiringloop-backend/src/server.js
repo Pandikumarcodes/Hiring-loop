@@ -4,23 +4,27 @@ import app from './app.js';
 import { config } from './config/env.js';
 import { connectDatabase, disconnectDatabase } from './database/client.js';
 
-const server = app.listen(config.port, () => {
-  console.log(`HiringLoop backend listening on port ${config.port}`);
-});
+let server;
 
-if (config.databaseUrl) {
-  try {
-    await connectDatabase();
+try {
+  if (await connectDatabase()) {
     console.log('HiringLoop database connection established');
-  } catch (error) {
-    console.error('HiringLoop database connection failed', error);
-    server.close();
-    process.exitCode = 1;
   }
+  server = app.listen(config.port, () => {
+    console.log(`HiringLoop backend listening on port ${config.port}`);
+  });
+} catch (error) {
+  console.error('HiringLoop database connection failed', error);
+  process.exitCode = 1;
 }
 
 async function shutdown(signal) {
   console.log(`Received ${signal}; shutting down`);
+  if (!server) {
+    await disconnectDatabase();
+    process.exit(0);
+    return;
+  }
   server.close(async () => {
     await disconnectDatabase();
     process.exit(0);
