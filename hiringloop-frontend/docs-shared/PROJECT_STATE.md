@@ -6,7 +6,7 @@ M0 — Architecture and Project Foundation
 
 ## Current Phase
 
-Phase 04 — Frontend Foundation
+Phase 05 — Authentication
 
 ## Previous Phase
 
@@ -32,6 +32,10 @@ COMPLETE
 - Phase 03 handoff: `docs/architecture/PHASE_03_HANDOFF.md`
 - Phase 04 Frontend Foundation — COMPLETE
 - Phase 04 handoff: `docs/architecture/PHASE_04_HANDOFF.md`
+- Phase 05A Authentication Architecture Decision Freeze — COMPLETE
+- Phase 05B Authentication Database Foundation — COMPLETE
+- Phase 05 Authentication implementation and integration verification — COMPLETE
+- Phase 05 handoff: `docs/architecture/PHASE_05_HANDOFF.md`
 
 ## Repository Structure
 
@@ -55,6 +59,10 @@ Do not implement AI functionality during the current software engineering phases
 
 ## Current Work
 
+Phase 05 Authentication is COMPLETE. Backend and frontend authentication
+implementation, security review, cross-stack contract review, automated tests,
+database integration checks, and documentation handoff are complete.
+
 Phase 04 Frontend Foundation is COMPLETE. Its verified implementation
 establishes the accessible React/Vite shell, neutral routing and layouts,
 product-agnostic UI and feedback primitives, safe `/api/v1` API transport and
@@ -63,24 +71,22 @@ state/form/async UX conventions, and frontend security/performance/testing
 baselines. The formal handoff is recorded in
 `docs/architecture/PHASE_04_HANDOFF.md`.
 
-## Phase 04 Completion Evidence
+## Phase 05 Completion Evidence
 
-- 6 frontend test files: 32 tests PASS
-- `npm run verify`: PASS twice consecutively without timeout overrides
-- Lint, format check, typecheck, and production build: PASS
-- No backend services contacted by frontend verification
-- Documentation handoff and shared-doc synchronization: PASS
-- No product workflow, authentication, authorization, database, backend, or AI
-  scope introduced
+- Backend auth suite: 96 tests PASS; database integration: 10 tests PASS
+- Frontend suite: 114 tests PASS
+- Backend lint, format check, Prisma validate, and frontend lint, format check,
+  typecheck, and production build: PASS
+- No dependency installation, database reset, or destructive operation performed
+- Manual browser QA remains a release/operator checklist; it was not claimed as run
 
 ## Next Task
 
-Phase 05 — Authentication
+Phase 06 — Organization & Multi-Tenancy
 
 ## Next Phase Status
 
-NOT STARTED — Phase 05 is the next approved phase. Do not begin Phase 05
-implementation as part of the Phase 04 handoff.
+Phase 05 — Authentication is COMPLETE.
 
 ## Documentation Gaps
 
@@ -88,9 +94,8 @@ implementation as part of the Phase 04 handoff.
 
 ## Deferred Work
 
-Authentication, authorization/RBAC, tenant resolution, product modules, concrete
-feature repositories, concrete Prisma/PostgreSQL error translation, real
-transactions, AsyncLocalStorage, structured production logging, rate limiting,
-Redis, workers, realtime, full security hardening, and AI remain deferred to
-approved later phases. The Phase 02 Prisma tooling audit debt remains tracked;
-no forced audit fix or package change was made.
+Organization context, membership authorization, RBAC/resource policies, tenant
+scoped product data, Redis, BullMQ, realtime, AI, and later product phases remain
+deferred to the approved roadmap. Authentication remains global identity. The
+Phase 02 Prisma tooling audit debt remains tracked; no forced audit fix or
+package change was made.

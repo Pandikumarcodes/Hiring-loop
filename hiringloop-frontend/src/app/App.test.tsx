@@ -1,10 +1,13 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
 import { AppErrorBoundary } from './AppErrorBoundary'
 import { AppRoutes } from './routes'
+import { authKeys } from '../features/auth/query-keys'
+import { createTestQueryClient } from '../test/query-client'
 
 afterEach(() => {
   cleanup()
@@ -12,10 +15,20 @@ afterEach(() => {
 })
 
 function renderRoutes(initialEntry = '/') {
+  const queryClient = createTestQueryClient()
+  if (initialEntry.startsWith('/app')) {
+    queryClient.setQueryData(authKeys.currentUser(), {
+      id: 'test-user',
+      email: 'test@example.test',
+      emailVerified: true,
+    })
+  }
   return render(
-    <MemoryRouter initialEntries={[initialEntry]}>
-      <AppRoutes />
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={[initialEntry]}>
+        <AppRoutes />
+      </MemoryRouter>
+    </QueryClientProvider>,
   )
 }
 

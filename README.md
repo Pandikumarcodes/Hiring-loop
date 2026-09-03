@@ -21,3 +21,13 @@ node scripts/sync-shared-docs.js
 Software Engineering
 → Production stabilization
 → AI Engineering later
+
+Current status
+
+- Phase 05 — Authentication — COMPLETE
+- Next authoritative roadmap phase: Phase 06 — Organization & Multi-Tenancy
+- Authentication uses PostgreSQL-backed opaque sessions, HttpOnly cookies, and
+  backend-enforced security controls. Organization, membership, RBAC, product
+  data, Redis/BullMQ, realtime, and AI remain outside the current boundary.
+- See [the Phase 05 handoff](docs/architecture/PHASE_05_HANDOFF.md) for the
+  verified API, security, testing, and manual QA checklist.

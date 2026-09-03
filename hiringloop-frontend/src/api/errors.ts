@@ -12,6 +12,8 @@ export interface ApiErrorOptions {
   readonly message: string
   readonly details?: unknown
   readonly requestId?: string
+  readonly retryAfter?: string
+  readonly rateLimit?: string
   readonly cause?: unknown
 }
 
@@ -21,6 +23,8 @@ export class ApiError extends Error {
   readonly code: string
   readonly details: unknown
   readonly requestId: string | undefined
+  readonly retryAfter: string | undefined
+  readonly rateLimit: string | undefined
 
   constructor(options: ApiErrorOptions) {
     super(options.message, { cause: options.cause })
@@ -30,6 +34,8 @@ export class ApiError extends Error {
     this.code = options.code
     this.details = options.details
     this.requestId = options.requestId
+    this.retryAfter = options.retryAfter
+    this.rateLimit = options.rateLimit
   }
 }
 

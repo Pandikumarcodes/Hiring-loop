@@ -146,7 +146,9 @@ export function createAuthController({
     },
     csrf: (request, response) => {
       response.status(200).json({
-        data: { csrfToken: createCsrfToken(request.auth.sessionId) },
+        data: {
+          csrfToken: createCsrfToken({ sessionId: request.auth.sessionId }),
+        },
       });
     },
     logout: async (request, response, next) => {

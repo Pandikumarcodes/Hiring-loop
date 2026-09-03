@@ -36,18 +36,22 @@ Start the backend normally with:
 npm start
 ```
 
-The runtime reads `NODE_ENV`, `PORT`, and the optional database connection
-variables. `NODE_ENV` may be `development`,
+The runtime loads `.env` before importing application configuration. It reads
+`NODE_ENV`, `PORT`, and the optional database connection variables. `NODE_ENV` may be `development`,
 `test`, or `production`. `PORT` must be a whole number from 1 through 65535
 and defaults to 3000. Invalid configuration fails startup immediately.
 `DATABASE_URL` selects the development database; `TEST_DATABASE_URL` is reserved
-for isolated database integration tests. The backend does not require a database
+for isolated database integration tests. `AUTH_CSRF_SECRET` is required in
+development and production and must contain at least 32 characters; tests use a
+controlled fallback when no secret is supplied. The backend does not require a database
 connection for the technical health endpoint, but the normal server verifies the
 connection when `DATABASE_URL` is configured.
 
-The additional provider-related variables in `.env.example` are reserved
-placeholders for future phases; they are not currently required or connected
-to any provider. Never put backend secrets in frontend `VITE_*` variables.
+`FRONTEND_ORIGIN` is an exact-origin browser/CORS and auth-link setting. SendGrid
+is optional in local development unless email delivery is being tested; if
+either `SENDGRID_API_KEY` or `AUTH_EMAIL_FROM` is set, both values and
+`FRONTEND_ORIGIN` are required. Google configuration is optional unless Google
+login is being tested. Never put backend secrets in frontend `VITE_*` variables.
 
 ## Quality and testing
 

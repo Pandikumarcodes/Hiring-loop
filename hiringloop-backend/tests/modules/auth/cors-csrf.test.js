@@ -34,7 +34,8 @@ function appFixture() {
       })),
       authenticateSession: authenticate,
       requireCsrf: createRequireCsrf({ secret }),
-      createCsrfToken: (id) => createCsrfToken({ secret, sessionId: id }),
+      createCsrfToken: ({ sessionId: id }) =>
+        createCsrfToken({ secret, sessionId: id }),
       serializeSessionCookie: vi.fn(() => 'session=raw'),
       clearSessionCookie: vi.fn(() => 'session=; Max-Age=0'),
       logoutSession: vi.fn(async () => {}),

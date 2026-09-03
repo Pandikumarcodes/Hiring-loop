@@ -38,7 +38,7 @@ function isStructuredJsonBody(body: BodyInit | JsonValue): body is JsonBody {
   )
 }
 
-function buildUrl(path: string): string {
+export function buildApiUrl(path: string): string {
   if (!path.startsWith('/') || path.startsWith('//')) {
     throw new ApiError({
       kind: 'configuration',
@@ -97,6 +97,8 @@ function makeHttpError(
     message,
     details: envelope?.details,
     requestId,
+    retryAfter: safeString(headers.get('Retry-After')),
+    rateLimit: safeString(headers.get('RateLimit')),
   })
 }
 
@@ -123,7 +125,7 @@ export async function apiRequest<TResponse>(
 
   let response: Response
   try {
-    response = await fetch(buildUrl(path), {
+    response = await fetch(buildApiUrl(path), {
       ...requestInit,
       body: requestBody,
       credentials: requestInit.credentials ?? 'include',

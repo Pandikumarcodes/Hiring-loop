@@ -27,14 +27,16 @@ Data must cross each boundary through explicit contracts, validation, authorizat
 
 ## Authentication Security Direction
 
-Architectural requirements only:
+The approved Phase 05 authentication architecture is recorded in ADR-007,
+ADR-008, and ADR-009. Authentication remains a global identity boundary and is
+not organization authorization.
 
-- password credentials must use an approved slow password-hashing algorithm; plaintext or reversible password storage is prohibited;
-- sessions must be secure, revocable, expire, and rotate where appropriate;
-- browser session cookies should be `HttpOnly`; `Secure` is required in production; `SameSite` must be selected deliberately for the deployment and CSRF model;
-- session expiration, idle behavior, refresh, revocation, and concurrent-session policy require explicit implementation decisions;
-- Google OAuth should use state protection and PKCE where appropriate, with redirect URI validation and server-side token protection;
-- email verification and password-reset tokens must be short-lived, single-use, protected in storage, and resistant to account enumeration;
+- password credentials use Argon2id behind a password-hasher abstraction; plaintext or reversible password storage is prohibited;
+- browser authentication uses server-stored opaque PostgreSQL sessions, with only a hash of the random session secret persisted;
+- sessions have a seven-day absolute lifetime, no sliding expiration initially, and are revoked on logout, password reset, and password change;
+- production session cookies are HttpOnly, Secure, SameSite=None, Path=/, host-only, and have no explicit Domain; development differences are centralized in configuration;
+- Google OIDC uses state, PKCE where applicable, nonce where applicable, redirect validation, issuer/audience validation, code exchange, and server-side provider-token protection;
+- email verification and password-reset tokens are short-lived, single-use, hashed at rest, and resistant to account enumeration;
 - authentication errors should be generic enough to avoid revealing whether an account exists;
 - login, logout, reset, verification, provider-link, and suspicious-session events should be auditable according to the audit policy.
 
@@ -74,11 +76,18 @@ Treat candidate-submitted application content, notes, comments, template content
 
 ### CSRF
 
-If browser credentials are cookie-based, state-changing requests need a deliberate CSRF defense appropriate to the chosen session and SameSite model. SameSite alone must not be assumed sufficient without deployment review.
+Cookie-authenticated browser requests use layered CSRF protection: strict
+allowed-Origin validation for all unsafe methods and a per-session synchronizer
+token in a custom header for authenticated unsafe methods. SameSite is
+defense-in-depth, not the sole control. JSON request bodies remain the
+authentication API contract; Fetch Metadata may be used as optional additional
+defense-in-depth.
 
 ### CORS
 
-Allow only approved frontend origins and methods/headers required by the product. Avoid wildcard credentialed CORS. Public and authenticated API CORS policies may differ.
+Use an exact allowlist of approved frontend origins and credentialed requests.
+Never combine `Access-Control-Allow-Origin: *` with credentials. The policy
+must support the frontend `apiRequest()` default of `credentials: include`.
 
 ### Security headers
 
@@ -86,7 +95,10 @@ Adopt security headers appropriate to the deployment, including a considered Con
 
 ### Cookies
 
-Use HttpOnly for session cookies, Secure in production, deliberate SameSite behavior, narrow domain/path scope, expiration, and rotation/revocation controls. Do not store sensitive session material in browser-accessible storage without an approved threat-model decision.
+Use the ADR-007 cookie policy: HttpOnly, Secure in production, SameSite=None
+for the cross-site deployment, Path=/, host-only/no explicit Domain, and a
+preferred `__Host-` prefix where permitted. Do not store sensitive session
+material in browser-accessible storage.
 
 ## Public API Security
 
@@ -201,7 +213,8 @@ Security and reliability interact:
 
 The following require later product/security/implementation decisions:
 
-- session strategy and exact cookie/CSRF configuration;
+- exact configured rate-limit values and email-delivery operational behavior;
+- account-linking UX and whether full Google linking is included in the initial implementation;
 - fixed versus custom roles and the final permission matrix;
 - private-feedback visibility and candidate self-service;
 - audit-log audience, retention, export, and redaction;

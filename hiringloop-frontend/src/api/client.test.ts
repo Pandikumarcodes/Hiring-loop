@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-import { apiRequest } from './client'
+import { apiRequest, buildApiUrl } from './client'
 import { ApiError } from './errors'
 
 vi.mock('../config/env', () => ({
@@ -61,7 +61,11 @@ describe('apiRequest', () => {
           },
         }),
         422,
-        { 'X-Request-Id': 'header-1' },
+        {
+          'X-Request-Id': 'header-1',
+          'Retry-After': '60',
+          RateLimit: 'limit=10, remaining=0, reset=60',
+        },
       ),
     )
 
@@ -72,7 +76,17 @@ describe('apiRequest', () => {
       message: 'Invalid input',
       details: ['field'],
       requestId: 'server-1',
+      retryAfter: '60',
+      rateLimit: 'limit=10, remaining=0, reset=60',
     })
+  })
+
+  test('builds only safe API paths from the configured backend origin', () => {
+    expect(buildApiUrl('/auth/google/start')).toBe(
+      'https://api.example.test/api/v1/auth/google/start',
+    )
+    expect(() => buildApiUrl('auth/google/start')).toThrowError(ApiError)
+    expect(() => buildApiUrl('//attacker.example')).toThrowError(ApiError)
   })
 
   test('uses the request ID header when the body has none', async () => {

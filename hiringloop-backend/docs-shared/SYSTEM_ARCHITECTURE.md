@@ -71,7 +71,8 @@ External provider credentials remain server-side. The backend is the enforcement
 
 ```text
 Route
-  → Middleware
+  → Request validation / relevant HTTP security middleware
+  → Authentication middleware when required
   → Controller
   → Service / Use Case
   → Repository / Data Access
@@ -80,7 +81,7 @@ Route
 ```
 
 - **Route** maps an HTTP method and path to a feature entry point.
-- **Middleware** handles cross-cutting request concerns such as authentication, tenant context, authorization, validation, rate limiting, and error translation where appropriate.
+- **Middleware** handles cross-cutting request concerns such as request validation, Origin/CSRF checks, authentication, tenant context, authorization, rate limiting, and error translation where appropriate.
 - **Controller** translates HTTP input into an application call and translates the result into an HTTP response. Controllers remain thin.
 - **Service / Use Case** coordinates business rules, permissions, transactions, and cross-module workflows.
 - **Repository / Data Access** expresses persistence operations and tenant-scoped queries without exposing storage details to controllers.
@@ -118,7 +119,7 @@ API Request
   ↓
 Authentication
   ↓
-Organization Context
+Organization Membership / tenant context (later phase)
   ↓
 Authorization
   ↓

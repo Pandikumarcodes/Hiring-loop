@@ -27,70 +27,20 @@ Data must cross each boundary through explicit contracts, validation, authorizat
 
 ## Authentication Security Direction
 
-Architectural requirements only:
+The approved Phase 05 authentication architecture is recorded in ADR-007,
+ADR-008, and ADR-009. Authentication remains a global identity boundary and is
+not organization authorization.
 
-- password credentials must use an approved slow password-hashing algorithm; plaintext or reversible password storage is prohibited;
-- sessions must be secure, revocable, expire, and rotate where appropriate;
-- browser session cookies should be `HttpOnly`; `Secure` is required in production; `SameSite` must be selected deliberately for the deployment and CSRF model;
-- session expiration, idle behavior, refresh, revocation, and concurrent-session policy require explicit implementation decisions;
-- Google OAuth should use state protection and PKCE where appropriate, with redirect URI validation and server-side token protection;
-- email verification and password-reset tokens must be short-lived, single-use, protected in storage, and resistant to account enumeration;
+- password credentials use Argon2id behind a password-hasher abstraction; plaintext or reversible password storage is prohibited;
+- browser authentication uses server-stored opaque PostgreSQL sessions, with only a hash of the random session secret persisted;
+- sessions have a seven-day absolute lifetime, no sliding expiration initially, and are revoked on logout, password reset, and password change;
+- production session cookies are HttpOnly, Secure, SameSite=None, Path=/, host-only, and have no explicit Domain; development differences are centralized in configuration;
+- Google OIDC uses state, PKCE where applicable, nonce where applicable, redirect validation, issuer/audience validation, code exchange, and server-side provider-token protection;
+- email verification and password-reset tokens are short-lived, single-use, hashed at rest, and resistant to account enumeration;
 - authentication errors should be generic enough to avoid revealing whether an account exists;
 - login, logout, reset, verification, provider-link, and suspicious-session events should be auditable according to the audit policy.
 
-The backend now implements password login, required opaque-session
-authentication, a seven-day PostgreSQL session cookie, current-session logout,
-and revoke-all session lifecycle behavior. CSRF enforcement and authorization
-remain later-phase work. Required authentication hashes the cookie secret before
-a minimal one-query session/User lookup and rejects missing, unknown, expired,
-or revoked sessions with generic 401 semantics. `POST /api/v1/auth/logout`
-revokes the current session by its trusted session and user IDs, retains the
-row, then clears the cookie. `POST /api/v1/auth/sessions/revoke-all` revokes all
-active sessions for the authenticated User, including the current session.
-Cookie clearing uses the issuance attributes, including the production
-`__Host-`/Secure policy. Database revocation must succeed before either route
-reports success. Requests authenticated before revocation may finish, while
-later authentication attempts fail. The resulting request context represents
-global User identity only; it carries no tenant or RBAC information.
-
-Phase 05H adds enumeration-resistant forgot-password handling, single-use
-SHA-256-hashed 30-minute password-reset tokens, and authenticated password
-change. Forgot-password eligibility is limited to global Users with a
-PasswordCredential; unknown and provider-only accounts receive the same `202`
-acknowledgement and cause no token or email. Forgot-token replacement commits
-before email delivery, so a provider failure does not roll back the committed
-token. A successful reset atomically consumes the token, updates the Argon2id
-credential, invalidates competing reset tokens, and revokes all sessions
-without creating a replacement. Password change verifies the current
-credential, then atomically updates the credential, revokes all sessions, and
-creates one fresh session for the current browser. Raw passwords, reset
-secrets, hashes, cookies, and reset URLs are not logged or returned. These
-flows do not resolve organization or membership context.
-
-Phase 05I adds backend-only Google OpenID Connect authentication at
-`GET /api/v1/auth/google/start` and `/callback`. The adapter uses discovery,
-authorization-code exchange, state, S256 PKCE, and nonce validation through
-`openid-client` 6.x. A signed, short-lived, HttpOnly transaction cookie binds
-the browser transaction; OAuth tokens, ID tokens, codes, state, nonce, and the
-PKCE verifier are never persisted. Google `sub` is the durable
-`GOOGLE`/`providerSubject` key. A validated `email_verified: true` claim may
-set `User.emailVerifiedAt` for a newly created User; established verification
-state is never overwritten. A matching HiringLoop email without a matching
-provider identity produces `ACCOUNT_LINKING_REQUIRED`; Google is never
-silently linked by email. Successful provider authentication creates the same
-seven-day opaque PostgreSQL AuthSession and cookie used by password login.
-No organization, membership, RBAC, or Google API access is involved.
-
-### Phase 05K authentication rate limiting
-
-Authentication abuse-sensitive endpoints use named, endpoint-specific
-`express-rate-limit` v8.7.0 MemoryStore policies. Counters are process-local,
-reset on restart/deploy, and not coordinated across instances; Redis or another
-distributed store remains deferred until horizontal scaling requires it. The
-full policy table, privacy-preserving key strategy, standardized `RateLimit`
-headers, structured `429 RATE_LIMITED` response, and safe `trust proxy = false`
-deployment requirement are recorded in
-[`AUTHENTICATION_RATE_LIMITING.md`](AUTHENTICATION_RATE_LIMITING.md).
+No authentication flow or credential storage is implemented here.
 
 ## Authorization Security
 
@@ -126,11 +76,18 @@ Treat candidate-submitted application content, notes, comments, template content
 
 ### CSRF
 
-If browser credentials are cookie-based, state-changing requests need a deliberate CSRF defense appropriate to the chosen session and SameSite model. SameSite alone must not be assumed sufficient without deployment review.
+Cookie-authenticated browser requests use layered CSRF protection: strict
+allowed-Origin validation for all unsafe methods and a per-session synchronizer
+token in a custom header for authenticated unsafe methods. SameSite is
+defense-in-depth, not the sole control. JSON request bodies remain the
+authentication API contract; Fetch Metadata may be used as optional additional
+defense-in-depth.
 
 ### CORS
 
-Allow only approved frontend origins and methods/headers required by the product. Avoid wildcard credentialed CORS. Public and authenticated API CORS policies may differ.
+Use an exact allowlist of approved frontend origins and credentialed requests.
+Never combine `Access-Control-Allow-Origin: *` with credentials. The policy
+must support the frontend `apiRequest()` default of `credentials: include`.
 
 ### Security headers
 
@@ -138,7 +95,10 @@ Adopt security headers appropriate to the deployment, including a considered Con
 
 ### Cookies
 
-Use HttpOnly for session cookies, Secure in production, deliberate SameSite behavior, narrow domain/path scope, expiration, and rotation/revocation controls. Do not store sensitive session material in browser-accessible storage without an approved threat-model decision.
+Use the ADR-007 cookie policy: HttpOnly, Secure in production, SameSite=None
+for the cross-site deployment, Path=/, host-only/no explicit Domain, and a
+preferred `__Host-` prefix where permitted. Do not store sensitive session
+material in browser-accessible storage.
 
 ## Public API Security
 
@@ -195,20 +155,6 @@ Never log unnecessarily:
 Logs should support correlation, diagnosis, and audit without becoming a second uncontrolled copy of sensitive recruiting data. Redaction and retention policies require implementation and security review.
 
 ## Security Ownership
-
-### Phase 05J browser request hardening
-
-Credentialed CORS is restricted to the exact configured `FRONTEND_ORIGIN`; no
-wildcard or arbitrary Origin reflection is used. Unsafe methods are Origin
-validated before route authentication. Pre-authentication mutations use Origin
-validation only, while authenticated mutations require Origin, a valid opaque
-session, and a session-bound HMAC synchronizer token from `X-CSRF-Token`.
-`GET /api/v1/auth/csrf` returns the token after authentication. Production
-requires the independent `AUTH_CSRF_SECRET`; no CSRF persistence, Redis, or
-extra database query is used. Missing Origin is explicitly accepted only in
-development/test for non-browser callers. Safe methods, including Google OIDC
-start/callback, do not require synchronizer tokens because the OAuth flow uses
-state, PKCE, and nonce. See [CORS_CSRF_HARDENING.md](CORS_CSRF_HARDENING.md).
 
 | Layer | Primary responsibilities |
 |---|---|
@@ -267,8 +213,8 @@ Security and reliability interact:
 
 The following require later product/security/implementation decisions:
 
-- CSRF enforcement and additional session lifecycle operations such as listing
-  or session-management UI;
+- exact configured rate-limit values and email-delivery operational behavior;
+- account-linking UX and whether full Google linking is included in the initial implementation;
 - fixed versus custom roles and the final permission matrix;
 - private-feedback visibility and candidate self-service;
 - audit-log audience, retention, export, and redaction;

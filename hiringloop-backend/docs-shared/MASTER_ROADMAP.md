@@ -243,7 +243,7 @@ their approved phases.
 - **Dependencies:** Phase 03.
 - **Definition of Done:** frontend shell builds, routes, handles standard states, and passes baseline tests without product workflows.
 
-## Phase 05 — Authentication — NOT STARTED
+## Phase 05 — Authentication — COMPLETE
 
 - **Objective:** implement secure identity authentication and session lifecycle. (FR-01)
 - **Features/sub-features:** registration/invitation entry points; login/logout; session refresh/revocation; password recovery or provider flow as approved.
@@ -258,6 +258,8 @@ their approved phases.
 - **Documentation outputs:** auth flow, threat notes, API contract.
 - **Dependencies:** Phases 02–04; ARCH-03.
 - **Definition of Done:** authenticated sessions work securely with backend enforcement and tested failure paths.
+
+Phase 05 closure evidence is recorded in `docs/architecture/PHASE_05_HANDOFF.md`.
 
 ## Phase 06 — Organization & Multi-Tenancy — NOT STARTED
 

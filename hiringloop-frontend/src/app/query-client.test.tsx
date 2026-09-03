@@ -111,6 +111,17 @@ describe('query retry policy', () => {
     expect(shouldRetryQuery(0, error)).toBe(false)
   })
 
+  test('does not retry an unauthenticated response', () => {
+    const error = new ApiError({
+      kind: 'http',
+      status: 401,
+      code: 'UNAUTHENTICATED',
+      message: 'Authentication required',
+    })
+
+    expect(shouldRetryQuery(0, error)).toBe(false)
+  })
+
   test('retries transient and server failures only within the bound', () => {
     const networkError = new ApiError({
       kind: 'network',

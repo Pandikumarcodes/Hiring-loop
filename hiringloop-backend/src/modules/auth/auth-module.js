@@ -152,7 +152,7 @@ export const authRouter = createAuthRouter({
   serializeGoogleTransactionCookie,
   clearGoogleTransactionCookie,
   requireCsrf: createRequireCsrf({ secret: config.authCsrfSecret }),
-  createCsrfToken: (sessionId) =>
+  createCsrfToken: ({ sessionId }) =>
     createCsrfToken({ secret: config.authCsrfSecret, sessionId }),
   logoutSession: createLogoutSession({ authRepository: repository }),
   revokeAllSessions: createRevokeAllSessions({ authRepository: repository }),

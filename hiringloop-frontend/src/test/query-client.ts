@@ -6,7 +6,9 @@ export function createTestQueryClient(): QueryClient {
     defaultOptions: {
       queries: {
         retry: false,
-        gcTime: 0,
+        // Keep unobserved cache entries available for deterministic assertions.
+        // Every test still receives a fresh QueryClient, so no state is shared.
+        gcTime: Infinity,
       },
       mutations: {
         retry: false,

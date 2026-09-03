@@ -1,5 +1,7 @@
-import { config } from './config/env.js';
+// oxlint-disable-next-line import/no-unassigned-import -- load .env before app/config imports
+import 'dotenv/config';
 import app from './app.js';
+import { config } from './config/env.js';
 import { connectDatabase, disconnectDatabase } from './database/client.js';
 
 const server = app.listen(config.port, () => {

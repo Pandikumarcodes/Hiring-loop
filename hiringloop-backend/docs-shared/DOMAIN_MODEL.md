@@ -47,9 +47,25 @@ The catalog below documents each requested entity's purpose, identity, owner, te
 - **Identity/owner:** stable account identity; Users owns profile, Auth owns credentials/sessions/provider links.
 - **Tenant:** global identity, not inherently tenant-owned.
 - **Lifecycle:** created, active, possibly deactivated; exact recovery/deletion states are **Proposed / Requires Product Decision**.
-- **Relationships:** `1 → many OrganizationMemberships`; may act in jobs, interviews, feedback, collaboration, offers, notifications, and audit.
+- **Relationships:** `1 → 0/1 PasswordCredential`, `1 → many AuthSessions`, `1 → many AuthTokens`, `1 → many AuthProviderIdentities`, and `1 → many OrganizationMemberships`; may act in jobs, interviews, feedback, collaboration, offers, notifications, and audit.
 - **Invariants:** identity alone grants no organization access.
 - **Time:** current profile plus separate authentication/action history.
+
+Authentication persistence is global identity infrastructure, separate from tenant ownership:
+
+```text
+User
+├── PasswordCredential
+├── AuthSession[]
+├── AuthToken[]
+└── AuthProviderIdentity[]
+
+User
+└── OrganizationMembership[]
+    └── Organization
+```
+
+Authentication records do not contain `organizationId`; authentication establishes User identity only. Organization access remains a separate Membership concern.
 
 #### Organization
 

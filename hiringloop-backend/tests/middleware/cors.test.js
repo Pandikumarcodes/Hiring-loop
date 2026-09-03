@@ -17,6 +17,9 @@ function app() {
     }),
   );
   server.post('/mutation', (_request, response) => response.json({ ok: true }));
+  server.get('/unauthenticated', (_request, response) =>
+    response.status(401).json({ error: { code: 'UNAUTHENTICATED' } }),
+  );
   return server;
 }
 
@@ -51,5 +54,15 @@ describe('credentialed CORS policy', () => {
       .set('Origin', 'https://attacker.example.test');
     expect(attacker.status).toBe(200);
     expect(attacker.headers['access-control-allow-origin']).toBeUndefined();
+  });
+
+  it('keeps CORS readable on structured 401 responses', async () => {
+    const response = await request(app())
+      .get('/unauthenticated')
+      .set('Origin', allowedOrigin);
+
+    expect(response.status).toBe(401);
+    expect(response.headers['access-control-allow-origin']).toBe(allowedOrigin);
+    expect(response.headers['access-control-allow-credentials']).toBe('true');
   });
 });

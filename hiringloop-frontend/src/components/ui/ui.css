@@ -1,7 +1,7 @@
 .ui-button {
   align-items: center;
   border: 1px solid transparent;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   cursor: pointer;
   display: inline-flex;
   font: inherit;
@@ -53,10 +53,11 @@
 .ui-select {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   color: var(--color-text);
   font: inherit;
   max-width: 100%;
+  min-height: 2.75rem;
   padding: 0.625rem 0.75rem;
   width: 100%;
 }
@@ -75,6 +76,10 @@
 .ui-textarea[aria-invalid='true'],
 .ui-select[aria-invalid='true'] {
   border-color: var(--color-danger);
+}
+.ui-input::placeholder {
+  color: var(--color-muted);
+  opacity: 0.75;
 }
 .ui-field {
   display: grid;
