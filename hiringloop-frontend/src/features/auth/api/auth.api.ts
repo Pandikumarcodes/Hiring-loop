@@ -1,5 +1,5 @@
-import { ApiError } from '../../api/errors'
-import { apiRequest, buildApiUrl } from '../../api/client'
+import { ApiError } from '../../../shared/lib/apiErrors'
+import { apiRequest, buildApiUrl } from '../../../shared/lib/apiClient'
 import type {
   AcknowledgementDto,
   AuthDataEnvelope,
@@ -13,7 +13,7 @@ import type {
   SessionUserDto,
   VerifyEmailInput,
   VerifyEmailResultDto,
-} from './types'
+} from '../types/auth.types'
 
 async function requestData<TData>(
   path: string,

@@ -1,6 +1,6 @@
 import { useId } from 'react'
 
-import { ErrorState, LoadingIndicator } from '../../components/feedback'
+import { ErrorState, LoadingIndicator } from '../../shared/components/feedback'
 
 export function SessionBootstrapLoading() {
   const titleId = useId()

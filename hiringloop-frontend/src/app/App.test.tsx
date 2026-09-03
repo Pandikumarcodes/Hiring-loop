@@ -4,10 +4,10 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-import { AppErrorBoundary } from './AppErrorBoundary'
-import { AppRoutes } from './routes'
-import { authKeys } from '../features/auth/query-keys'
-import { createTestQueryClient } from '../test/query-client'
+import { AppErrorBoundary } from './error/AppErrorBoundary'
+import { AppRoutes } from './router/routes'
+import { authKeys } from '../features/auth/hooks/query-keys'
+import { createTestQueryClient } from '../tests/query-client'
 
 afterEach(() => {
   cleanup()

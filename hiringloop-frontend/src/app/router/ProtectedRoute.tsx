@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 
-import { useCurrentUser } from '../../features/auth/queries'
+import { useCurrentUser } from '../../features/auth/hooks/queries'
 import { SessionBootstrapError, SessionBootstrapLoading } from './SessionState'
 
 export function ProtectedRoute() {

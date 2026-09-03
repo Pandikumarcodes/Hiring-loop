@@ -1,4 +1,4 @@
-import { isApiError } from '../../api/errors'
+import { isApiError } from '../../../shared/lib/apiErrors'
 
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 

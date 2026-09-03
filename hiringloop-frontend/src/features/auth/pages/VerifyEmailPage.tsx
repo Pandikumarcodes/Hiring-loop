@@ -1,20 +1,20 @@
 import { Link, useLocation } from 'react-router-dom'
 
-import { Button } from '../../../components/ui'
-import { useVerifyEmail } from '../mutations'
+import { Button } from '../../../shared/components/ui'
+import { useVerifyEmail } from '../hooks/mutations'
 import {
   deliveryFailureMessage,
   isInvalidAuthToken,
   isTemporaryError,
   rateLimitMessage,
   TEMPORARY_ERROR_MESSAGE,
-} from '../ui-utils'
+} from '../utils/ui-utils'
 import {
   AuthAlert,
-  AuthLayout,
   AuthPageHeader,
   ResendVerificationForm,
 } from '../components'
+import { AuthLayout } from '../../../layouts/AuthLayout'
 
 export function VerifyEmailPage() {
   const location = useLocation()

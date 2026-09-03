@@ -1,14 +1,15 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 
-import { Button, Field, Input } from '../../../components/ui'
-import { useForgotPassword } from '../mutations'
+import { Button, Field, Input } from '../../../shared/components/ui'
+import { useForgotPassword } from '../hooks/mutations'
 import {
   genericMutationError,
   rateLimitMessage,
   validateEmail,
-} from '../ui-utils'
-import { AuthAlert, AuthLayout, AuthPageHeader } from '../components'
+} from '../utils/ui-utils'
+import { AuthAlert, AuthPageHeader } from '../components'
+import { AuthLayout } from '../../../layouts/AuthLayout'
 
 export function ForgotPasswordPage() {
   const forgot = useForgotPassword()

@@ -3,15 +3,15 @@ import { renderHook, waitFor } from '@testing-library/react'
 import type { PropsWithChildren } from 'react'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 
-import { ApiError } from '../../api/errors'
-import { createTestQueryClient } from '../../test/query-client'
+import { ApiError } from '../../../shared/lib/apiErrors'
+import { createTestQueryClient } from '../../../tests/query-client'
 
 const { getCurrentUserMock, getCsrfTokenMock } = vi.hoisted(() => ({
   getCurrentUserMock: vi.fn(),
   getCsrfTokenMock: vi.fn(),
 }))
 
-vi.mock('./api', () => ({
+vi.mock('../api/auth.api', () => ({
   getCurrentUser: getCurrentUserMock,
   getCsrfToken: getCsrfTokenMock,
 }))

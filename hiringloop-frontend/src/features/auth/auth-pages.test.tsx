@@ -4,12 +4,12 @@ import { userEvent } from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-import { ApiError } from '../../api/errors'
-import { AppRoutes } from '../../app/routes'
-import { createTestQueryClient } from '../../test/query-client'
-import { authKeys } from './query-keys'
+import { ApiError } from '../../shared/lib/apiErrors'
+import { AppRoutes } from '../../app/router/routes'
+import { createTestQueryClient } from '../../tests/query-client'
+import { authKeys } from './hooks/query-keys'
 import { GoogleButton } from './components/GoogleButton'
-import { startGoogleAuthentication } from './google-navigation'
+import { startGoogleAuthentication } from './utils/google-navigation'
 
 const apiMocks = vi.hoisted(() => ({
   changePassword: vi.fn(),
@@ -26,7 +26,7 @@ const apiMocks = vi.hoisted(() => ({
   verifyEmail: vi.fn(),
 }))
 
-vi.mock('./api', () => apiMocks)
+vi.mock('./api/auth.api', () => apiMocks)
 
 function renderRoute(entry: string) {
   const queryClient = createTestQueryClient()

@@ -1,6 +1,6 @@
 import { QueryClient, type DefaultOptions } from '@tanstack/react-query'
 
-import { isApiError } from '../api/errors'
+import { isApiError } from '../../shared/lib/apiErrors'
 
 const MAX_QUERY_RETRIES = 2
 

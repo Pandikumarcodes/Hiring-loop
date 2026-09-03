@@ -3,15 +3,15 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-import { createTestQueryClient } from '../../test/query-client'
-import type { AuthUserDto } from '../../features/auth/types'
+import { createTestQueryClient } from '../../tests/query-client'
+import type { AuthUserDto } from '../../features/auth/types/auth.types'
 
 const useCurrentUserMock = vi.hoisted(() => vi.fn())
-vi.mock('../../features/auth/queries', () => ({
+vi.mock('../../features/auth/hooks/queries', () => ({
   useCurrentUser: useCurrentUserMock,
 }))
 
-import { AppRoutes } from '../routes'
+import { AppRoutes } from './routes'
 
 const user = {
   id: 'user-1',

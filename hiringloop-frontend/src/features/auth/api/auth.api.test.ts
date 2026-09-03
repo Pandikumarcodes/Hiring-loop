@@ -5,7 +5,7 @@ const { apiRequestMock, buildApiUrlMock } = vi.hoisted(() => ({
   buildApiUrlMock: vi.fn(),
 }))
 
-vi.mock('../../api/client', () => ({
+vi.mock('../../../shared/lib/apiClient', () => ({
   apiRequest: apiRequestMock,
   buildApiUrl: buildApiUrlMock,
 }))
@@ -23,9 +23,9 @@ import {
   resetPassword,
   revokeAllSessions,
   verifyEmail,
-} from './api'
-import { ApiError } from '../../api/errors'
-import { readAuthOAuthStatus } from './url-state'
+} from './auth.api'
+import { ApiError } from '../../../shared/lib/apiErrors'
+import { readAuthOAuthStatus } from '../utils/url-state'
 
 beforeEach(() => {
   apiRequestMock.mockReset()

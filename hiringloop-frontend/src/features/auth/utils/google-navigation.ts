@@ -1,4 +1,4 @@
-import { getGoogleAuthStartUrl } from './api'
+import { getGoogleAuthStartUrl } from '../api/auth.api'
 
 /** Starts OAuth as a top-level backend navigation, never a client-side flow. */
 export function startGoogleAuthentication(

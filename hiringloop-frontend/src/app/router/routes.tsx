@@ -1,18 +1,18 @@
 import { Route, Routes } from 'react-router-dom'
 
-import { AppLayout } from './layouts/AppLayout'
-import { PublicLayout } from './layouts/PublicLayout'
-import { ProtectedRoute } from './router/ProtectedRoute'
-import { PublicRoute } from './router/PublicRoute'
-import { FoundationPage } from './pages/FoundationPage'
-import { NotFoundPage } from './pages/NotFoundPage'
+import { AppLayout } from '../../layouts/AppLayout'
+import { PublicLayout } from '../../layouts/PublicLayout'
+import { ProtectedRoute } from './ProtectedRoute'
+import { PublicRoute } from './PublicRoute'
+import { FoundationPage } from '../pages/FoundationPage'
+import { NotFoundPage } from '../pages/NotFoundPage'
 import {
   ForgotPasswordPage,
   LoginPage,
   RegisterPage,
   ResetPasswordPage,
   VerifyEmailPage,
-} from '../features/auth/pages'
+} from '../../features/auth/pages'
 
 export function AppRoutes() {
   return (

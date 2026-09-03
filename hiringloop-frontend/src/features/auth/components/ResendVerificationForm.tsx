@@ -1,13 +1,13 @@
 import { useState, type FormEvent } from 'react'
 
-import { Button, Field, Input } from '../../../components/ui'
-import { useResendVerification } from '../mutations'
+import { Button, Field, Input } from '../../../shared/components/ui'
+import { useResendVerification } from '../hooks/mutations'
 import {
   deliveryFailureMessage,
   genericMutationError,
   rateLimitMessage,
   validateEmail,
-} from '../ui-utils'
+} from '../utils/ui-utils'
 import { AuthAlert } from './AuthAlert'
 
 interface ResendVerificationFormProps {

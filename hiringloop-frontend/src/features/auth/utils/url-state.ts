@@ -1,4 +1,4 @@
-import type { AuthOAuthStatus } from './types'
+import type { AuthOAuthStatus } from '../types/auth.types'
 
 const AUTH_OAUTH_STATUSES: ReadonlySet<string> = new Set([
   'account-linking-required',

@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from 'react'
 import { Link } from 'react-router-dom'
 
-import { BrandMark } from './BrandMark'
+import { BrandMark } from '../features/auth/components/BrandMark'
 
 export function AuthLayout({ children }: PropsWithChildren) {
   return (

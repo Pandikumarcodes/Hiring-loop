@@ -1,5 +1,4 @@
 export { AuthAlert } from './AuthAlert'
-export { AuthLayout } from './AuthLayout'
 export { AuthPageHeader } from './AuthPageHeader'
 export { BrandMark } from './BrandMark'
 export { GoogleButton } from './GoogleButton'

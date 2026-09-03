@@ -1,9 +1,9 @@
 import { queryOptions, useQuery, useQueryClient } from '@tanstack/react-query'
 
-import { isApiError } from '../../api/errors'
-import { getCsrfToken, getCurrentUser } from './api'
+import { isApiError } from '../../../shared/lib/apiErrors'
+import { getCsrfToken, getCurrentUser } from '../api/auth.api'
 import { authKeys } from './query-keys'
-import type { AuthUserDto } from './types'
+import type { AuthUserDto } from '../types/auth.types'
 
 export function currentUserQueryOptions() {
   return queryOptions({

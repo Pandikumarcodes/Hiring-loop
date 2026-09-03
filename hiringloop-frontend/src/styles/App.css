@@ -1,6 +1,6 @@
-@import './components/feedback/feedback.css';
-@import './components/ui/ui.css';
-@import './features/auth/auth.css';
+@import '../shared/components/feedback/feedback.css';
+@import '../shared/components/ui/ui.css';
+@import '../features/auth/auth.css';
 
 .site-frame,
 .app-frame {

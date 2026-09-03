@@ -11,14 +11,14 @@ export {
   resetPassword,
   revokeAllSessions,
   verifyEmail,
-} from './api'
-export { authKeys } from './query-keys'
+} from './api/auth.api'
+export { authKeys } from './hooks/query-keys'
 export {
   csrfQueryOptions,
   currentUserQueryOptions,
   useCsrfToken,
   useCurrentUser,
-} from './queries'
+} from './hooks/queries'
 export {
   useChangePassword,
   useForgotPassword,
@@ -29,8 +29,8 @@ export {
   useResetPassword,
   useRevokeAllSessions,
   useVerifyEmail,
-} from './mutations'
-export { readAuthOAuthStatus } from './url-state'
+} from './hooks/mutations'
+export { readAuthOAuthStatus } from './utils/url-state'
 export type {
   AcknowledgementDto,
   AuthOAuthStatus,
@@ -43,4 +43,4 @@ export type {
   ResetPasswordResultDto,
   VerifyEmailInput,
   VerifyEmailResultDto,
-} from './types'
+} from './types/auth.types'

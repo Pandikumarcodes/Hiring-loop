@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { Field, Input } from '../../../components/ui'
+import { Field, Input } from '../../../shared/components/ui'
 
 interface PasswordFieldProps {
   autoComplete: 'current-password' | 'new-password'

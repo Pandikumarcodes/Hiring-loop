@@ -1,9 +1,9 @@
 import type { QueryClient } from '@tanstack/react-query'
 
-import { ApiError, isApiError } from '../../api/errors'
+import { ApiError, isApiError } from '../../../shared/lib/apiErrors'
 import { authKeys } from './query-keys'
 import { csrfQueryOptions } from './queries'
-import type { AuthUserDto } from './types'
+import type { AuthUserDto } from '../types/auth.types'
 
 export async function runAuthenticatedAuthMutation<TResult>(
   queryClient: QueryClient,

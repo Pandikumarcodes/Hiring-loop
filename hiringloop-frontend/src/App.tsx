@@ -1,8 +1,8 @@
-import './App.css'
+import './styles/App.css'
 
-import { AppErrorBoundary } from './app/AppErrorBoundary'
-import { AppProviders } from './app/AppProviders'
-import { AppRoutes } from './app/routes'
+import { AppErrorBoundary } from './app/error/AppErrorBoundary'
+import { AppProviders } from './app/providers/AppProviders'
+import { AppRoutes } from './app/router/routes'
 
 function App() {
   return (

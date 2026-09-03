@@ -3,8 +3,8 @@ import { act, renderHook } from '@testing-library/react'
 import type { PropsWithChildren } from 'react'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 
-import { ApiError } from '../../api/errors'
-import { createTestQueryClient } from '../../test/query-client'
+import { ApiError } from '../../../shared/lib/apiErrors'
+import { createTestQueryClient } from '../../../tests/query-client'
 
 const apiMocks = vi.hoisted(() => ({
   changePassword: vi.fn(),
@@ -20,7 +20,7 @@ const apiMocks = vi.hoisted(() => ({
   verifyEmail: vi.fn(),
 }))
 
-vi.mock('./api', () => apiMocks)
+vi.mock('../api/auth.api', () => apiMocks)
 
 import {
   useChangePassword,

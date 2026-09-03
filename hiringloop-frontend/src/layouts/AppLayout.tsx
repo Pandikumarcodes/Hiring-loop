@@ -1,8 +1,8 @@
 import { Link, Outlet, useNavigate } from 'react-router-dom'
 
-import { useLogout } from '../../features/auth/mutations'
-import { genericMutationError } from '../../features/auth/ui-utils'
-import { AuthAlert } from '../../features/auth/components'
+import { useLogout } from '../features/auth/hooks/mutations'
+import { genericMutationError } from '../features/auth/utils/ui-utils'
+import { AuthAlert } from '../features/auth/components'
 
 export function AppLayout() {
   const navigate = useNavigate()

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
-import { Button } from '../../../components/ui'
-import { startGoogleAuthentication } from '../google-navigation'
+import { Button } from '../../../shared/components/ui'
+import { startGoogleAuthentication } from '../utils/google-navigation'
 
 interface GoogleButtonProps {
   disabled?: boolean

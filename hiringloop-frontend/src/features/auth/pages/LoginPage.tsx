@@ -1,23 +1,23 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
-import { isApiError } from '../../../api/errors'
-import { Button, Field, Input } from '../../../components/ui'
-import { useLogin } from '../mutations'
+import { isApiError } from '../../../shared/lib/apiErrors'
+import { Button, Field, Input } from '../../../shared/components/ui'
+import { useLogin } from '../hooks/mutations'
 import { getSafeReturnTo } from '../../../app/router/safe-route'
-import { readAuthOAuthStatus } from '../url-state'
+import { readAuthOAuthStatus } from '../utils/url-state'
 import {
   genericMutationError,
   rateLimitMessage,
   validateEmail,
-} from '../ui-utils'
+} from '../utils/ui-utils'
 import {
   AuthAlert,
-  AuthLayout,
   AuthPageHeader,
   GoogleButton,
   PasswordField,
 } from '../components'
+import { AuthLayout } from '../../../layouts/AuthLayout'
 
 export function LoginPage() {
   const location = useLocation()

@@ -10,10 +10,10 @@ import {
   resetPassword,
   revokeAllSessions,
   verifyEmail,
-} from './api'
+} from '../api/auth.api'
 import { runAuthenticatedAuthMutation } from './authenticated-mutation'
 import { authKeys } from './query-keys'
-import type { AuthUserDto } from './types'
+import type { AuthUserDto } from '../types/auth.types'
 
 function useClearSessionState() {
   const queryClient = useQueryClient()

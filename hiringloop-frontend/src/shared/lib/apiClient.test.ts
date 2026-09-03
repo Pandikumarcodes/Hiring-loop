@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-import { apiRequest, buildApiUrl } from './client'
-import { ApiError } from './errors'
+import { apiRequest, buildApiUrl } from './apiClient'
+import { ApiError } from './apiErrors'
 
-vi.mock('../config/env', () => ({
+vi.mock('../../app/config/env', () => ({
   frontendConfig: { apiBaseUrl: 'https://api.example.test' },
 }))
 

@@ -1,21 +1,17 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 
-import { Button } from '../../../components/ui'
-import { useResetPassword } from '../mutations'
+import { Button } from '../../../shared/components/ui'
+import { useResetPassword } from '../hooks/mutations'
 import {
   isInvalidAuthToken,
   isTemporaryError,
   rateLimitMessage,
   TEMPORARY_ERROR_MESSAGE,
   validatePassword,
-} from '../ui-utils'
-import {
-  AuthAlert,
-  AuthLayout,
-  AuthPageHeader,
-  PasswordField,
-} from '../components'
+} from '../utils/ui-utils'
+import { AuthAlert, AuthPageHeader, PasswordField } from '../components'
+import { AuthLayout } from '../../../layouts/AuthLayout'
 
 export function ResetPasswordPage() {
   const location = useLocation()

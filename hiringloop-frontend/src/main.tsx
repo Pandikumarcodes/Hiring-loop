@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import './index.css'
-import { assertFrontendConfig } from './config/env'
+import './styles/index.css'
+import { assertFrontendConfig } from './app/config/env'
 import App from './App.tsx'
 
 assertFrontendConfig()

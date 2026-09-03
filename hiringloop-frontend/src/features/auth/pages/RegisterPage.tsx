@@ -1,23 +1,23 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 
-import { isApiError } from '../../../api/errors'
-import { Button, Field, Input } from '../../../components/ui'
-import { useRegister } from '../mutations'
+import { isApiError } from '../../../shared/lib/apiErrors'
+import { Button, Field, Input } from '../../../shared/components/ui'
+import { useRegister } from '../hooks/mutations'
 import {
   genericMutationError,
   rateLimitMessage,
   validateEmail,
   validatePassword,
-} from '../ui-utils'
+} from '../utils/ui-utils'
 import {
   AuthAlert,
-  AuthLayout,
   AuthPageHeader,
   GoogleButton,
   PasswordField,
   ResendVerificationForm,
 } from '../components'
+import { AuthLayout } from '../../../layouts/AuthLayout'
 
 export function RegisterPage() {
   const register = useRegister()

@@ -1,4 +1,4 @@
-import { PageHeader } from '../../components/ui'
+import { PageHeader } from '../../shared/components/ui'
 
 interface FoundationPageProps {
   context?: 'public' | 'application'

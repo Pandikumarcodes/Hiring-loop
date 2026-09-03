@@ -77,13 +77,13 @@ separate backend application and are not configured here.
 
 ## Shared API client
 
-Frontend API transport lives in `src/api/client.ts`. `VITE_API_BASE_URL` is a
+Frontend API transport lives in `src/shared/lib/apiClient.ts`. `VITE_API_BASE_URL` is a
 backend origin without an API path; the shared client owns the `/api/v1`
 prefix. Future feature API functions own endpoint paths and DTO types, then
 call `apiRequest`; pages and components must not call `fetch` directly for
 application APIs.
 
-`ApiError` in `src/api/errors.ts` exposes a safe `kind`, HTTP `status` when
+`ApiError` in `src/shared/lib/apiErrors.ts` exposes a safe `kind`, HTTP `status` when
 available, backend `code`, safe `message` and `details`, and preserved
 `requestId`. HTTP errors also preserve safe `Retry-After` and standardized
 `RateLimit` header values when the backend supplies them. Empty successful
@@ -93,22 +93,22 @@ aborted requests are distinguishable from network failures.
 
 The client is stateless transport only. TanStack Query provides caching,
 deduplication, invalidation, and background refetching through
-`src/app/AppProviders.tsx` and the reusable application client in
-`src/app/query-client.ts`. The QueryClient is created once per app, remains
+`src/app/providers/AppProviders.tsx` and the reusable application client in
+`src/app/providers/query-client.ts`. The QueryClient is created once per app, remains
 in-memory, and is never persisted to browser storage.
 
 ## Authentication server-state foundation
 
 Phase 05L authentication code is feature-owned under `src/features/auth/`:
 
-- `types.ts` defines only request/response DTOs from the backend contract,
+- `types/auth.types.ts` defines only request/response DTOs from the backend contract,
   including the global `{ id, email, emailVerified }` user identity.
-- `api.ts` calls the shared `apiRequest()` transport for every HTTP auth API.
-- `query-keys.ts` centralizes current-user and CSRF cache keys.
-- `queries.ts` owns current-user and memory-only CSRF queries.
-- `authenticated-mutation.ts` lazily obtains CSRF and supplies
+- `api/auth.api.ts` calls the shared `apiRequest()` transport for every HTTP auth API.
+- `hooks/query-keys.ts` centralizes current-user and CSRF cache keys.
+- `hooks/queries.ts` owns current-user and memory-only CSRF queries.
+- `hooks/authenticated-mutation.ts` lazily obtains CSRF and supplies
   `X-CSRF-Token` to authenticated unsafe auth requests.
-- `mutations.ts` owns auth mutations and their session-aware cache updates.
+- `hooks/mutations.ts` owns auth mutations and their session-aware cache updates.
 - `url-state.ts` safely recognizes the allowlisted `oauth` status values that
   the backend may place on the future login route.
 
@@ -280,7 +280,7 @@ collection window, no focus refetch, and bounded retries. Network failures and
 not retry. `ApiError` objects are preserved so consumers can access status,
 code, message, and request ID. Query and mutation lifecycle state (pending,
 success, error, fetching/refetching) belongs to feature UI; final shared
-loading/error integration is provided by the product-agnostic feedback primitives in `src/components/feedback/`.
+loading/error integration is provided by the product-agnostic feedback primitives in `src/shared/components/feedback/`.
 
 ## Async and form conventions
 
@@ -391,8 +391,8 @@ through **05P Authentication Security + Failure-Path Hardening**. The next
 sub-phase is **05Q Phase 05 Integration Verification + Handoff**. Phase 05
 remains **COMPLETE**.
 
-Routing is composed in `src/app/routes.tsx` and mounted through the minimal
-provider composition in `src/app/AppProviders.tsx`. The current neutral routes
+Routing is composed in `src/app/router/routes.tsx` and mounted through the minimal
+provider composition in `src/app/providers/AppProviders.tsx`. The current neutral routes
 are `/` (foundation landing), `/app` (application-shell seam), and a catch-all
 not-found route. `PublicLayout` and `AppLayout` own feature-agnostic frame,
 navigation seam, main content, and responsive concerns.
@@ -406,12 +406,12 @@ product navigation remain deferred. See `docs-shared/` and the authoritative
 
 ### Shared UI foundation
 
-Reusable, product-agnostic primitives live in `src/components/ui/` and
-`src/components/feedback/`. The current set includes Button, Input, Textarea,
+Reusable, product-agnostic primitives live in `src/shared/components/ui/` and
+`src/shared/components/feedback/`. The current set includes Button, Input, Textarea,
 Select, Field, Badge, PageHeader, LoadingIndicator, LoadingState, EmptyState,
 NoResultsState, and ErrorState. The small-form error types live in
-`src/components/forms/form-state.ts` without imposing a form framework.
-They use the small semantic CSS token layer in `src/index.css` and shared
+`src/shared/utils/form-state.ts` without imposing a form framework.
+They use the small semantic CSS token layer in `src/styles/index.css` and shared
 styles alongside the components. Shared UI is for patterns used by unrelated
 features; domain-specific UI belongs in its feature module.
 

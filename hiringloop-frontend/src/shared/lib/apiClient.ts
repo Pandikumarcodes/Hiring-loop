@@ -1,6 +1,6 @@
-import { frontendConfig } from '../config/env'
-import { ApiError } from './errors'
-import type { JsonValue } from './types'
+import { frontendConfig } from '../../app/config/env'
+import { ApiError } from './apiErrors'
+import type { JsonValue } from '../types'
 
 const API_PREFIX = '/api/v1'
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9._:-]{1,128}$/

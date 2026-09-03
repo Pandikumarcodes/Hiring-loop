@@ -6,8 +6,8 @@ import {
 } from '@tanstack/react-query'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-import { ApiError } from '../api/errors'
-import { createTestQueryClient } from '../test/query-client'
+import { ApiError } from '../../shared/lib/apiErrors'
+import { createTestQueryClient } from '../../tests/query-client'
 import { AppProviders } from './AppProviders'
 import {
   appQueryClient,
