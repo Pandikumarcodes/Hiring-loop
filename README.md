@@ -4,13 +4,15 @@ HiringLoop is a production-style multi-tenant recruitment SaaS platform.
 
 Repository structure:
 
-- hiringloop-frontend — React frontend
-- hiringloop-backend — Node.js backend
-- docs — architecture and engineering documentation
+- `hiringloop-frontend` — React frontend
+- `hiringloop-backend` — Node.js backend
+- `docs` — architecture and engineering documentation
 
 Current development strategy:
 
-Shared Codex context is kept in synchronized reference copies under each application's `docs-shared/` directory. The authoritative documentation lives at the repository root and in root `docs/` directories.
+Shared Codex context is kept in synchronized reference copies under each
+application's `docs-shared/` directory. The authoritative documentation lives
+at the repository root and in root `docs/` directories.
 
 Synchronize the approved shared files with:
 
@@ -22,12 +24,13 @@ Software Engineering
 → Production stabilization
 → AI Engineering later
 
-Current status
+Current status:
 
-- Phase 05 — Authentication — COMPLETE
-- Next authoritative roadmap phase: Phase 06 — Organization & Multi-Tenancy
+- Phase 06 — Organization & Multi-Tenancy — IMPLEMENTATION COMPLETE; MANUAL QA PENDING
+- Next implementation phase: Phase 07 — Team Management & Authorization (not started)
 - Authentication uses PostgreSQL-backed opaque sessions, HttpOnly cookies, and
-  backend-enforced security controls. Organization, membership, RBAC, product
-  data, Redis/BullMQ, realtime, and AI remain outside the current boundary.
-- See [the Phase 05 handoff](docs/architecture/PHASE_05_HANDOFF.md) for the
-  verified API, security, testing, and manual QA checklist.
+  backend-enforced security controls. Phase 06 adds organization membership
+  tenant boundaries; RBAC policy, product data, Redis/BullMQ, realtime, and AI
+  remain outside the current boundary.
+- See [the Phase 06 handoff](docs/architecture/PHASE_06_HANDOFF.md) for the
+  verified architecture, APIs, security, testing, and manual QA checklist.

@@ -29,6 +29,9 @@ The repository currently has no local PRD file. PRD traceability below uses only
 - `Phase 01 — Project Foundation` — **COMPLETE**
 - `Phase 02 — Database Foundation` — **COMPLETE**
 - `Phase 03 — Backend Foundation` — **COMPLETE**
+- `Phase 04 — Frontend Foundation` — **COMPLETE**
+- `Phase 05 — Authentication` — **COMPLETE**
+- `Phase 06 — Organization & Multi-Tenancy` — **IMPLEMENTATION COMPLETE — MANUAL QA PENDING**
 
 The historical task detail below remains the ordered roadmap definition. Its original Phase 00 in-progress label is superseded by this closure status after ARCH-06 acceptance.
 
@@ -261,7 +264,7 @@ their approved phases.
 
 Phase 05 closure evidence is recorded in `docs/architecture/PHASE_05_HANDOFF.md`.
 
-## Phase 06 — Organization & Multi-Tenancy — NOT STARTED
+## Phase 06 — Organization & Multi-Tenancy — IMPLEMENTATION COMPLETE — MANUAL QA PENDING
 
 - **Objective:** implement tenant organization lifecycle and organization-scoped context. (FR-02)
 - **Features/sub-features:** create organization; organization settings; active organization context; tenant-scoped resource conventions.
@@ -276,6 +279,11 @@ Phase 05 closure evidence is recorded in `docs/architecture/PHASE_05_HANDOFF.md`
 - **Documentation outputs:** tenancy guide and data-access checklist.
 - **Dependencies:** Phase 05; ARCH-02/03.
 - **Definition of Done:** every tenant-owned path is organization-scoped and cross-tenant tests pass.
+
+Phase 06 engineering implementation and automated verification are complete.
+The handoff is recorded in `docs/architecture/PHASE_06_HANDOFF.md`. Final
+authenticated browser QA remains a user/operator checklist; Phase 07 must not
+start until that acceptance step is complete.
 
 ## Phase 07 — Team Management & Authorization — NOT STARTED
 

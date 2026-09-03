@@ -132,7 +132,7 @@ is created in this phase.
 | Security review | trust-boundary parsing and safe errors | IMPLEMENTED FOR PHASE 03 SHELL |
 | Performance review | bounded payload, reused client, lightweight health | IMPLEMENTED FOR FOUNDATION |
 | Concrete Prisma error translation | no feature repository exists yet | DEFERRED-NON-BLOCKING |
-| Authentication/authorization/tenant context | no product security behavior in scope | DEFERRED |
+| Authentication/authorization/tenant context | Phase 05 authentication and Phase 06 tenant context | IMPLEMENTED FOR PHASES 05–06 |
 
 ## 4. Error and response contract
 
@@ -196,3 +196,24 @@ implemented Phase 03 foundation.
 
 **Next task after verification passes:** Phase 03 HANDOFF + COMPLETION. This
 document does not mark the phase complete and does not create the handoff.
+
+## Phase 06 implementation addendum
+
+Phase 06 implements the first production organization boundary while
+preserving this layered architecture:
+
+```text
+Route → Middleware → Controller → Service / Use Case → Repository → Prisma → PostgreSQL
+```
+
+The organization module owns organization creation, organization listing,
+organization lookup, and tenant-context resolution. Controllers receive the
+verified authenticated user and tenant context; Prisma access remains in the
+organization repository. Organization creation uses one Prisma transaction to
+create the Organization and its creator's ADMIN OrganizationMembership.
+
+For organization routes, the request organization ID is validated navigation
+context only. The tenant middleware verifies authenticated membership using both
+`userId` and `organizationId`, then attaches only `{ organizationId,
+membershipId, role }` as trusted context. Future tenant-owned repositories must
+include organization predicates in their persistence queries.

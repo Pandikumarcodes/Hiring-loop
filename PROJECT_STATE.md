@@ -6,15 +6,15 @@ M0 — Architecture and Project Foundation
 
 ## Current Phase
 
-Phase 05 — Authentication
+Phase 06 — Organization & Multi-Tenancy
 
 ## Previous Phase
 
-Phase 03 — Backend Foundation — COMPLETE
+Phase 05 — Authentication — COMPLETE
 
 ## Phase Status
 
-COMPLETE
+IMPLEMENTATION COMPLETE — MANUAL QA PENDING
 
 ## Completed
 
@@ -24,18 +24,14 @@ COMPLETE
 - Modular monolith backend architecture selected
 - Separate frontend and backend applications selected
 - Single Git repository and shared documentation structure established
-- Phase 00 planning and architecture documentation — COMPLETE
-- Phase 01 Project Foundation — COMPLETE
-- Phase 02 Database Foundation — COMPLETE
-- Phase 02 handoff: `docs/architecture/PHASE_02_HANDOFF.md`
-- Phase 03 Backend Foundation — COMPLETE
-- Phase 03 handoff: `docs/architecture/PHASE_03_HANDOFF.md`
-- Phase 04 Frontend Foundation — COMPLETE
-- Phase 04 handoff: `docs/architecture/PHASE_04_HANDOFF.md`
-- Phase 05A Authentication Architecture Decision Freeze — COMPLETE
-- Phase 05B Authentication Database Foundation — COMPLETE
-- Phase 05 Authentication implementation and integration verification — COMPLETE
-- Phase 05 handoff: `docs/architecture/PHASE_05_HANDOFF.md`
+- Phase 00 through Phase 05 foundation and handoffs — COMPLETE
+- Phase 06A Organization/Multi-Tenancy Architecture — COMPLETE
+- Phase 06B Database + Backend Organization Foundation — COMPLETE
+- Phase 06C Tenant Context + Multi-Tenancy Security — COMPLETE
+- Phase 06D Frontend Organization Experience — COMPLETE
+- Phase 06E Full Organization & Multi-Tenancy Audit + Fixes — COMPLETE
+- Phase 06F Final engineering verification and documentation synchronization — COMPLETE
+- Phase 06 handoff: `docs/architecture/PHASE_06_HANDOFF.md`
 
 ## Repository Structure
 
@@ -59,34 +55,35 @@ Do not implement AI functionality during the current software engineering phases
 
 ## Current Work
 
-Phase 05 Authentication is COMPLETE. Backend and frontend authentication
-implementation, security review, cross-stack contract review, automated tests,
-database integration checks, and documentation handoff are complete.
+Phase 06 Organization & Multi-Tenancy engineering implementation is complete.
+Organization creation, membership-backed tenant context, cross-tenant denial,
+organization APIs, frontend onboarding/switching, and session-scoped query
+cleanup are implemented and automatically verified. Manual authenticated
+browser QA remains pending.
 
-Phase 04 Frontend Foundation is COMPLETE. Its verified implementation
-establishes the accessible React/Vite shell, neutral routing and layouts,
-product-agnostic UI and feedback primitives, safe `/api/v1` API transport and
-ApiError normalization, request-ID preservation, TanStack Query foundation,
-state/form/async UX conventions, and frontend security/performance/testing
-baselines. The formal handoff is recorded in
-`docs/architecture/PHASE_04_HANDOFF.md`.
+Authentication remains a global identity boundary. The formal Phase 06 handoff
+is recorded in `docs/architecture/PHASE_06_HANDOFF.md`.
 
-## Phase 05 Completion Evidence
+## Phase 06 Completion Evidence
 
-- Backend auth suite: 96 tests PASS; database integration: 10 tests PASS
-- Frontend suite: 114 tests PASS
-- Backend lint, format check, Prisma validate, and frontend lint, format check,
-  typecheck, and production build: PASS
+- Backend verification: 22 test files, 116 tests PASS
+- Backend database integration: 3 test files, 11 tests PASS
+- Frontend verification: 13 test files, 119 tests PASS
+- Backend lint, format check, Prisma validate/generate, and frontend lint,
+  format check, typecheck, and production build: PASS
+- Startup smoke: backend connected to PostgreSQL, listened on port 3000, and
+  `/health` returned `{"status":"ok"}`
+- `git diff --check`: PASS
 - No dependency installation, database reset, or destructive operation performed
-- Manual browser QA remains a release/operator checklist; it was not claimed as run
+- Manual browser QA remains pending and is not claimed as complete
 
 ## Next Task
 
-Phase 06 — Organization & Multi-Tenancy
+User-performed manual browser QA for Phase 06, followed by final acceptance.
 
 ## Next Phase Status
 
-Phase 05 — Authentication is COMPLETE.
+Phase 07 — Team Management & Authorization is NOT STARTED.
 
 ## Documentation Gaps
 
@@ -94,8 +91,7 @@ Phase 05 — Authentication is COMPLETE.
 
 ## Deferred Work
 
-Organization context, membership authorization, RBAC/resource policies, tenant
-scoped product data, Redis, BullMQ, realtime, AI, and later product phases remain
-deferred to the approved roadmap. Authentication remains global identity. The
-Phase 02 Prisma tooling audit debt remains tracked; no forced audit fix or
-package change was made.
+Full RBAC/resource policies, invitations, membership administration, role
+changes, tenant-scoped product data, Redis, BullMQ, realtime, AI, and later
+product phases remain deferred to the approved roadmap. The Phase 02 Prisma
+tooling audit debt remains tracked.

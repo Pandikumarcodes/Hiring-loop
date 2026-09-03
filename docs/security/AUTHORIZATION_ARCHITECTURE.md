@@ -282,8 +282,35 @@ The following are **Proposed / Requires Product Decision**:
 - whether Recruiter and Hiring Manager scope is organization-wide or job-assignment-based;
 - private-feedback visibility, including who can view another interviewer's response;
 - how long an Interviewer's access lasts after an interview;
-- organization switching behavior and active-context UX;
+- future organization-context UX beyond the Phase 06 route-driven selection;
 - whether an organization owner has special privileges beyond Admin;
 - who can view/export audit records and whether audit fields are redacted;
 - whether candidates receive self-service access to applications, documents, interview details, or offers;
 - field-level restrictions for candidate PII, documents, communications, and offer terms.
+
+## Phase 06 implementation boundary
+
+Phase 06 implements the Organization tenant boundary and membership verification
+for the organization API. Its security questions are intentionally layered:
+
+- Authentication answers: “Who are you?”
+- Membership answers: “Do you belong to this organization?”
+- RBAC answers: “What actions does your organization role allow?”
+- Resource authorization answers: “Can you access this exact resource?”
+
+The implemented Phase 06 flow is:
+
+```text
+Request
+→ authenticate session
+→ validate requested organizationId
+→ verify OrganizationMembership(userId, organizationId)
+→ attach trusted tenantContext { organizationId, membershipId, role }
+→ controller → use case → tenant-scoped repository → Prisma/PostgreSQL
+```
+
+The route ID is request/navigation context, never authorization authority.
+Active organization selection is route-driven and is not stored in AuthSession.
+Cross-tenant organization requests return a safe not-found result. Full RBAC,
+resource policies, invitations, and membership administration remain later
+roadmap work.

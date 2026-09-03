@@ -223,6 +223,29 @@ User, PasswordCredential, and verification token have committed; this is not a
 login failure. See `docs/architecture/PHASE_05_STABILITY_AUDIT.md` for the
 operator procedure and status interpretation.
 
+## Phase 06 tenant boundary implementation
+
+Phase 06 now implements the first authenticated organization boundary. The
+backend flow is:
+
+```text
+Request
+→ authenticate session
+→ validate organizationId
+→ verify OrganizationMembership(userId, organizationId)
+→ attach trusted tenantContext { organizationId, membershipId, role }
+→ controller → service/use case → tenant-scoped repository → Prisma/PostgreSQL
+```
+
+The route organization ID is untrusted request/navigation context until the
+membership query succeeds. AuthSession remains global identity state and is not
+mutated by organization selection. Organization listing is membership-scoped,
+organization creation requires authentication and CSRF, and inaccessible
+organization detail requests use a non-disclosing not-found response.
+Frontend organization data is route-driven server state in TanStack Query; its
+session-scoped list/detail cache is removed when authentication identity changes.
+Full RBAC and resource policy enforcement remain later roadmap scope.
+
 ## Deferred and Proposed Decisions
 
 The following require later product/security/implementation decisions:
@@ -234,6 +257,7 @@ The following require later product/security/implementation decisions:
 - audit-log audience, retention, export, and redaction;
 - file retention, malware scanning provider, and deletion behavior;
 - public anti-spam controls and accessibility tradeoffs;
-- organization owner behavior and organization switching;
+- whether an organization Admin has special privileges beyond the implemented
+  organization-admin creator behavior;
 - exact CORS, CSP, rate-limit, and monitoring thresholds;
 - provider webhook verification and reconciliation policy.

@@ -102,11 +102,18 @@ The synchronized `docs-shared/` files were compared with root status files.
 
 ### C. Deferred to later phases (non-blocking)
 
-Authentication implementation, organization switching,
-tenant context, RBAC and resource authorization, Jobs, Candidates,
+Authentication implementation, RBAC and resource authorization, Jobs, Candidates,
 Applications, Interviews, Offers, analytics, notifications, file/resume
 flows, realtime, AI, product navigation, product-specific forms/tables,
 permission-driven product behavior, and production observability/SLOs.
+
+Phase 06 organization implementation is now present under
+`src/features/organizations/`. It uses feature-owned API functions, stable
+TanStack Query keys for organization lists/details, route-driven organization
+selection, onboarding, and a native accessible organization switcher. The
+organization list and detail queries are marked session-scoped and are cleared
+by the generic QueryClient session-change boundary; no global tenant store,
+localStorage, or sessionStorage authority exists.
 
 ## Target architecture
 
