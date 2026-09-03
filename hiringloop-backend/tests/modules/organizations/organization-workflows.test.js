@@ -23,7 +23,7 @@ function makeApp(overrides = {}, { authenticated = true } = {}) {
   const services = {
     createOrganizationForUser: vi.fn(async () => organization),
     listOrganizationsForUser: vi.fn(async () => [organization]),
-    getOrganizationForUser: vi.fn(async () => organization),
+    getOrganizationById: vi.fn(async () => organization),
     ...overrides,
   };
   const authenticateSession = (request, _response, next) => {
@@ -41,6 +41,14 @@ function makeApp(overrides = {}, { authenticated = true } = {}) {
     }
     next();
   };
+  const tenantContextMiddleware = (request, _response, next) => {
+    request.tenantContext = {
+      organizationId: request.params.organizationId,
+      membershipId: 'membership-a',
+      role: 'ADMIN',
+    };
+    next();
+  };
   const app = express();
   app.use(express.json());
   app.use(
@@ -49,6 +57,7 @@ function makeApp(overrides = {}, { authenticated = true } = {}) {
       ...services,
       authenticateSession,
       requireCsrf,
+      tenantContextMiddleware,
     }),
   );
   app.use(errorHandler);
@@ -144,12 +153,12 @@ describe('organization use cases and routes', () => {
       '/api/v1/organizations/not-an-uuid',
     );
     expect(malformed.status).toBe(400);
-    expect(services.getOrganizationForUser).not.toHaveBeenCalled();
+    expect(services.getOrganizationById).not.toHaveBeenCalled();
   });
 
   it('returns a non-disclosing not-found result when membership lookup denies access', async () => {
     const { app } = makeApp({
-      getOrganizationForUser: vi.fn(async () => null),
+      getOrganizationById: vi.fn(async () => null),
     });
     const response = await request(app).get(
       '/api/v1/organizations/01990b72-7c3a-7b2d-b6bb-9a6a7a1c0002',

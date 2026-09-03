@@ -3,7 +3,7 @@ import { notFoundError } from '../../../errors/application-error.js';
 export function createOrganizationController({
   createOrganizationForUser,
   listOrganizationsForUser,
-  getOrganizationForUser,
+  getOrganizationById,
 }) {
   return {
     create: async (request, response, next) => {
@@ -29,10 +29,9 @@ export function createOrganizationController({
     },
     get: async (request, response, next) => {
       try {
-        const organization = await getOrganizationForUser({
-          userId: request.auth.userId,
-          organizationId: request.validated.params.organizationId,
-        });
+        const organization = await getOrganizationById(
+          request.tenantContext.organizationId,
+        );
         if (!organization) {
           throw notFoundError();
         }

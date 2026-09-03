@@ -52,5 +52,23 @@ export function createOrganizationRepository(prisma) {
       });
       return membership?.organization ?? null;
     },
+
+    async findMembershipForUserAndOrganization({ userId, organizationId }) {
+      return prisma.organizationMembership.findUnique({
+        where: { organizationId_userId: { organizationId, userId } },
+        select: {
+          id: true,
+          organizationId: true,
+          role: true,
+        },
+      });
+    },
+
+    async findOrganizationById(organizationId) {
+      return prisma.organization.findUnique({
+        where: { id: organizationId },
+        select: ORGANIZATION_SELECT,
+      });
+    },
   };
 }

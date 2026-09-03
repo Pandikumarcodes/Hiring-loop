@@ -12,13 +12,14 @@ export function createOrganizationRouter({
   requireCsrf,
   createOrganizationForUser,
   listOrganizationsForUser,
-  getOrganizationForUser,
+  getOrganizationById,
+  tenantContextMiddleware,
 }) {
   const router = express.Router();
   const controller = createOrganizationController({
     createOrganizationForUser,
     listOrganizationsForUser,
-    getOrganizationForUser,
+    getOrganizationById,
   });
 
   router.get('/', authenticateSession, controller.list);
@@ -33,6 +34,7 @@ export function createOrganizationRouter({
     '/:organizationId',
     authenticateSession,
     validateRequest({ params: organizationIdParamsSchema }),
+    tenantContextMiddleware,
     controller.get,
   );
 

@@ -184,6 +184,28 @@ These names describe policy decisions, not code to implement now. Each policy sh
 6. Explicitly test cross-tenant access for direct resources, nested resources, search, bulk operations, file access, and asynchronous work.
 7. A resource's organization must be checked before applying role or assignment rules.
 
+### Implemented Phase 06C Tenant Context Boundary
+
+Organization-scoped routes obtain the requested organization identifier from a
+validated route parameter. The authenticated session supplies `request.auth.userId`;
+the backend then resolves `OrganizationMembership` by the composite
+`(userId, organizationId)` key before attaching this trusted request context:
+
+```js
+request.tenantContext = {
+  organizationId,
+  membershipId,
+  role,
+};
+```
+
+The route identifier is never trusted by itself, and no active organization is
+stored or mutated on `AuthSession`. A missing membership uses the same
+non-disclosing not-found behavior as an inaccessible organization. Future
+tenant-owned repositories must accept `organizationId` as part of their query
+input and scope the database predicate with it; global lookup followed by
+application filtering is not an accepted convention.
+
 Later repository access should conceptually require tenant context, for example:
 
 ```text
