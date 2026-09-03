@@ -91,6 +91,14 @@ const repository = databaseUrl
       },
     };
 
+export const authenticateSession = createAuthenticateSession({
+  authRepository: repository,
+  authSecretHasher,
+  cookieName: config.authSession.cookieName,
+  clearSessionCookie: createSessionCookieClearer(config.authSession),
+});
+export const requireCsrf = createRequireCsrf({ secret: config.authCsrfSecret });
+
 export const authEmailDelivery = emailDelivery;
 const createSession = createHiringLoopSession({
   authRepository: repository,
@@ -151,18 +159,13 @@ export const authRouter = createAuthRouter({
   secureCookies: config.authSession.cookieSecure,
   serializeGoogleTransactionCookie,
   clearGoogleTransactionCookie,
-  requireCsrf: createRequireCsrf({ secret: config.authCsrfSecret }),
+  requireCsrf,
   createCsrfToken: ({ sessionId }) =>
     createCsrfToken({ secret: config.authCsrfSecret, sessionId }),
   logoutSession: createLogoutSession({ authRepository: repository }),
   revokeAllSessions: createRevokeAllSessions({ authRepository: repository }),
   serializeSessionCookie: createSessionCookieSerializer(config.authSession),
   clearSessionCookie: createSessionCookieClearer(config.authSession),
-  authenticateSession: createAuthenticateSession({
-    authRepository: repository,
-    authSecretHasher,
-    cookieName: config.authSession.cookieName,
-    clearSessionCookie: createSessionCookieClearer(config.authSession),
-  }),
+  authenticateSession,
   rateLimiters: authRateLimiters,
 });
