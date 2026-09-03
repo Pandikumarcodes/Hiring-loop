@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 import { createTestQueryClient } from '../../tests/query-client'
 import type { AuthUserDto } from '../../features/auth/types/auth.types'
+import { organizationKeys } from '../../features/organizations/hooks/query-keys'
 
 const useCurrentUserMock = vi.hoisted(() => vi.fn())
 vi.mock('../../features/auth/hooks/queries', () => ({
@@ -20,8 +21,10 @@ const user = {
 }
 
 function renderRoutes(initialEntry: string) {
+  const queryClient = createTestQueryClient()
+  queryClient.setQueryData(organizationKeys.list(), [])
   return render(
-    <QueryClientProvider client={createTestQueryClient()}>
+    <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[initialEntry]}>
         <AppRoutes />
       </MemoryRouter>
@@ -78,7 +81,7 @@ describe('session route guards', () => {
 
     expect(
       await screen.findByRole('heading', {
-        name: 'Neutral application layout',
+        name: 'Create your first organization',
       }),
     ).toBeVisible()
   })
@@ -131,7 +134,7 @@ describe('session route guards', () => {
 
     expect(
       await screen.findByRole('heading', {
-        name: 'Neutral application layout',
+        name: 'Create your first organization',
       }),
     ).toBeVisible()
   })

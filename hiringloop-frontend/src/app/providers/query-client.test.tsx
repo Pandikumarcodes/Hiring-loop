@@ -11,6 +11,7 @@ import { createTestQueryClient } from '../../tests/query-client'
 import { AppProviders } from './AppProviders'
 import {
   appQueryClient,
+  clearSessionScopedQueries,
   queryRetryDelay,
   shouldRetryQuery,
 } from './query-client'
@@ -166,5 +167,23 @@ describe('test QueryClient isolation', () => {
     expect(secondClient.getQueryData(['test', 'isolated'])).toBeUndefined()
 
     expect(secondClient.getQueryCache().getAll()).toHaveLength(0)
+  })
+
+  test('clears only queries marked as session scoped', async () => {
+    const queryClient = createTestQueryClient()
+    await queryClient.prefetchQuery({
+      queryKey: ['organizations'],
+      queryFn: async () => ['organization-a'],
+      meta: { clearOnAuthChange: true },
+    })
+    await queryClient.prefetchQuery({
+      queryKey: ['public-content'],
+      queryFn: async () => 'shared',
+    })
+
+    clearSessionScopedQueries(queryClient)
+
+    expect(queryClient.getQueryData(['organizations'])).toBeUndefined()
+    expect(queryClient.getQueryData(['public-content'])).toBe('shared')
   })
 })

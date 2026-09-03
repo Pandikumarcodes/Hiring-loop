@@ -8,6 +8,7 @@ import { AppErrorBoundary } from './error/AppErrorBoundary'
 import { AppRoutes } from './router/routes'
 import { authKeys } from '../features/auth/hooks/query-keys'
 import { createTestQueryClient } from '../tests/query-client'
+import { organizationKeys } from '../features/organizations/hooks/query-keys'
 
 afterEach(() => {
   cleanup()
@@ -22,6 +23,7 @@ function renderRoutes(initialEntry = '/') {
       email: 'test@example.test',
       emailVerified: true,
     })
+    queryClient.setQueryData(organizationKeys.list(), [])
   }
   return render(
     <QueryClientProvider client={queryClient}>
@@ -50,11 +52,28 @@ describe('application routes', () => {
     renderRoutes('/app')
 
     expect(
-      screen.getByRole('heading', { name: 'Neutral application layout' }),
+      screen.getByRole('heading', { name: 'Create your first organization' }),
     ).toBeVisible()
     expect(
       screen.getByRole('navigation', { name: 'Application shell navigation' }),
     ).toBeVisible()
+    expect(
+      screen.queryByRole('link', { name: 'Workspaces' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /Open account menu/ }),
+    ).toBeVisible()
+  })
+
+  test('keeps sign out inside the compact account menu', async () => {
+    const user = userEvent.setup()
+    renderRoutes('/app')
+    await user.click(screen.getByRole('button', { name: /Open account menu/ }))
+    expect(screen.getByRole('menu', { name: 'Account menu' })).toBeVisible()
+    expect(screen.getByRole('menuitem', { name: 'Sign out' })).toBeVisible()
+    expect(
+      screen.queryByRole('button', { name: 'Sign out' }),
+    ).not.toBeInTheDocument()
   })
 
   test('renders an accessible not-found experience for unknown routes', () => {

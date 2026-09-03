@@ -10,6 +10,7 @@ import { createTestQueryClient } from '../../tests/query-client'
 import { authKeys } from './hooks/query-keys'
 import { GoogleButton } from './components/GoogleButton'
 import { startGoogleAuthentication } from './utils/google-navigation'
+import { organizationKeys } from '../organizations/hooks/query-keys'
 
 const apiMocks = vi.hoisted(() => ({
   changePassword: vi.fn(),
@@ -31,6 +32,7 @@ vi.mock('./api/auth.api', () => apiMocks)
 function renderRoute(entry: string) {
   const queryClient = createTestQueryClient()
   queryClient.setQueryData(authKeys.currentUser(), null)
+  queryClient.setQueryData(organizationKeys.list(), [])
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[entry]}>
@@ -127,7 +129,7 @@ describe('login UI', () => {
     })
     await waitFor(() =>
       expect(
-        screen.getByRole('heading', { name: 'Neutral application layout' }),
+        screen.getByRole('heading', { name: 'Create your first organization' }),
       ).toBeVisible(),
     )
   })

@@ -4,6 +4,7 @@ import { ApiError, isApiError } from '../../../shared/lib/apiErrors'
 import { authKeys } from './query-keys'
 import { csrfQueryOptions } from './queries'
 import type { AuthUserDto } from '../types/auth.types'
+import { clearSessionScopedQueries } from '../../../app/providers/query-client'
 
 export async function runAuthenticatedAuthMutation<TResult>(
   queryClient: QueryClient,
@@ -36,6 +37,7 @@ export async function runAuthenticatedAuthMutation<TResult>(
     ) {
       queryClient.setQueryData<AuthUserDto | null>(authKeys.currentUser(), null)
       queryClient.removeQueries({ queryKey: authKeys.csrf(), exact: true })
+      clearSessionScopedQueries(queryClient)
     }
 
     throw error

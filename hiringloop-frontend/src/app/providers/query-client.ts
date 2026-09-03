@@ -53,3 +53,14 @@ const queryDefaults: DefaultOptions = {
 export const appQueryClient = new QueryClient({
   defaultOptions: queryDefaults,
 })
+
+/**
+ * Remove data whose authorization is tied to the authenticated identity.
+ * Feature query options opt in through metadata so the auth feature does not
+ * need to know product-specific query keys.
+ */
+export function clearSessionScopedQueries(queryClient: QueryClient): void {
+  queryClient.removeQueries({
+    predicate: (query) => query.meta?.clearOnAuthChange === true,
+  })
+}

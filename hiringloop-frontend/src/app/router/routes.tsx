@@ -13,6 +13,21 @@ import {
   ResetPasswordPage,
   VerifyEmailPage,
 } from '../../features/auth/pages'
+import {
+  OrganizationLandingPage,
+  OrganizationOnboardingPage,
+  OrganizationWorkspacePage,
+} from '../../features/organizations'
+import { useOrganizations } from '../../features/organizations/hooks/queries'
+
+function OrganizationOnboardingRoute() {
+  const organizations = useOrganizations()
+  return (
+    <OrganizationOnboardingPage
+      organizationCount={organizations.data?.length ?? 0}
+    />
+  )
+}
 
 export function AppRoutes() {
   return (
@@ -30,7 +45,16 @@ export function AppRoutes() {
       </Route>
       <Route element={<ProtectedRoute />}>
         <Route path="app/*" element={<AppLayout />}>
-          <Route index element={<FoundationPage context="application" />} />
+          <Route index element={<OrganizationLandingPage />} />
+          <Route
+            path="organizations/new"
+            element={<OrganizationOnboardingRoute />}
+          />
+          <Route
+            path="organizations/:organizationId"
+            element={<OrganizationWorkspacePage />}
+          />
+          <Route path="organizations" element={<OrganizationLandingPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Route>
