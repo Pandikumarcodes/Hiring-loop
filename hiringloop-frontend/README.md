@@ -51,6 +51,23 @@ checking, type checking, tests, and the production build in sequence, stopping
 when a command fails. `format` writes formatting changes; use
 `format:check` for a read-only check.
 
+## Manual responsive QA
+
+Use browser DevTools with responsive mode at 320, 375, 390, 768, 1024, and
+1280px wide (also spot-check 360, 430, 1440px+). For each viewport, confirm
+there is no horizontal document scroll, the primary action is visible, focus
+remains visible, and long text wraps without clipping.
+
+Check these routes and states:
+
+- `/login`: email/password, reveal control, alerts, Google action, and links.
+- `/register`: validation, password guidance, delivery warning, and resend.
+- `/verify-email`: missing, valid, invalid/expired, resend, and error states.
+- `/forgot-password`: form, success, error, and navigation.
+- `/reset-password`: form, validation, invalid/expired, success, and long URLs.
+- `/app`: protected shell header, return-home, sign-out, and shell error.
+- `/` and an unknown route: public header/footer, foundation, and 404.
+
 ## Tests
 
 ```sh

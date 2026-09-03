@@ -8,7 +8,10 @@
   font-weight: 700;
   justify-content: center;
   min-height: 2.75rem;
+  max-width: 100%;
   padding: 0.625rem 1rem;
+  text-align: center;
+  white-space: normal;
   transition:
     background-color 120ms ease,
     border-color 120ms ease;
@@ -84,9 +87,11 @@
 .ui-field {
   display: grid;
   gap: var(--space-2);
+  min-width: 0;
 }
 .ui-field__label {
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 .ui-field__hint,
 .ui-field__error {
@@ -98,6 +103,7 @@
 }
 .ui-field__error {
   color: var(--color-danger);
+  overflow-wrap: anywhere;
 }
 .ui-badge {
   border-radius: 999px;
@@ -127,6 +133,10 @@
   display: flex;
   gap: var(--space-6);
   justify-content: space-between;
+  min-width: 0;
+}
+.ui-page-header > div:first-child {
+  min-width: 0;
 }
 .ui-page-header h1 {
   margin: 0;
@@ -140,6 +150,7 @@
 }
 .ui-page-header__actions {
   flex-shrink: 0;
+  max-width: 100%;
 }
 
 @media (max-width: 40rem) {
@@ -147,6 +158,10 @@
     flex-direction: column;
   }
   .ui-page-header__actions {
+    width: 100%;
+  }
+
+  .ui-page-header__actions .ui-button {
     width: 100%;
   }
 }
