@@ -55,7 +55,7 @@ export function createCreateInvitation({
         rawToken,
       });
     } catch (error) {
-      throw emailDeliveryFailedError({ cause: error });
+      throw emailDeliveryFailedError({ operation: 'invitation', cause: error });
     }
     return toInvitationDto(invitation);
   };

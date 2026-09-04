@@ -163,7 +163,11 @@ describe('invitation creation', () => {
         email: 'person@example.com',
         role: 'RECRUITER',
       }),
-    ).rejects.toMatchObject({ status: 503, code: 'EMAIL_DELIVERY_FAILED' });
+    ).rejects.toMatchObject({
+      status: 503,
+      code: 'EMAIL_DELIVERY_FAILED',
+      message: 'Invitation email could not be sent',
+    });
     expect(repository.createOrRotateInvitation).toHaveBeenCalledOnce();
   });
 });

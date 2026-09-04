@@ -320,12 +320,16 @@ export function TeamPage() {
                   role: dialog.role!,
                 })
                 .then(() => setDialog(null))
-                .catch(() => {})
+                .catch((error) => {
+                  if (isApiError(error) && error.status === 409) setDialog(null)
+                })
             else if (dialog.kind === 'remove')
               void remove
                 .mutateAsync(dialog.member!.id)
                 .then(() => setDialog(null))
-                .catch(() => {})
+                .catch((error) => {
+                  if (isApiError(error) && error.status === 409) setDialog(null)
+                })
             else
               void revoke
                 .mutateAsync(dialog.invitationId!)

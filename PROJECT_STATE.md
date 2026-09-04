@@ -74,6 +74,13 @@ cache cleanup are implemented and verified.
 - Targeted security fix: email delivery receives only delivery fields and the
   transient raw token; the persisted invitation record/token hash is excluded
   from the adapter boundary
+- Phase 07 manual QA fix pass: `EMAIL_DELIVERY_FAILED` refetches only the
+  current organization invitations query, invitation delivery errors use
+  invitation-specific wording, and non-recoverable Team 409 confirmations
+  close while retaining page-level feedback
+- Real invitation delivery remains externally blocked in the checked-in local
+  environment because `SENDGRID_API_KEY` and `AUTH_EMAIL_FROM` are unset; no
+  secret values are committed or logged
 
 Authentication remains a global identity boundary. The formal Phase 07G audit
 is recorded in `docs/architecture/PHASE_07G_FINAL_AUTHORIZATION_AUDIT.md`.

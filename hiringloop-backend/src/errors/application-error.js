@@ -61,11 +61,14 @@ export function authTokenInvalidError() {
   });
 }
 
-export function emailDeliveryFailedError() {
+export function emailDeliveryFailedError({ operation = 'verification' } = {}) {
   return new ApplicationError({
     status: 503,
     code: ERROR_CODES.EMAIL_DELIVERY_FAILED,
-    message: 'Verification email could not be sent',
+    message:
+      operation === 'invitation'
+        ? 'Invitation email could not be sent'
+        : 'Verification email could not be sent',
   });
 }
 

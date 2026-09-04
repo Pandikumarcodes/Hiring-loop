@@ -121,6 +121,26 @@ Logout/session changes remove session-scoped Team and organization queries.
 Destructive actions use accessible confirmation dialogs with loading/disabled
 states, Escape support, and focus restoration.
 
+### Manual QA fix pass
+
+An invitation create response with `503 EMAIL_DELIVERY_FAILED` means the
+invitation was committed but external delivery failed. The frontend preserves
+the warning and invalidates only the current organization invitation query so
+the persisted pending row appears without a browser refresh. Invitation
+delivery errors use invitation-specific wording; verification errors retain
+verification-specific wording.
+
+The Team confirmation flows close role-change and member-removal dialogs after
+a structured 409 business conflict, while leaving the server error visible and
+preserving server-backed member state. Recoverable mutation errors still leave
+their dialog open.
+
+In the checked-in local environment SendGrid is intentionally disabled because
+`SENDGRID_API_KEY` and `AUTH_EMAIL_FROM` are unset. Real invitation delivery
+QA requires both values, a verified SendGrid sender in `AUTH_EMAIL_FROM`, the
+correct `FRONTEND_ORIGIN`, and a backend restart. No provider secret is logged
+or hardcoded.
+
 ## Tests and verification
 
 - Backend: 26 non-database files / 139 tests passed.
@@ -136,8 +156,8 @@ The Phase 07F dialog fix now traps Tab and Shift+Tab, handles Escape, and
 restores focus to the trigger. Recruiting resources, future resource policies,
 non-Admin recruiting grants, audit-log product behavior, and broader
 membership-status workflows remain deferred. Manual authenticated browser QA
-remains an operator checklist from Phase 06 and is not an authorization
-blocker.
+remains an operator checklist; real invitation receipt and acceptance QA is
+blocked until the external SendGrid configuration is supplied.
 
 ## Final acceptance decision
 

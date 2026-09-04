@@ -11,6 +11,7 @@ import {
 import type { TeamRole } from '../types/team.types'
 import { teamKeys } from './query-keys'
 import { organizationKeys } from '../../organizations/hooks/query-keys'
+import { isApiError } from '../../../shared/lib/apiErrors'
 export function useInviteMember(organizationId: string) {
   const c = useQueryClient()
   return useMutation({
@@ -23,6 +24,14 @@ export function useInviteMember(organizationId: string) {
         queryKey: teamKeys.invitations(organizationId),
         exact: true,
       }),
+    onError: (error) => {
+      if (isApiError(error) && error.code === 'EMAIL_DELIVERY_FAILED') {
+        return c.invalidateQueries({
+          queryKey: teamKeys.invitations(organizationId),
+          exact: true,
+        })
+      }
+    },
   })
 }
 export function useChangeMemberRole(organizationId: string) {
