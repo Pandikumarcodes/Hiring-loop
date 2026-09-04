@@ -26,5 +26,9 @@ function isLocation(value: unknown): value is Location {
 }
 
 function isSafeInternalRoute(pathname: string) {
-  return pathname === '/app' || pathname.startsWith('/app/')
+  return (
+    pathname === '/app' ||
+    pathname.startsWith('/app/') ||
+    pathname === '/invitations/accept'
+  )
 }

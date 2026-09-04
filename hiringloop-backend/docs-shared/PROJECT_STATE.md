@@ -6,7 +6,7 @@ M0 — Architecture and Project Foundation
 
 ## Current Phase
 
-Phase 06 — Organization & Multi-Tenancy
+Phase 07 — Team Management & Authorization
 
 ## Previous Phase
 
@@ -14,7 +14,7 @@ Phase 05 — Authentication — COMPLETE
 
 ## Phase Status
 
-IMPLEMENTATION COMPLETE — MANUAL QA PENDING
+COMPLETE — Phase 07G final authorization audit passed
 
 ## Completed
 
@@ -32,6 +32,7 @@ IMPLEMENTATION COMPLETE — MANUAL QA PENDING
 - Phase 06E Full Organization & Multi-Tenancy Audit + Fixes — COMPLETE
 - Phase 06F Final engineering verification and documentation synchronization — COMPLETE
 - Phase 06 handoff: `docs/architecture/PHASE_06_HANDOFF.md`
+- Phase 07G final authorization audit: `docs/architecture/PHASE_07G_FINAL_AUTHORIZATION_AUDIT.md`
 
 ## Repository Structure
 
@@ -55,14 +56,27 @@ Do not implement AI functionality during the current software engineering phases
 
 ## Current Work
 
-Phase 06 Organization & Multi-Tenancy engineering implementation is complete.
-Organization creation, membership-backed tenant context, cross-tenant denial,
-organization APIs, frontend onboarding/switching, and session-scoped query
-cleanup are implemented and automatically verified. Manual authenticated
-browser QA remains pending.
+Phase 07 Team Management & Authorization is complete. Authentication,
+membership-backed tenant context, ADMIN-only Team management, tenant-scoped
+member and invitation repositories, atomic invitation acceptance, final-Admin
+protection, sanitized DTOs, permission-aware frontend UX, and session-scoped
+cache cleanup are implemented and verified.
 
-Authentication remains a global identity boundary. The formal Phase 06 handoff
-is recorded in `docs/architecture/PHASE_06_HANDOFF.md`.
+## Phase 07G Verification Evidence
+
+- Backend non-database verification: 26 test files, 139 tests PASS
+- PostgreSQL integration verification: 5 test files, 26 tests PASS
+- Frontend verification: 15 test files, 129 tests PASS
+- Backend lint, format check, Prisma validate/generate, and frontend lint,
+  format check, typecheck, and production build: PASS
+- PostgreSQL migration status: up to date
+- `git diff --check`: PASS
+- Targeted security fix: email delivery receives only delivery fields and the
+  transient raw token; the persisted invitation record/token hash is excluded
+  from the adapter boundary
+
+Authentication remains a global identity boundary. The formal Phase 07G audit
+is recorded in `docs/architecture/PHASE_07G_FINAL_AUTHORIZATION_AUDIT.md`.
 
 ## Phase 06 Completion Evidence
 
@@ -79,11 +93,13 @@ is recorded in `docs/architecture/PHASE_06_HANDOFF.md`.
 
 ## Next Task
 
-User-performed manual browser QA for Phase 06, followed by final acceptance.
+No Phase 07 work remains. Manual authenticated browser QA from Phase 06 remains
+an operator checklist and is not represented as an authorization blocker.
 
 ## Next Phase Status
 
-Phase 07 — Team Management & Authorization is NOT STARTED.
+Phase 08 — Job Management is NOT STARTED. Do not begin it as part of the
+Phase 07G audit.
 
 ## Documentation Gaps
 
@@ -91,7 +107,6 @@ Phase 07 — Team Management & Authorization is NOT STARTED.
 
 ## Deferred Work
 
-Full RBAC/resource policies, invitations, membership administration, role
-changes, tenant-scoped product data, Redis, BullMQ, realtime, AI, and later
-product phases remain deferred to the approved roadmap. The Phase 02 Prisma
-tooling audit debt remains tracked.
+Recruiting resources and their future resource-level permissions, Redis,
+BullMQ, realtime, AI, and later product phases remain deferred to the approved
+roadmap. The Phase 02 Prisma tooling audit debt remains tracked.

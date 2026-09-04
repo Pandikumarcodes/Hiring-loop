@@ -26,11 +26,14 @@ Software Engineering
 
 Current status:
 
-- Phase 06 — Organization & Multi-Tenancy — IMPLEMENTATION COMPLETE; MANUAL QA PENDING
-- Next implementation phase: Phase 07 — Team Management & Authorization (not started)
+- Phase 07 — Team Management & Authorization — COMPLETE
+- Next implementation phase: Phase 08 — Job Management (not started)
 - Authentication uses PostgreSQL-backed opaque sessions, HttpOnly cookies, and
-  backend-enforced security controls. Phase 06 adds organization membership
-  tenant boundaries; RBAC policy, product data, Redis/BullMQ, realtime, and AI
-  remain outside the current boundary.
+  backend-enforced security controls. Phase 07 adds ADMIN-only team
+  authorization, tenant-scoped member/invitation operations, and final-Admin
+  protection; recruiting product data, Redis/BullMQ, realtime, and AI remain
+  outside the current boundary.
 - See [the Phase 06 handoff](docs/architecture/PHASE_06_HANDOFF.md) for the
   verified architecture, APIs, security, testing, and manual QA checklist.
+- See [the Phase 07G authorization audit](docs/architecture/PHASE_07G_FINAL_AUTHORIZATION_AUDIT.md)
+  for Team-management completion evidence and security decisions.

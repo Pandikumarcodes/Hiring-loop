@@ -281,11 +281,9 @@ Phase 05 closure evidence is recorded in `docs/architecture/PHASE_05_HANDOFF.md`
 - **Definition of Done:** every tenant-owned path is organization-scoped and cross-tenant tests pass.
 
 Phase 06 engineering implementation and automated verification are complete.
-The handoff is recorded in `docs/architecture/PHASE_06_HANDOFF.md`. Final
-authenticated browser QA remains a user/operator checklist; Phase 07 must not
-start until that acceptance step is complete.
+The handoff is recorded in `docs/architecture/PHASE_06_HANDOFF.md`.
 
-## Phase 07 — Team Management & Authorization — NOT STARTED
+## Phase 07 — Team Management & Authorization — COMPLETE
 
 - **Objective:** manage organization members, roles, permissions, and authorization decisions. (FR-03)
 - **Features/sub-features:** invite/remove members; roles; permission checks; protected actions; membership status.
@@ -300,6 +298,10 @@ start until that acceptance step is complete.
 - **Documentation outputs:** permission matrix and authorization guide.
 - **Dependencies:** Phase 06; ARCH-03.
 - **Definition of Done:** documented permission matrix is enforced server-side and verified across tenants and roles.
+
+Phase 07G final authorization audit is complete. The handoff is recorded in
+`docs/architecture/PHASE_07G_FINAL_AUTHORIZATION_AUDIT.md`. Phase 08 remains
+not started.
 
 ## Phase 08 — Job Management — NOT STARTED
 

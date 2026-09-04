@@ -11,6 +11,7 @@ export class EmailDeliveryError extends Error {
 
 const VERIFICATION_PATH = '/verify-email';
 const PASSWORD_RESET_PATH = '/reset-password';
+const INVITATION_PATH = '/invitations/accept';
 
 function verificationUrl(frontendOrigin, token) {
   const origin = frontendOrigin.endsWith('/')
@@ -28,6 +29,16 @@ export function passwordResetUrl(frontendOrigin, token) {
     : `${frontendOrigin}/`;
   return new URL(
     `${PASSWORD_RESET_PATH.slice(1)}?token=${encodeURIComponent(token)}`,
+    origin,
+  ).toString();
+}
+
+export function invitationAcceptanceUrl(frontendOrigin, token) {
+  const origin = frontendOrigin.endsWith('/')
+    ? frontendOrigin
+    : `${frontendOrigin}/`;
+  return new URL(
+    `${INVITATION_PATH.slice(1)}?token=${encodeURIComponent(token)}`,
     origin,
   ).toString();
 }
@@ -96,6 +107,35 @@ export function createSendGridEmailDelivery({
         throw providerFailure(error);
       }
     },
+    async sendInvitation({
+      email,
+      organizationName,
+      role,
+      expiresAt,
+      invitationToken,
+    }) {
+      const url = invitationAcceptanceUrl(frontendOrigin, invitationToken);
+      const expiration = new Date(expiresAt).toISOString();
+      try {
+        await client.send({
+          to: email,
+          from,
+          subject: `Invitation to join ${organizationName} on HiringLoop`,
+          text: [
+            `You have been invited to join ${organizationName} on HiringLoop.`,
+            '',
+            `Your workspace role will be ${role}.`,
+            `Accept the invitation here: ${url}`,
+            `This invitation expires on ${expiration}.`,
+            '',
+            'If you did not expect this invitation, you can ignore this email.',
+          ].join('\n'),
+          html: `<p>You have been invited to join ${organizationName} on HiringLoop.</p><p>Your workspace role will be ${role}.</p><p><a href="${url}">Accept invitation</a></p><p>This invitation expires on ${expiration}.</p><p>If you did not expect this invitation, you can ignore this email.</p>`,
+        });
+      } catch (error) {
+        throw providerFailure(error);
+      }
+    },
   };
 }
 
@@ -110,6 +150,9 @@ export function createInMemoryEmailDelivery() {
     async sendPasswordReset(message) {
       messages.push({ ...message });
     },
+    async sendInvitation(message) {
+      messages.push({ ...message });
+    },
   };
 }
 
@@ -119,6 +162,9 @@ export function createNonDeliveringEmailDelivery() {
       throw new EmailDeliveryError();
     },
     async sendPasswordReset() {
+      throw new EmailDeliveryError();
+    },
+    async sendInvitation() {
       throw new EmailDeliveryError();
     },
   };

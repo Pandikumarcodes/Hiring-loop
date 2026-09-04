@@ -314,3 +314,25 @@ Active organization selection is route-driven and is not stored in AuthSession.
 Cross-tenant organization requests return a safe not-found result. Full RBAC,
 resource policies, invitations, and membership administration remain later
 roadmap work.
+
+## Phase 07 implementation boundary
+
+Phase 07 implements the current Team-management authorization boundary. The
+backend resolves an authenticated user's organization membership into trusted
+tenant context, then applies centralized permissions before member or
+invitation operations. In the current MVP scope, all Team-management
+permissions are granted only to `ADMIN`; `RECRUITER`, `HIRING_MANAGER`, and
+`INTERVIEWER` fail closed for these operations. Frontend permission checks are
+UX only.
+
+Member and invitation repositories require `organizationId` for sensitive
+lookups and mutations. Member role changes and removals lock the Organization
+row in a PostgreSQL transaction and count Admins before reducing the Admin
+population. Invitation acceptance locks the invitation row, checks the
+verified invited email, creates at most one membership, and marks the
+invitation accepted atomically. Explicit DTOs omit credentials, sessions,
+tokens, token hashes, and internal authorization metadata.
+
+The Phase 07G final audit is recorded in
+`docs/architecture/PHASE_07G_FINAL_AUTHORIZATION_AUDIT.md`. Recruiting resource
+policies and future non-Admin recruiting permissions remain deferred.

@@ -91,6 +91,7 @@ model Organization {
   createdAt   DateTime                 @default(now()) @db.Timestamptz(6)
   updatedAt   DateTime                 @updatedAt @db.Timestamptz(6)
   memberships OrganizationMembership[]
+  invitations Invitation[]
 }
 
 model OrganizationMembership {
@@ -103,7 +104,28 @@ model OrganizationMembership {
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   user         User         @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  sentInvitations Invitation[] @relation("InvitationInviterMembership")
 
   @@unique([organizationId, userId])
   @@index([userId])
+}
+
+model Invitation {
+  id                   String   @id @db.Uuid
+  organizationId       String   @db.Uuid
+  email                String   @db.VarChar(320)
+  role                 String   @db.VarChar(32)
+  tokenHash            String   @unique
+  expiresAt            DateTime @db.Timestamptz(6)
+  acceptedAt           DateTime? @db.Timestamptz(6)
+  revokedAt            DateTime? @db.Timestamptz(6)
+  inviterMembershipId  String   @db.Uuid
+  createdAt            DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt            DateTime @updatedAt @db.Timestamptz(6)
+
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  inviterMembership OrganizationMembership @relation("InvitationInviterMembership", fields: [inviterMembershipId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([organizationId, email])
+  @@index([organizationId, createdAt])
 }

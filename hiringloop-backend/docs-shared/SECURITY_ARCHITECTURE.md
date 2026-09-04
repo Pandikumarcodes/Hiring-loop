@@ -246,6 +246,16 @@ Frontend organization data is route-driven server state in TanStack Query; its
 session-scoped list/detail cache is removed when authentication identity changes.
 Full RBAC and resource policy enforcement remain later roadmap scope.
 
+## Phase 07 authorization boundary
+
+Phase 07 closes the current authorization slice for organization Team
+management. Authentication, membership-backed tenant context, ADMIN-only
+permissions, tenant-scoped repository predicates, explicit DTOs, PostgreSQL
+final-Admin serialization, and atomic invitation acceptance are implemented
+and tested. Frontend permissions remain presentation state and do not replace
+backend enforcement. The Phase 07G handoff records the complete audit and
+known non-blocking focus-trap limitation.
+
 ## Deferred and Proposed Decisions
 
 The following require later product/security/implementation decisions:

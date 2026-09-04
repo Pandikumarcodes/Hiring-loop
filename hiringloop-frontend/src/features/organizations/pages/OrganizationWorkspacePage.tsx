@@ -49,6 +49,9 @@ export function OrganizationWorkspacePage() {
           Your team-management and recruiting workflows will appear here as your
           workspace grows.
         </p>
+        <Link className="organization-workspace__team-link" to="team">
+          Team
+        </Link>
       </div>
     </section>
   )

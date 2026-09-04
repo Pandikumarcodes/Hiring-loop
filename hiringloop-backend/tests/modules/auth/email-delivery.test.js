@@ -37,6 +37,37 @@ describe('SendGrid email verification delivery', () => {
     );
   });
 
+  it('sends an invitation acceptance link without including the token hash', async () => {
+    const client = { setApiKey: vi.fn(), send: vi.fn(async () => []) };
+    const delivery = createSendGridEmailDelivery({
+      client,
+      apiKey: 'SG.test-key',
+      from: 'HiringLoop <no-reply@hiringloop.test>',
+      frontendOrigin: 'https://app.hiringloop.test',
+    });
+
+    await delivery.sendInvitation({
+      email: 'user@example.test',
+      organizationName: 'Acme Hiring',
+      role: 'RECRUITER',
+      expiresAt: new Date('2026-09-11T00:00:00.000Z'),
+      invitationToken: 'raw/token?value',
+    });
+
+    expect(client.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'user@example.test',
+        subject: 'Invitation to join Acme Hiring on HiringLoop',
+        text: expect.stringContaining(
+          'https://app.hiringloop.test/invitations/accept?token=raw%2Ftoken%3Fvalue',
+        ),
+      }),
+    );
+    const message = client.send.mock.calls[0][0];
+    expect(message.text).not.toContain('tokenHash');
+    expect(message.html).not.toContain('tokenHash');
+  });
+
   it('maps provider failures without retaining provider details', async () => {
     const client = {
       setApiKey: vi.fn(),

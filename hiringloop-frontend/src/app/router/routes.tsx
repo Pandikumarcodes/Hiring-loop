@@ -19,6 +19,7 @@ import {
   OrganizationWorkspacePage,
 } from '../../features/organizations'
 import { useOrganizations } from '../../features/organizations/hooks/queries'
+import { InvitationAcceptancePage, TeamPage } from '../../features/team'
 
 function OrganizationOnboardingRoute() {
   const organizations = useOrganizations()
@@ -39,6 +40,7 @@ export function AppRoutes() {
       </Route>
       <Route path="verify-email" element={<VerifyEmailPage />} />
       <Route path="reset-password" element={<ResetPasswordPage />} />
+      <Route path="invitations/accept" element={<InvitationAcceptancePage />} />
       <Route element={<PublicLayout />}>
         <Route index element={<FoundationPage />} />
         <Route path="*" element={<NotFoundPage />} />
@@ -53,6 +55,10 @@ export function AppRoutes() {
           <Route
             path="organizations/:organizationId"
             element={<OrganizationWorkspacePage />}
+          />
+          <Route
+            path="organizations/:organizationId/team"
+            element={<TeamPage />}
           />
           <Route path="organizations" element={<OrganizationLandingPage />} />
           <Route path="*" element={<NotFoundPage />} />

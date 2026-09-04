@@ -2,6 +2,7 @@
 @import '../shared/components/ui/ui.css';
 @import '../features/auth/auth.css';
 @import '../features/organizations/organizations.css';
+@import '../features/team/team.css';
 
 .site-frame,
 .app-frame {
