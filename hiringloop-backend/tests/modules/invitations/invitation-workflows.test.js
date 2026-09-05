@@ -113,6 +113,9 @@ describe('invitation creation', () => {
         expiresAt: new Date('2026-09-11T00:00:00.000Z'),
       }),
     );
+    expect(
+      repository.createOrRotateInvitation.mock.calls[0][0].tokenHash,
+    ).not.toBe('raw-secret');
     expect(deliverInvitation).toHaveBeenCalledWith(
       expect.objectContaining({ rawToken: 'raw-secret' }),
     );

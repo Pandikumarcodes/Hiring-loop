@@ -90,6 +90,9 @@ export function useRevokeInvitation(organizationId: string) {
 export function useAcceptInvitation() {
   const c = useQueryClient()
   return useMutation({
+    // Acceptance failures are terminal invitation states. A user can choose
+    // to try again from the page, but React Query must never replay the token.
+    retry: false,
     mutationFn: (token: string) =>
       runAuthenticatedAuthMutation(c, (csrf) => acceptInvitation(token, csrf)),
     onSuccess: async (result) => {
@@ -99,6 +102,10 @@ export function useAcceptInvitation() {
       })
       await c.invalidateQueries({
         queryKey: organizationKeys.detail(result.organization.id),
+        exact: true,
+      })
+      await c.invalidateQueries({
+        queryKey: authKeys.currentUser(),
         exact: true,
       })
     },

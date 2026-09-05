@@ -6,6 +6,7 @@ import { useLogout } from '../features/auth/hooks/mutations'
 import { useCurrentUser } from '../features/auth/hooks/queries'
 import { genericMutationError } from '../features/auth/utils/ui-utils'
 import { OrganizationSwitcher } from '../features/organizations'
+import { BrandMark } from '../features/auth/components/BrandMark'
 
 export function AppLayout() {
   const navigate = useNavigate()
@@ -51,8 +52,8 @@ export function AppLayout() {
     <div className="app-frame">
       <header className="app-header">
         <div className="app-header__inner">
-          <Link className="brand" to="/">
-            HiringLoop
+          <Link className="brand" to="/" aria-label="HiringLoop home">
+            <BrandMark className="app-brand" />
           </Link>
           <nav
             className="app-header__controls"
@@ -72,9 +73,10 @@ export function AppLayout() {
                 <span className="account-menu__avatar" aria-hidden="true">
                   {initial}
                 </span>
-                <span className="account-menu__name">{email}</span>
                 <span className="account-menu__chevron" aria-hidden="true">
-                  ⌄
+                  <svg viewBox="0 0 16 16" focusable="false">
+                    <path d="m4 6 4 4 4-4" />
+                  </svg>
                 </span>
               </button>
               {accountOpen ? (
@@ -84,8 +86,21 @@ export function AppLayout() {
                   aria-label="Account menu"
                 >
                   <div className="account-menu__panel-identity">
-                    <strong>{email}</strong>
-                    <span>Signed in account</span>
+                    <span
+                      className="account-menu__panel-avatar"
+                      aria-hidden="true"
+                    >
+                      {initial}
+                    </span>
+                    <div className="account-menu__panel-copy">
+                      <strong
+                        className="account-menu__panel-email"
+                        title={email}
+                      >
+                        {email}
+                      </strong>
+                      <span>Signed in account</span>
+                    </div>
                   </div>
                   <button
                     className="account-menu__item"

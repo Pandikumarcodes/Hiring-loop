@@ -48,11 +48,28 @@ connection for the technical health endpoint, but the normal server verifies the
 database connection before listening. `FRONTEND_ORIGIN` is required for
 non-test browser authentication and must exactly match `http://localhost:5173`.
 
-`FRONTEND_ORIGIN` is an exact-origin browser/CORS and auth-link setting. SendGrid
-is optional in local development unless email delivery is being tested; if
-either `SENDGRID_API_KEY` or `AUTH_EMAIL_FROM` is set, both values and
-`FRONTEND_ORIGIN` are required. Google configuration is optional unless Google
-login is being tested. Never put backend secrets in frontend `VITE_*` variables.
+`FRONTEND_ORIGIN` is an exact-origin browser/CORS and auth-link setting.
+`EMAIL_PROVIDER` selects `console` for explicit local development or `sendgrid`
+for real delivery; it defaults safely to `sendgrid` without enabling delivery
+when no credentials are present. `EMAIL_PROVIDER=sendgrid` requires
+`SENDGRID_API_KEY`, `AUTH_EMAIL_FROM`, and `FRONTEND_ORIGIN`. Console delivery is
+rejected in production. Google configuration is optional unless Google login is
+being tested. Never put backend secrets in frontend `VITE_*` variables.
+
+For local invitation testing, use this in the backend `.env` and restart the
+backend:
+
+```dotenv
+EMAIL_PROVIDER=console
+FRONTEND_ORIGIN=http://localhost:5173
+```
+
+When an admin sends an invitation, the backend prints a `[DEV EMAIL]` block
+including the raw invitation URL. Copy that URL into the browser, then log in
+or register as the invited user and accept the invitation. The console adapter
+is development-only and prints no token hash. For SendGrid mode, configure
+`EMAIL_PROVIDER=sendgrid`, `SENDGRID_API_KEY`, `AUTH_EMAIL_FROM`, and
+`FRONTEND_ORIGIN` without committing secrets.
 
 ## Quality and testing
 
@@ -127,9 +144,9 @@ context is created. `POST /api/v1/auth/verify-email` accepts `{ token }` and
 atomically performs single-use verification. Raw tokens are sent through the
 email-delivery port but only their SHA-256 hashes are stored.
 
-Email verification delivery uses the narrow auth email-delivery port and a
-SendGrid adapter in configured development/production-like runtimes. Configure
-`SENDGRID_API_KEY`, `AUTH_EMAIL_FROM`, and `FRONTEND_ORIGIN` together; production
+Email verification delivery uses the narrow auth email-delivery port with the
+selected console or SendGrid adapter. Configure `SENDGRID_API_KEY`,
+`AUTH_EMAIL_FROM`, and `FRONTEND_ORIGIN` together for SendGrid; production
 startup rejects missing or partial SendGrid configuration. Tests use an
 in-memory adapter and never contact SendGrid. Verification links are built from
 the configured frontend URL as `/verify-email?token=...`, and expire after 24

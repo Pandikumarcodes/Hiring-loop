@@ -9,7 +9,7 @@ import { createAuthRepository } from './repositories/auth-repository.js';
 import {
   createNonDeliveringEmailDelivery,
   createInMemoryEmailDelivery,
-  createSendGridEmailDelivery,
+  createEmailDelivery,
 } from './email/email-delivery.js';
 import { createRegisterUser } from './use-cases/register-user.js';
 import { createVerifyEmail } from './use-cases/verify-email.js';
@@ -39,9 +39,12 @@ import { authRateLimiters } from '../../middleware/rate-limit.js';
 const emailDelivery =
   config.environment === 'test'
     ? createInMemoryEmailDelivery()
-    : config.sendGrid.enabled
-      ? createSendGridEmailDelivery(config.sendGrid)
-      : createNonDeliveringEmailDelivery();
+    : config.email.provider === 'sendgrid' && !config.sendGrid.enabled
+      ? createNonDeliveringEmailDelivery()
+      : createEmailDelivery({
+          ...config.email,
+          sendGrid: config.sendGrid,
+        });
 const databaseUrl =
   config.environment === 'test' ? config.testDatabaseUrl : config.databaseUrl;
 const repository = databaseUrl

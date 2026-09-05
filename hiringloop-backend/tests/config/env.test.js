@@ -81,4 +81,34 @@ describe('runtime environment configuration', { timeout: 20_000 }, () => {
     });
     expect(result.status).toBe(0);
   });
+
+  it('accepts console email delivery without SendGrid credentials in development', () => {
+    const result = load({
+      ...baseEnvironment,
+      EMAIL_PROVIDER: 'console',
+      AUTH_CSRF_SECRET: 'a'.repeat(32),
+    });
+    expect(result.status).toBe(0);
+  });
+
+  it('rejects console email delivery in production', () => {
+    const result = load({
+      ...baseEnvironment,
+      NODE_ENV: 'production',
+      EMAIL_PROVIDER: 'console',
+      AUTH_CSRF_SECRET: 'a'.repeat(32),
+    });
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain('EMAIL_PROVIDER=console');
+  });
+
+  it('requires SendGrid configuration when the provider is explicitly selected', () => {
+    const result = load({
+      ...baseEnvironment,
+      EMAIL_PROVIDER: 'sendgrid',
+      AUTH_CSRF_SECRET: 'a'.repeat(32),
+    });
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain('SendGrid');
+  });
 });

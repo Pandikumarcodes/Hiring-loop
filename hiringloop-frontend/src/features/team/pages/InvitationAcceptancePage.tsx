@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ErrorState, LoadingState } from '../../../shared/components/feedback'
 import { Button } from '../../../shared/components/ui'
@@ -11,6 +11,7 @@ export function InvitationAcceptancePage() {
   const user = useCurrentUser()
   const token = new URLSearchParams(location.search).get('token')
   const accept = useAcceptInvitation()
+  const attemptedToken = useRef<string | null>(null)
   const { isPending, isSuccess, mutateAsync, reset } = accept
   useEffect(() => {
     if (user.isUnauthenticated)
@@ -19,9 +20,11 @@ export function InvitationAcceptancePage() {
       user.isAuthenticated &&
       user.user?.emailVerified &&
       token &&
+      attemptedToken.current !== token &&
       !isPending &&
       !isSuccess
-    )
+    ) {
+      attemptedToken.current = token
       void mutateAsync(token)
         .then((result) =>
           navigate(`/app/organizations/${result.organization.id}`, {
@@ -29,12 +32,13 @@ export function InvitationAcceptancePage() {
           }),
         )
         .catch(() => {})
+    }
   }, [
     isPending,
     isSuccess,
     location,
-    navigate,
     mutateAsync,
+    navigate,
     token,
     user.isAuthenticated,
     user.isUnauthenticated,
@@ -56,7 +60,13 @@ export function InvitationAcceptancePage() {
         title="Verify your email first"
         description="Verify your HiringLoop email address, then open this invitation again."
         action={
-          <Button onClick={() => navigate('/verify-email')}>
+          <Button
+            onClick={() =>
+              navigate('/verify-email', {
+                state: { from: location },
+              })
+            }
+          >
             Go to email verification
           </Button>
         }
@@ -72,7 +82,16 @@ export function InvitationAcceptancePage() {
             ? 'This invitation is not available for this account.'
             : 'This invitation is invalid, expired, or no longer available.'
         }
-        action={<Button onClick={() => reset()}>Try again</Button>}
+        action={
+          <Button
+            onClick={() => {
+              attemptedToken.current = null
+              reset()
+            }}
+          >
+            Try again
+          </Button>
+        }
       />
     )
   if (isSuccess) return <LoadingState label="Opening workspace" />

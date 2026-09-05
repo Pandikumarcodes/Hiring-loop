@@ -87,6 +87,13 @@ afterEach(() => {
 describe('login UI', () => {
   test('renders accessible fields and auth navigation', () => {
     renderRoute('/login')
+    expect(screen.getByLabelText('HiringLoop home')).toBeVisible()
+    expect(
+      screen.queryByText('Structured hiring, without the chaos.'),
+    ).not.toBeInTheDocument()
+    expect(screen.getByText('Hiring, organized.')).toBeVisible()
+    expect(screen.getByText('Full-Stack Engineer')).toBeInTheDocument()
+    expect(screen.queryByText('Hire better.')).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Welcome back' })).toBeVisible()
     expect(screen.getByRole('textbox', { name: 'Email' })).toHaveAttribute(
       'autocomplete',

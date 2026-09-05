@@ -17,20 +17,49 @@ export function AuthLayout({ children }: PropsWithChildren) {
         >
           <BrandMark />
         </Link>
+        <div className="auth-workflow" aria-hidden="true">
+          <div className="auth-workflow__topline">
+            <span>Hiring workspace</span>
+            <span className="auth-workflow__status">On track</span>
+          </div>
+          <div className="auth-workflow__role">
+            <div>
+              <span className="auth-workflow__eyebrow">Open role</span>
+              <strong>Full-Stack Engineer</strong>
+            </div>
+            <span className="auth-workflow__count">12 candidates</span>
+          </div>
+          <div className="auth-workflow__pipeline">
+            <span className="auth-workflow__eyebrow">Candidate pipeline</span>
+            <div className="auth-workflow__steps">
+              <span className="auth-workflow__step auth-workflow__step--active">
+                Applied
+              </span>
+              <span className="auth-workflow__connector" />
+              <span className="auth-workflow__step">Screen</span>
+              <span className="auth-workflow__connector" />
+              <span className="auth-workflow__step">Interview</span>
+              <span className="auth-workflow__connector" />
+              <span className="auth-workflow__step">Decision</span>
+            </div>
+          </div>
+          <div className="auth-workflow__footer">
+            <span className="auth-workflow__avatar">3</span>
+            <span>Team aligned</span>
+            <span className="auth-workflow__meeting">
+              3 interviews scheduled
+            </span>
+          </div>
+        </div>
         <div className="auth-layout__brand-copy">
-          <p className="auth-layout__statement">
-            Hire better.
-            <br />
-            Move faster.
-            <br />
-            Stay aligned.
-          </p>
+          <p className="auth-layout__statement">Hiring, organized.</p>
           <p className="auth-layout__positioning">
-            Structured hiring for modern teams.
+            Keep jobs, candidates, interviews, and decisions in one clear
+            workspace.
           </p>
           <ul className="auth-layout__benefits">
-            <li>Clear hiring pipelines</li>
-            <li>Structured collaboration</li>
+            <li>Structured hiring workflows</li>
+            <li>Clear team collaboration</li>
             <li>Better hiring decisions</li>
           </ul>
         </div>

@@ -57,12 +57,19 @@ describe('application routes', () => {
     expect(
       screen.getByRole('navigation', { name: 'Application shell navigation' }),
     ).toBeVisible()
+    expect(screen.getByRole('link', { name: 'HiringLoop home' })).toBeVisible()
     expect(
       screen.queryByRole('link', { name: 'Workspaces' }),
     ).not.toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: /Open account menu/ }),
     ).toBeVisible()
+    expect(
+      screen.getByRole('button', { name: /Open account menu/ }),
+    ).not.toHaveTextContent('test@example.test')
+    expect(
+      screen.getByRole('button', { name: /Open account menu/ }),
+    ).toHaveTextContent('T')
   })
 
   test('keeps sign out inside the compact account menu', async () => {
@@ -71,6 +78,8 @@ describe('application routes', () => {
     await user.click(screen.getByRole('button', { name: /Open account menu/ }))
     expect(screen.getByRole('menu', { name: 'Account menu' })).toBeVisible()
     expect(screen.getByRole('menuitem', { name: 'Sign out' })).toBeVisible()
+    expect(screen.getByText('test@example.test')).toBeVisible()
+    expect(screen.getByText('Signed in account')).toBeVisible()
     expect(
       screen.queryByRole('button', { name: 'Sign out' }),
     ).not.toBeInTheDocument()

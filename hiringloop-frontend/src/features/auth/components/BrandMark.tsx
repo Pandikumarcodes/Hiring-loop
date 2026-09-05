@@ -1,10 +1,11 @@
 interface BrandMarkProps {
   compact?: boolean
+  className?: string
 }
 
-export function BrandMark({ compact = false }: BrandMarkProps) {
+export function BrandMark({ compact = false, className = '' }: BrandMarkProps) {
   return (
-    <div className="auth-brand" aria-label="HiringLoop">
+    <div className={`auth-brand ${className}`.trim()} aria-label="HiringLoop">
       <svg
         aria-hidden="true"
         className="auth-brand__mark"

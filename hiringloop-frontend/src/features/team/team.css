@@ -164,3 +164,111 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Team page refinement */
+.team-page {
+  padding-top: clamp(2rem, 5vw, 3.75rem);
+}
+.team-page > .ui-page-header {
+  margin-bottom: 2.25rem;
+}
+.team-page > .ui-page-header h1 {
+  font-size: clamp(1.875rem, 3.5vw, 2.5rem);
+  letter-spacing: -0.045em;
+}
+.team-page > .ui-page-header p {
+  font-size: 1rem;
+  margin-top: 0.5rem;
+}
+.team-section {
+  border-radius: 0.875rem;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 4%);
+  margin-top: 1.75rem;
+}
+.team-section h2 {
+  background: var(--color-surface);
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+  padding: 1.125rem 1.5rem;
+}
+.team-table th,
+.team-table td {
+  padding: 1rem 1.5rem;
+}
+.team-table th {
+  background: #f8fafc;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.team-table tbody tr {
+  transition: background-color 120ms ease;
+}
+.team-table tbody tr:hover {
+  background: #fbfefe;
+}
+.team-table td:first-child strong {
+  display: block;
+  max-width: 22rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.team-actions {
+  gap: 0.625rem;
+}
+.team-actions .ui-select {
+  min-height: 2.5rem;
+}
+.team-actions .ui-button {
+  min-height: 2.5rem;
+  white-space: nowrap;
+}
+.team-invite {
+  border-radius: 0.875rem;
+  box-shadow: 0 6px 18px rgb(13 148 136 / 7%);
+  margin-bottom: 1.75rem;
+  padding: 1.5rem;
+}
+.team-invite h2 {
+  letter-spacing: -0.02em;
+}
+.team-feedback {
+  border: 1px solid #a7f3d0;
+  font-size: 0.9rem;
+}
+.team-feedback--error {
+  border-color: #fecaca;
+}
+
+@media (max-width: 40rem) {
+  .team-page {
+    padding-top: 2rem;
+  }
+  .team-page > .ui-page-header {
+    margin-bottom: 1.75rem;
+  }
+  .team-section h2 {
+    padding-inline: 1rem;
+  }
+  .team-table tr {
+    padding: 1rem;
+  }
+  .team-table td {
+    align-items: flex-start;
+    min-height: 2.25rem;
+  }
+  .team-table td:first-child strong {
+    max-width: 12rem;
+  }
+  .team-actions {
+    width: 100%;
+  }
+  .team-actions .ui-select,
+  .team-actions .ui-button {
+    flex: 1 1 8rem;
+  }
+  .team-invite {
+    padding: 1.125rem;
+  }
+}

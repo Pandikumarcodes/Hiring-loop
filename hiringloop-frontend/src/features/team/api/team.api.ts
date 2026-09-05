@@ -111,6 +111,8 @@ export async function revokeInvitation(
 }
 export async function acceptInvitation(token: string, csrfToken: string) {
   const response = await apiRequest<TeamListEnvelope<AcceptanceDto>>(
+    // apiRequest adds the single /api/v1 prefix. Keep this feature endpoint
+    // aligned with the backend's unscoped acceptance route.
     '/invitations/accept',
     { method: 'POST', body: { token }, headers: { 'X-CSRF-Token': csrfToken } },
   )

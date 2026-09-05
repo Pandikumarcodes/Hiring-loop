@@ -15,6 +15,7 @@ import {
   ResendVerificationForm,
 } from '../components'
 import { AuthLayout } from '../../../layouts/AuthLayout'
+import { getSafeReturnTo } from '../../../app/router/safe-route'
 
 export function VerifyEmailPage() {
   const location = useLocation()
@@ -47,6 +48,7 @@ export function VerifyEmailPage() {
   }
 
   if (verify.isSuccess) {
+    const returnTo = getSafeReturnTo(location.state && location.state.from)
     return (
       <AuthLayout>
         <div className="auth-result">
@@ -57,9 +59,15 @@ export function VerifyEmailPage() {
             title="Email verified"
             description="Your email has been successfully verified."
           />
-          <Link className="ui-button ui-button--primary" to="/login">
-            Sign in
-          </Link>
+          {location.state && location.state.from ? (
+            <Link className="ui-button ui-button--primary" to={returnTo}>
+              Continue
+            </Link>
+          ) : (
+            <Link className="ui-button ui-button--primary" to="/login">
+              Sign in
+            </Link>
+          )}
         </div>
       </AuthLayout>
     )

@@ -31,6 +31,8 @@ const optionalEmailSchema = z.preprocess(
   z.string().email().optional(),
 );
 
+const emailProviderSchema = z.enum(['sendgrid', 'console']).default('sendgrid');
+
 const frontendOriginSchema = z.preprocess(
   (value) => (value === '' ? undefined : value),
   z
@@ -53,6 +55,7 @@ const environmentInputSchema = z.object({
   FRONTEND_ORIGIN: frontendOriginSchema,
   AUTH_CSRF_SECRET: optionalSecretSchema,
 
+  EMAIL_PROVIDER: emailProviderSchema,
   SENDGRID_API_KEY: optionalSecretSchema,
   AUTH_EMAIL_FROM: optionalEmailSchema,
 
@@ -71,6 +74,7 @@ const parsedEnvironment = environmentInputSchema.safeParse({
   FRONTEND_ORIGIN: process.env.FRONTEND_ORIGIN,
   AUTH_CSRF_SECRET: process.env.AUTH_CSRF_SECRET,
 
+  EMAIL_PROVIDER: process.env.EMAIL_PROVIDER,
   SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,
   AUTH_EMAIL_FROM: process.env.AUTH_EMAIL_FROM,
 
@@ -91,6 +95,7 @@ if (!parsedEnvironment.success) {
 
 const {
   NODE_ENV,
+  EMAIL_PROVIDER,
   SENDGRID_API_KEY,
   AUTH_EMAIL_FROM,
   FRONTEND_ORIGIN,
@@ -119,9 +124,21 @@ const sendGridConfigured = sendGridCredentials.some(Boolean);
 
 const sendGridValues = [SENDGRID_API_KEY, AUTH_EMAIL_FROM, FRONTEND_ORIGIN];
 
-if (sendGridConfigured && !sendGridValues.every(Boolean)) {
+if (
+  EMAIL_PROVIDER === 'sendgrid' &&
+  (process.env.EMAIL_PROVIDER !== undefined ||
+    NODE_ENV === 'production' ||
+    sendGridConfigured) &&
+  !sendGridValues.every(Boolean)
+) {
   throw new Error(
     'Configuration error: SENDGRID_API_KEY, AUTH_EMAIL_FROM, and FRONTEND_ORIGIN are required for SendGrid email delivery',
+  );
+}
+
+if (NODE_ENV === 'production' && EMAIL_PROVIDER === 'console') {
+  throw new Error(
+    'Configuration error: EMAIL_PROVIDER=console is not allowed in production',
   );
 }
 
@@ -186,6 +203,17 @@ if (
 
 export const config = Object.freeze({
   environment: NODE_ENV,
+
+  email: Object.freeze({
+    provider: EMAIL_PROVIDER,
+    environment: NODE_ENV,
+    frontendOrigin: FRONTEND_ORIGIN,
+    sendGrid: Object.freeze({
+      apiKey: SENDGRID_API_KEY,
+      from: AUTH_EMAIL_FROM,
+      frontendOrigin: FRONTEND_ORIGIN,
+    }),
+  }),
 
   port: parsedEnvironment.data.PORT,
 

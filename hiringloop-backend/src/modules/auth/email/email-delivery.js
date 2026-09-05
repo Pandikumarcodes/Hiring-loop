@@ -139,6 +139,104 @@ export function createSendGridEmailDelivery({
   };
 }
 
+function developmentEmailLog({
+  email,
+  subject,
+  organizationName,
+  role,
+  expiresAt,
+  url,
+}) {
+  return [
+    '[DEV EMAIL]',
+    `To: ${email}`,
+    `Subject: ${subject}`,
+    ...(organizationName ? [`Organization: ${organizationName}`] : []),
+    ...(role ? [`Role: ${role}`] : []),
+    ...(expiresAt ? [`Expires: ${new Date(expiresAt).toISOString()}`] : []),
+    'Invitation URL:',
+    url,
+  ].join('\n');
+}
+
+export function createConsoleEmailDelivery({
+  frontendOrigin,
+  logger = console,
+  environment,
+}) {
+  if (!frontendOrigin || environment !== 'development') {
+    throw new Error(
+      'Console email delivery requires a frontend origin and explicit development mode',
+    );
+  }
+
+  return {
+    async sendEmailVerification({ email, verificationToken }) {
+      logger.log(
+        developmentEmailLog({
+          email,
+          subject: 'Verify your HiringLoop email address',
+          url: verificationUrl(frontendOrigin, verificationToken),
+        }),
+      );
+    },
+    async sendPasswordReset({ email, resetToken, resetUrl }) {
+      logger.log(
+        developmentEmailLog({
+          email,
+          subject: 'Reset your HiringLoop password',
+          url: resetUrl ?? passwordResetUrl(frontendOrigin, resetToken),
+        }),
+      );
+    },
+    async sendInvitation({
+      email,
+      organizationName,
+      role,
+      expiresAt,
+      invitationToken,
+    }) {
+      logger.log(
+        developmentEmailLog({
+          email,
+          subject: `Invitation to join ${organizationName} on HiringLoop`,
+          organizationName,
+          role,
+          expiresAt,
+          url: invitationAcceptanceUrl(frontendOrigin, invitationToken),
+        }),
+      );
+    },
+  };
+}
+
+export function createEmailDelivery({
+  provider,
+  environment,
+  frontendOrigin,
+  sendGrid,
+  logger = console,
+}) {
+  if (provider === 'console') {
+    if (environment !== 'development') {
+      throw new Error(
+        'Console email delivery is only available in development',
+      );
+    }
+    return createConsoleEmailDelivery({
+      frontendOrigin,
+      logger,
+      environment,
+    });
+  }
+
+  if (provider === 'sendgrid') {
+    return createSendGridEmailDelivery(sendGrid);
+  }
+
+  throw new Error(`Unsupported email provider: ${provider}`);
+}
+
 export function createInMemoryEmailDelivery() {
   const messages = [];
 
