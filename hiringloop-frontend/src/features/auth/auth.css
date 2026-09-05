@@ -46,8 +46,8 @@
   justify-content: center;
   min-width: 0;
   outline: none;
-  padding: clamp(var(--space-8), 7vw, 4rem) var(--space-4);
-  min-height: 0;
+  min-height: 100%;
+  padding: clamp(2rem, 6vw, 4rem) clamp(1rem, 7vw, 7rem);
 }
 
 .auth-layout__form-panel {
@@ -123,12 +123,12 @@
   color: var(--color-text-secondary);
   cursor: pointer;
   display: flex;
-  height: 2.5rem;
+  height: 2.75rem;
   justify-content: center;
   padding: 0;
   position: absolute;
   right: 0.125rem;
-  top: 0.125rem;
+  top: 0;
   width: 2.5rem;
 }
 
@@ -363,6 +363,8 @@
     padding-inline: var(--space-3);
   }
   .auth-form__inline-link {
+    max-width: 100%;
+    overflow-wrap: anywhere;
     position: static;
     margin-bottom: var(--space-2);
   }
@@ -374,6 +376,57 @@
   .auth-alert,
   .auth-secondary-surface {
     padding-inline: var(--space-3);
+  }
+}
+
+/* Responsive guardrails: every auth surface must be shrinkable at phone widths. */
+.auth-layout__brand-panel,
+.auth-layout__main,
+.auth-layout__form-panel,
+.auth-form,
+.auth-result {
+  min-width: 0;
+  max-width: 100%;
+}
+.auth-footer-copy {
+  overflow-wrap: anywhere;
+}
+.auth-google-button {
+  min-width: 0;
+}
+.auth-workflow__role,
+.auth-workflow__footer {
+  min-width: 0;
+}
+.auth-workflow__meeting {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+@media (max-width: 55.99rem) {
+  .auth-layout__main {
+    padding-inline: clamp(1rem, 6vw, 2.5rem);
+  }
+  .auth-layout__form-panel {
+    padding-block: 0;
+  }
+  .auth-page-header h1 {
+    font-size: clamp(1.75rem, 7vw, 2.25rem);
+  }
+}
+
+@media (max-width: 30rem) {
+  .auth-layout__brand-panel {
+    padding-inline: 1rem;
+  }
+  .auth-layout__main {
+    padding-inline: 1rem;
+  }
+  .auth-page-header h1 {
+    font-size: clamp(1.625rem, 8vw, 2rem);
+  }
+  .auth-footer-copy {
+    line-height: 1.5;
   }
 }
 
@@ -409,7 +462,7 @@
 }
 .auth-form__submit,
 .auth-google-button {
-  min-height: 3rem;
+  min-height: 2.75rem;
 }
 .auth-divider {
   margin-block: 1.75rem;
@@ -429,9 +482,7 @@
     background: var(--color-surface);
   }
   .auth-layout__brand-copy {
-    display: block;
-    margin-top: 1.5rem;
-    max-width: 34rem;
+    display: none;
   }
   .auth-workflow {
     display: none;
@@ -582,6 +633,9 @@
 
 @media (max-width: 40rem) {
   .auth-layout__main {
+    align-items: flex-start;
+    min-height: 0;
+    padding-block: clamp(1.75rem, 7vw, 2.5rem);
     padding-inline: clamp(1rem, 6vw, 1.5rem);
   }
   .auth-layout__form-panel {
