@@ -9,6 +9,7 @@ import {
 import { errorHandler } from '../../../src/middleware/error-handler.js';
 import { createOrganizationRouter } from '../../../src/modules/organizations/routes/organization-routes.js';
 import { createCreateOrganizationForUser } from '../../../src/modules/organizations/use-cases/create-organization-for-user.js';
+import { createGetOrganizationById } from '../../../src/modules/organizations/use-cases/get-organization-by-id.js';
 
 const organization = {
   id: '01990b72-7c3a-7b2d-b6bb-9a6a7a1c0001',
@@ -65,6 +66,21 @@ function makeApp(overrides = {}, { authenticated = true } = {}) {
 }
 
 describe('organization use cases and routes', () => {
+  it('adds current membership permissions to organization detail without exposing a role', async () => {
+    const getOrganizationById = createGetOrganizationById({
+      organizationRepository: {
+        findOrganizationById: vi.fn(async () => organization),
+      },
+    });
+    const result = await getOrganizationById({
+      organizationId: organization.id,
+      role: 'HIRING_MANAGER',
+    });
+    expect(result).not.toHaveProperty('role');
+    expect(result.permissions).toContain('job:list');
+    expect(result.permissions).not.toContain('job:archive');
+  });
+
   it('creates the organization and ADMIN membership in one repository transaction', async () => {
     const organizationRepository = {
       createOrganizationWithAdminMembership: vi.fn(async (input) => {

@@ -5,6 +5,7 @@ import { LoadingState } from '../../../shared/components/feedback'
 import { PageHeader } from '../../../shared/components/ui'
 import { useOrganization, useOrganizations } from '../hooks/queries'
 import { isOrganizationId } from '../utils/organization-utils'
+import { JobsNavigationLink } from '../../jobs'
 
 export function OrganizationWorkspacePage() {
   const { organizationId } = useParams()
@@ -55,6 +56,7 @@ export function OrganizationWorkspacePage() {
         >
           Team
         </Link>
+        <JobsNavigationLink permissions={organization.data.permissions} />
       </div>
     </section>
   )

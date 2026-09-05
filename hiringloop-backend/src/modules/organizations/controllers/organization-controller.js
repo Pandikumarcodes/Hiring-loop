@@ -29,9 +29,10 @@ export function createOrganizationController({
     },
     get: async (request, response, next) => {
       try {
-        const organization = await getOrganizationById(
-          request.tenantContext.organizationId,
-        );
+        const organization = await getOrganizationById({
+          organizationId: request.tenantContext.organizationId,
+          role: request.tenantContext.role,
+        });
         if (!organization) {
           throw notFoundError();
         }

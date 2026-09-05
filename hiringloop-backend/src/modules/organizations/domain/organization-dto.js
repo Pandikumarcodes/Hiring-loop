@@ -8,3 +8,10 @@ export function toOrganizationDto(organization) {
     updatedAt: organization.updatedAt,
   };
 }
+
+export function toCurrentOrganizationDto(organization, permissions) {
+  return {
+    ...toOrganizationDto(organization),
+    permissions: [...permissions],
+  };
+}

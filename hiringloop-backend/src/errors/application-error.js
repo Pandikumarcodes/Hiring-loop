@@ -11,6 +11,11 @@ export const ERROR_CODES = Object.freeze({
   CSRF_INVALID: 'CSRF_INVALID',
   FORBIDDEN: 'FORBIDDEN',
   RATE_LIMITED: 'RATE_LIMITED',
+  JOB_NOT_FOUND: 'JOB_NOT_FOUND',
+  JOB_VERSION_CONFLICT: 'JOB_VERSION_CONFLICT',
+  JOB_INVALID_TRANSITION: 'JOB_INVALID_TRANSITION',
+  JOB_NOT_READY_TO_OPEN: 'JOB_NOT_READY_TO_OPEN',
+  JOB_ARCHIVED: 'JOB_ARCHIVED',
 });
 
 export class ApplicationError extends Error {
@@ -120,3 +125,37 @@ export function rateLimitError() {
     message: 'Too many requests. Please try again later.',
   });
 }
+
+function jobError({ code, message, details }) {
+  return new ApplicationError({
+    status: code === ERROR_CODES.JOB_NOT_FOUND ? 404 : 409,
+    code,
+    message,
+    details,
+  });
+}
+
+export const jobNotFoundError = () =>
+  jobError({ code: ERROR_CODES.JOB_NOT_FOUND, message: 'Job not found' });
+export const jobVersionConflictError = () =>
+  jobError({
+    code: ERROR_CODES.JOB_VERSION_CONFLICT,
+    message: 'Job version is stale',
+  });
+export const jobInvalidTransitionError = (details) =>
+  jobError({
+    code: ERROR_CODES.JOB_INVALID_TRANSITION,
+    message: 'Job lifecycle transition is not allowed',
+    details,
+  });
+export const jobNotReadyToOpenError = (details) =>
+  jobError({
+    code: ERROR_CODES.JOB_NOT_READY_TO_OPEN,
+    message: 'Job is not ready to open',
+    details,
+  });
+export const jobArchivedError = () =>
+  jobError({
+    code: ERROR_CODES.JOB_ARCHIVED,
+    message: 'Archived jobs are read-only',
+  });

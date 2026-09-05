@@ -37,13 +37,12 @@ describe('static permission evaluation', () => {
     }
   });
 
-  it('fails closed for non-admin roles, unknown roles, and unknown permissions', () => {
+  it('keeps team management Admin-only and fails closed for unknown values', () => {
     for (const role of [
       ORGANIZATION_ROLES.RECRUITER,
       ORGANIZATION_ROLES.HIRING_MANAGER,
       ORGANIZATION_ROLES.INTERVIEWER,
     ]) {
-      expect(ROLE_PERMISSIONS[role]).toEqual([]);
       expect(hasPermission({ role, permission: PERMISSIONS.MEMBER_READ })).toBe(
         false,
       );
@@ -53,6 +52,42 @@ describe('static permission evaluation', () => {
     ).toBe(false);
     expect(
       hasPermission({ role: ORGANIZATION_ROLES.ADMIN, permission: 'member:*' }),
+    ).toBe(false);
+  });
+
+  it('implements the approved Job permission matrix', () => {
+    const managerPermissions = [
+      PERMISSIONS.JOB_LIST,
+      PERMISSIONS.JOB_READ,
+      PERMISSIONS.JOB_CREATE,
+      PERMISSIONS.JOB_UPDATE,
+      PERMISSIONS.JOB_OPEN,
+      PERMISSIONS.JOB_CLOSE,
+      PERMISSIONS.JOB_REOPEN,
+    ];
+    for (const permission of managerPermissions) {
+      expect(hasPermission({ role: 'ADMIN', permission })).toBe(true);
+      expect(hasPermission({ role: 'RECRUITER', permission })).toBe(true);
+      expect(hasPermission({ role: 'HIRING_MANAGER', permission })).toBe(true);
+      expect(hasPermission({ role: 'INTERVIEWER', permission })).toBe(false);
+    }
+    expect(
+      hasPermission({ role: 'ADMIN', permission: PERMISSIONS.JOB_ARCHIVE }),
+    ).toBe(true);
+    expect(
+      hasPermission({ role: 'RECRUITER', permission: PERMISSIONS.JOB_ARCHIVE }),
+    ).toBe(true);
+    expect(
+      hasPermission({
+        role: 'HIRING_MANAGER',
+        permission: PERMISSIONS.JOB_ARCHIVE,
+      }),
+    ).toBe(false);
+    expect(
+      hasPermission({
+        role: 'INTERVIEWER',
+        permission: PERMISSIONS.JOB_ARCHIVE,
+      }),
     ).toBe(false);
   });
 });

@@ -23,7 +23,12 @@ function requireOrganization(value: unknown): OrganizationDto {
   if (
     !isRecord(value) ||
     typeof value.id !== 'string' ||
-    typeof value.name !== 'string'
+    typeof value.name !== 'string' ||
+    (value.permissions !== undefined &&
+      (!Array.isArray(value.permissions) ||
+        !value.permissions.every(
+          (permission) => typeof permission === 'string',
+        )))
   ) {
     return invalidResponse()
   }

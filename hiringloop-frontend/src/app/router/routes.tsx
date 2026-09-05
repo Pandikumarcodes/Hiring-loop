@@ -20,6 +20,12 @@ import {
 } from '../../features/organizations'
 import { useOrganizations } from '../../features/organizations/hooks/queries'
 import { InvitationAcceptancePage, TeamPage } from '../../features/team'
+import {
+  CreateJobPage,
+  EditJobPage,
+  JobDetailPage,
+  JobsPage,
+} from '../../features/jobs'
 
 function OrganizationOnboardingRoute() {
   const organizations = useOrganizations()
@@ -59,6 +65,22 @@ export function AppRoutes() {
           <Route
             path="organizations/:organizationId/team"
             element={<TeamPage />}
+          />
+          <Route
+            path="organizations/:organizationId/jobs"
+            element={<JobsPage />}
+          />
+          <Route
+            path="organizations/:organizationId/jobs/new"
+            element={<CreateJobPage />}
+          />
+          <Route
+            path="organizations/:organizationId/jobs/:jobId"
+            element={<JobDetailPage />}
+          />
+          <Route
+            path="organizations/:organizationId/jobs/:jobId/edit"
+            element={<EditJobPage />}
           />
           <Route path="organizations" element={<OrganizationLandingPage />} />
           <Route path="*" element={<NotFoundPage />} />

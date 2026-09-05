@@ -16,6 +16,7 @@ export function createOrganizationRouter({
   tenantContextMiddleware,
   invitationRouter,
   memberRouter,
+  jobRouter,
 }) {
   const router = express.Router();
   const controller = createOrganizationController({
@@ -29,6 +30,9 @@ export function createOrganizationRouter({
   }
   if (memberRouter) {
     router.use('/:organizationId/members', memberRouter);
+  }
+  if (jobRouter) {
+    router.use('/:organizationId/jobs', jobRouter);
   }
 
   router.get('/', authenticateSession, controller.list);
