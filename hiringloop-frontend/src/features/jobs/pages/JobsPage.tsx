@@ -38,6 +38,7 @@ import {
 } from '../utils/job-utils'
 import { ConfirmDialog } from '../../team/components/ConfirmDialog'
 import { useOrganization } from '../../organizations/hooks/queries'
+import { jobRoutes } from '../utils/job-routes'
 const defaults: JobFilters = {
   page: 1,
   limit: 20,
@@ -136,7 +137,9 @@ export function JobsPage() {
         description="Manage open roles and draft positions."
         actions={
           can(organization.data.permissions, 'job:create') ? (
-            <Button onClick={() => navigate('new')}>New job</Button>
+            <Button onClick={() => navigate(jobRoutes.create(organizationId))}>
+              New job
+            </Button>
           ) : null
         }
       />
@@ -217,7 +220,11 @@ export function JobsPage() {
             description="Create your first job and start building your hiring workflow."
             action={
               can(organization.data.permissions, 'job:create') ? (
-                <Button onClick={() => navigate('new')}>Create job</Button>
+                <Button
+                  onClick={() => navigate(jobRoutes.create(organizationId))}
+                >
+                  Create job
+                </Button>
               ) : undefined
             }
           />
@@ -250,7 +257,7 @@ export function JobsPage() {
                     <td className="px-4 py-4 font-bold">
                       <Link
                         className="text-primary-dark hover:underline"
-                        to={j.id}
+                        to={jobRoutes.detail(organizationId, j.id)}
                       >
                         {jobTitle(j.title)}
                       </Link>
@@ -272,7 +279,9 @@ export function JobsPage() {
                     <td className="px-4 py-2">
                       <JobActions
                         job={j}
-                        onEdit={() => navigate(`${j.id}/edit`)}
+                        onEdit={() =>
+                          navigate(jobRoutes.edit(organizationId, j.id))
+                        }
                         onAction={(action) =>
                           setPending({
                             id: j.id,
@@ -297,7 +306,10 @@ export function JobsPage() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <Link className="font-bold text-primary-dark" to={j.id}>
+                    <Link
+                      className="font-bold text-primary-dark"
+                      to={jobRoutes.detail(organizationId, j.id)}
+                    >
                       {jobTitle(j.title)}
                     </Link>
                     <div className="mt-2">
@@ -306,7 +318,9 @@ export function JobsPage() {
                   </div>
                   <JobActions
                     job={j}
-                    onEdit={() => navigate(`${j.id}/edit`)}
+                    onEdit={() =>
+                      navigate(jobRoutes.edit(organizationId, j.id))
+                    }
                     onAction={(action) =>
                       setPending({
                         id: j.id,

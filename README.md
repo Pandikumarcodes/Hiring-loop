@@ -26,8 +26,8 @@ Software Engineering
 
 Current status:
 
-- Phase 07 — Team Management & Authorization — COMPLETE
-- Next implementation phase: Phase 08 — Job Management (not started)
+- Phase 08 — Job Management — COMPLETE
+- Next implementation phase: Phase 09 — Pipeline Configuration (not started)
 - Authentication uses PostgreSQL-backed opaque sessions, HttpOnly cookies, and
   backend-enforced security controls. Phase 07 adds ADMIN-only team
   authorization, tenant-scoped member/invitation operations, and final-Admin
@@ -37,3 +37,5 @@ Current status:
   verified architecture, APIs, security, testing, and manual QA checklist.
 - See [the Phase 07G authorization audit](docs/architecture/PHASE_07G_FINAL_AUTHORIZATION_AUDIT.md)
   for Team-management completion evidence and security decisions.
+- See [the Phase 08 handoff](docs/architecture/PHASE_08_HANDOFF.md) for the
+  completed Job schema, lifecycle, APIs, frontend workflows, and verification.

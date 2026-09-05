@@ -300,10 +300,9 @@ The handoff is recorded in `docs/architecture/PHASE_06_HANDOFF.md`.
 - **Definition of Done:** documented permission matrix is enforced server-side and verified across tenants and roles.
 
 Phase 07G final authorization audit is complete. The handoff is recorded in
-`docs/architecture/PHASE_07G_FINAL_AUTHORIZATION_AUDIT.md`. Phase 08 remains
-not started.
+`docs/architecture/PHASE_07G_FINAL_AUTHORIZATION_AUDIT.md`.
 
-## Phase 08 — Job Management — NOT STARTED
+## Phase 08 — Job Management — COMPLETE
 
 - **Objective:** manage job requisitions and job lifecycle. (FR-04)
 - **Features/sub-features:** draft/edit/publish/pause/close; requirements; ownership; list/detail/filter views.
@@ -318,6 +317,9 @@ not started.
 - **Documentation outputs:** job lifecycle and API/user workflow docs.
 - **Dependencies:** Phase 07.
 - **Definition of Done:** authorized users can manage jobs through valid lifecycle transitions with tested tenant isolation.
+
+Phase 08 is complete. Its implementation and verification handoff is recorded
+in `docs/architecture/PHASE_08_HANDOFF.md`. Phase 09 remains not started.
 
 ## Phase 09 — Pipeline Configuration — NOT STARTED
 

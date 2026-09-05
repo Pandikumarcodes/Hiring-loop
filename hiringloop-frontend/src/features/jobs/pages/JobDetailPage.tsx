@@ -19,6 +19,7 @@ import {
 import { ConfirmDialog } from '../../team/components/ConfirmDialog'
 import { useOrganization } from '../../organizations/hooks/queries'
 import { isApiError } from '../../../shared/lib/apiErrors'
+import { jobRoutes } from '../utils/job-routes'
 export function JobDetailPage() {
   const { organizationId = '', jobId = '' } = useParams()
   const navigate = useNavigate()
@@ -34,8 +35,8 @@ export function JobDetailPage() {
   const conflict =
     isApiError(transition.error) &&
     transition.error.code === 'JOB_VERSION_CONFLICT'
-  if (organization.isPending || query.isPending)
-    return <LoadingState label="Loading job" />
+  if (organization.isPending)
+    return <LoadingState label="Checking job access" />
   if (organization.isError || !mayRead)
     return (
       <Wrap>
@@ -54,6 +55,8 @@ export function JobDetailPage() {
         />
       </Wrap>
     )
+  if (query.isPending || !query.data)
+    return <LoadingState label="Loading job" />
   const j = query.data
   return (
     <Wrap>
@@ -68,7 +71,7 @@ export function JobDetailPage() {
         actions={
           <JobActions
             job={j}
-            onEdit={() => navigate('edit')}
+            onEdit={() => navigate(jobRoutes.edit(organizationId, jobId))}
             onAction={setAction}
             permissions={organization.data.permissions}
           />

@@ -2332,7 +2332,8 @@ This is the final Phase 02 design gate before limited PostgreSQL/Prisma implemen
 | Organization | IMPLEMENT IN PHASE 02 FOUNDATION | Tenant root and lifecycle |
 | OrganizationMembership | IMPLEMENT IN PHASE 02 FOUNDATION | User–Organization context with fixed role and access status |
 | Invitation | IMPLEMENT IN LATER FEATURE PHASE | Phase 05/07 authentication/team workflow |
-| Job, JobHiringTeamMember | IMPLEMENT IN LATER FEATURE PHASE | Phase 08 Job Management |
+| Job | IMPLEMENTED IN PHASE 08 | Tenant-owned Job lifecycle and listing state |
+| JobHiringTeamMember | IMPLEMENT IN LATER FEATURE PHASE | Assignment policy was not approved for Phase 08 |
 | Pipeline, PipelineStage | IMPLEMENT IN LATER FEATURE PHASE | Phase 09 Pipeline Configuration; no placement table |
 | ApplicationForm, ApplicationFormVersion, ApplicationFormQuestion | IMPLEMENT IN LATER FEATURE PHASE | Phase 10 forms/career site |
 | Candidate, Application | IMPLEMENT IN LATER FEATURE PHASE | Phase 11; requires submission/reapplication decisions |
@@ -2376,7 +2377,8 @@ Invitation is deliberately not in the foundation. Its token, resend, expiry, acc
 | Organization | Yes | Yes | Phase 02 | Tenant root |
 | OrganizationMembership | Yes | Yes | Phase 02 | Connects identity to tenant and fixed role |
 | Invitation | Yes | No | Phase 05/07 | Auth/team workflow |
-| Job, JobHiringTeamMember | Yes | No | Phase 08 | Product Job and assignment policy |
+| Job | Yes | Yes | Phase 08 | Tenant-owned Job lifecycle and listing state |
+| JobHiringTeamMember | Yes | No | Later feature phase | Assignment policy was not approved for Phase 08 |
 | Pipeline, PipelineStage | Yes | No | Phase 09 | Depends on Job and pipeline lifecycle |
 | Forms, Questions, Answers | Yes | No | Phase 10/11 | Public submission and exact version lineage |
 | Candidate, Application | Yes | No | Phase 11 | Duplicate/reapplication and submission decisions |

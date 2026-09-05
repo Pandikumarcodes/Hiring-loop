@@ -9,6 +9,7 @@ import { useJob } from '../hooks/queries'
 import type { JobInput } from '../types/job.types'
 import { can, detailToInput, jobError, validateJob } from '../utils/job-utils'
 import { useOrganization } from '../../organizations/hooks/queries'
+import { jobRoutes } from '../utils/job-routes'
 export function EditJobPage() {
   const { organizationId = '', jobId = '' } = useParams()
   const navigate = useNavigate()
@@ -61,7 +62,13 @@ export function EditJobPage() {
         <ErrorState
           title="Archived job"
           description="Archived jobs are view-only."
-          action={<Button onClick={() => navigate('..')}>View job</Button>}
+          action={
+            <Button
+              onClick={() => navigate(jobRoutes.detail(organizationId, jobId))}
+            >
+              View job
+            </Button>
+          }
         />
       </Wrap>
     )
@@ -77,7 +84,7 @@ export function EditJobPage() {
         ...currentValue,
         expectedVersion: currentJob.version,
       })
-      navigate('..', { replace: true })
+      navigate(jobRoutes.detail(organizationId, jobId), { replace: true })
     } catch (error) {
       setMessage(jobError(error, 'We could not save your changes.'))
     }
@@ -116,7 +123,7 @@ export function EditJobPage() {
         submitLabel="Save changes"
         onChange={setValue}
         onSubmit={() => void save()}
-        onCancel={() => navigate('..')}
+        onCancel={() => navigate(jobRoutes.detail(organizationId, jobId))}
       />
     </Wrap>
   )

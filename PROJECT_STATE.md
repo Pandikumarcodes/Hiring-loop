@@ -6,15 +6,16 @@ M0 — Architecture and Project Foundation
 
 ## Current Phase
 
-Phase 07 — Team Management & Authorization
+Phase 08 — Job Management
 
 ## Previous Phase
 
-Phase 05 — Authentication — COMPLETE
+Phase 07 — Team Management & Authorization — COMPLETE
 
 ## Phase Status
 
-COMPLETE — Phase 07G final authorization audit passed
+COMPLETE — Phase 08 implementation, engineering audit, targeted manual-QA fix,
+and final manual browser QA passed
 
 ## Completed
 
@@ -25,14 +26,15 @@ COMPLETE — Phase 07G final authorization audit passed
 - Separate frontend and backend applications selected
 - Single Git repository and shared documentation structure established
 - Phase 00 through Phase 05 foundation and handoffs — COMPLETE
-- Phase 06A Organization/Multi-Tenancy Architecture — COMPLETE
-- Phase 06B Database + Backend Organization Foundation — COMPLETE
-- Phase 06C Tenant Context + Multi-Tenancy Security — COMPLETE
-- Phase 06D Frontend Organization Experience — COMPLETE
-- Phase 06E Full Organization & Multi-Tenancy Audit + Fixes — COMPLETE
-- Phase 06F Final engineering verification and documentation synchronization — COMPLETE
-- Phase 06 handoff: `docs/architecture/PHASE_06_HANDOFF.md`
-- Phase 07G final authorization audit: `docs/architecture/PHASE_07G_FINAL_AUTHORIZATION_AUDIT.md`
+- Phase 06 Organization & Multi-Tenancy — COMPLETE
+- Phase 07 Team Management & Authorization — COMPLETE
+- Phase 08 Job Management database — COMPLETE
+- Phase 08 Job Management backend — COMPLETE: exactly 8 APIs
+- Phase 08 Job Management frontend — COMPLETE: exactly 4 main screens
+- Phase 08 end-to-end engineering audit — COMPLETE
+- Phase 08 targeted manual-QA navigation fix — COMPLETE
+- Phase 08 final manual browser QA — PASSED
+- Phase 08 handoff: `docs/architecture/PHASE_08_HANDOFF.md`
 
 ## Repository Structure
 
@@ -48,65 +50,48 @@ Do not implement AI functionality during the current software engineering phases
 
 ## Architecture Decisions
 
-- Modular monolith with domain-based backend boundaries
+- Modular monolith with a bounded Job backend module
 - Separate frontend/backend applications
 - PostgreSQL source of truth
+- Organization is the tenant boundary
+- Centralized backend-authoritative permissions
+- Explicit Job lifecycle operations; no DELETE or generic status PATCH
+- Optimistic concurrency for Job mutations
+- Organization-specific TanStack Query keys and absolute Job route builders
 - Background workers reserved for justified async workloads
 - AI deferred
 
 ## Current Work
 
-Phase 07 Team Management & Authorization is complete. Authentication,
-membership-backed tenant context, ADMIN-only Team management, tenant-scoped
-member and invitation repositories, atomic invitation acceptance, final-Admin
-protection, sanitized DTOs, permission-aware frontend UX, and session-scoped
-cache cleanup are implemented and verified.
+Phase 08 Job Management is complete. It provides one 16-field Job entity,
+three Job enums, two business indexes, eight organization-scoped APIs, and four
+organization-scoped frontend screens. Draft, Open, Closed, and terminal
+Archived behavior; readiness validation; tenant isolation; permissions;
+optimistic concurrency; responsive UX; and create/open recovery are implemented
+and verified. Final manual browser QA passed.
 
-## Phase 07G Verification Evidence
+## Phase 08 Verification Evidence
 
-- Backend non-database verification: 26 test files, 139 tests PASS
-- PostgreSQL integration verification: 5 test files, 26 tests PASS
-- Frontend verification: 15 test files, 129 tests PASS
-- Backend lint, format check, Prisma validate/generate, and frontend lint,
-  format check, typecheck, and production build: PASS
-- PostgreSQL migration status: up to date
+- Backend focused Job verification: 1 file / 42 tests PASS
+- PostgreSQL focused Job integration: 1 file / 4 tests PASS
+- PostgreSQL full integration verification: 7 files / 50 tests PASS
+- Backend full non-database verification: 27 files / 190 tests PASS
+- Frontend focused Job verification: 5 files / 15 tests PASS
+- Frontend full verification: 24 files / 153 tests PASS
+- Backend lint, format check, and Prisma validation: PASS
+- Frontend lint, format check, typecheck, and production build: PASS
 - `git diff --check`: PASS
-- Targeted security fix: email delivery receives only delivery fields and the
-  transient raw token; the persisted invitation record/token hash is excluded
-  from the adapter boundary
-- Phase 07 manual QA fix pass: `EMAIL_DELIVERY_FAILED` refetches only the
-  current organization invitations query, invitation delivery errors use
-  invitation-specific wording, and non-recoverable Team 409 confirmations
-  close while retaining page-level feedback
-- Real invitation delivery remains externally blocked in the checked-in local
-  environment because `SENDGRID_API_KEY` and `AUTH_EMAIL_FROM` are unset; no
-  secret values are committed or logged
-
-Authentication remains a global identity boundary. The formal Phase 07G audit
-is recorded in `docs/architecture/PHASE_07G_FINAL_AUTHORIZATION_AUDIT.md`.
-
-## Phase 06 Completion Evidence
-
-- Backend verification: 22 test files, 116 tests PASS
-- Backend database integration: 3 test files, 11 tests PASS
-- Frontend verification: 13 test files, 119 tests PASS
-- Backend lint, format check, Prisma validate/generate, and frontend lint,
-  format check, typecheck, and production build: PASS
-- Startup smoke: backend connected to PostgreSQL, listened on port 3000, and
-  `/health` returned `{"status":"ok"}`
-- `git diff --check`: PASS
-- No dependency installation, database reset, or destructive operation performed
-- Manual browser QA remains pending and is not claimed as complete
+- Final manual browser QA: PASS
 
 ## Next Task
 
-No Phase 07 work remains. Manual authenticated browser QA from Phase 06 remains
-an operator checklist and is not represented as an authorization blocker.
+No Phase 08 work remains. Preserve the completed Phase 08 scope and handoff.
 
 ## Next Phase Status
 
-Phase 08 — Job Management is NOT STARTED. Do not begin it as part of the
-Phase 07G audit.
+Phase 09 — Pipeline Configuration is NOT STARTED. Its objective is to configure
+organization/job pipeline stages and valid transitions. Do not begin it as part
+of Phase 08 closure.
 
 ## Documentation Gaps
 
@@ -114,6 +99,6 @@ Phase 07G audit.
 
 ## Deferred Work
 
-Recruiting resources and their future resource-level permissions, Redis,
-BullMQ, realtime, AI, and later product phases remain deferred to the approved
-roadmap. The Phase 02 Prisma tooling audit debt remains tracked.
+Pipeline configuration and every later ATS domain remain deferred to their
+approved roadmap phases. Applications, Candidates, Interviews, Offers,
+Analytics, Redis, BullMQ, realtime, and AI are not started.

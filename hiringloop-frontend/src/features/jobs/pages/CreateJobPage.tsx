@@ -8,6 +8,7 @@ import { jobError, validateJob } from '../utils/job-utils'
 import { useOrganization } from '../../organizations/hooks/queries'
 import { ErrorState, LoadingState } from '../../../shared/components/feedback'
 import { can } from '../utils/job-utils'
+import { jobRoutes } from '../utils/job-routes'
 const initial: JobInput = {
   title: '',
   department: null,
@@ -32,7 +33,9 @@ export function CreateJobPage() {
     try {
       const created = await create.mutateAsync(value)
       if (!open) {
-        navigate(`../${created.id}`, { replace: true })
+        navigate(jobRoutes.detail(organizationId, created.id), {
+          replace: true,
+        })
         return
       }
       try {
@@ -41,9 +44,9 @@ export function CreateJobPage() {
           expectedVersion: created.version,
           targetJobId: created.id,
         })
-        navigate(`../${result.id}`, { replace: true })
+        navigate(jobRoutes.detail(organizationId, result.id), { replace: true })
       } catch (error) {
-        navigate(`../${created.id}/edit`, {
+        navigate(jobRoutes.edit(organizationId, created.id), {
           replace: true,
           state: {
             notice: jobError(
@@ -91,7 +94,7 @@ export function CreateJobPage() {
         onChange={setValue}
         onSubmit={() => void save(false)}
         onSecondary={() => void save(true)}
-        onCancel={() => navigate('..')}
+        onCancel={() => navigate(jobRoutes.list(organizationId))}
       />
     </section>
   )
