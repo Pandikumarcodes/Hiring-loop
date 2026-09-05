@@ -79,7 +79,7 @@ export function TeamPage() {
     members.error.status === 403
   )
     return (
-      <section className="team-page">
+      <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <ErrorState
           title="Team access unavailable"
           description="You do not have permission to view this workspace team."
@@ -88,7 +88,7 @@ export function TeamPage() {
     )
   if (members.isError)
     return (
-      <section className="team-page">
+      <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <ErrorState
           description={teamErrorMessage(
             members.error,
@@ -100,7 +100,7 @@ export function TeamPage() {
     )
   if (!allowed)
     return (
-      <section className="team-page">
+      <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <ErrorState
           title="Team access unavailable"
           description="You do not have permission to view this workspace team."
@@ -120,7 +120,7 @@ export function TeamPage() {
             )
           : ''
   return (
-    <section className="team-page">
+    <section className="mx-auto w-full max-w-7xl min-w-0 px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
       <PageHeader
         title="Team"
         description="Manage people and workspace access"
@@ -129,19 +129,29 @@ export function TeamPage() {
         }
       />
       {mutationError ? (
-        <p className="team-feedback team-feedback--error" role="alert">
+        <p
+          className="rounded-control border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-800"
+          role="alert"
+        >
           {mutationError}
         </p>
       ) : null}
       {invite.isSuccess ? (
-        <p className="team-feedback" role="status">
+        <p
+          className="rounded-control border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-800"
+          role="status"
+        >
           Invitation saved for {invite.data.email}.
         </p>
       ) : null}
       {inviteOpen ? (
-        <form className="team-invite" onSubmit={submitInvite} noValidate>
-          <h2>Invite a member</h2>
-          <div className="team-invite__fields">
+        <form
+          className="mb-7 grid gap-4 rounded-card border border-teal-200 bg-primary-soft p-4 shadow-sm sm:p-6"
+          onSubmit={submitInvite}
+          noValidate
+        >
+          <h2 className="text-lg font-bold">Invite a member</h2>
+          <div className="grid min-w-0 gap-4 md:grid-cols-[1.4fr_1fr]">
             <Field id="invite-email" label="Email" required error={formError}>
               {({ describedBy, invalid }) => (
                 <Input
@@ -176,7 +186,7 @@ export function TeamPage() {
               )}
             </Field>
           </div>
-          <div className="team-dialog__actions">
+          <div className="mt-1 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <Button
               type="button"
               variant="secondary"
@@ -191,9 +201,15 @@ export function TeamPage() {
         </form>
       ) : null}
       <TeamSection title="Members">
-        <div className="team-table-wrap">
-          <table className="team-table">
+        <div className="hidden overflow-x-auto md:block">
+          <table className="w-full table-fixed border-collapse">
             <caption className="sr-only">Workspace members</caption>
+            <colgroup>
+              <col className="w-[42%]" />
+              <col className="w-[16%]" />
+              <col className="w-[16%]" />
+              <col className="w-[26%]" />
+            </colgroup>
             <thead>
               <tr>
                 <th scope="col">Member / Email</th>
@@ -221,6 +237,23 @@ export function TeamPage() {
             </tbody>
           </table>
         </div>
+        <div className="grid gap-3 px-3 pb-3 md:hidden">
+          {members.data.length ? (
+            members.data.map((member) => (
+              <MemberCard
+                key={member.id}
+                member={member}
+                self={member.user.email.toLowerCase() === selfEmail}
+                onRole={(r) => setDialog({ kind: 'role', member, role: r })}
+                onRemove={() => setDialog({ kind: 'remove', member })}
+              />
+            ))
+          ) : (
+            <p className="px-1 py-2 text-sm text-text-secondary">
+              No members found.
+            </p>
+          )}
+        </div>
       </TeamSection>
       <TeamSection title="Pending invitations">
         {invitations.isPending ? (
@@ -234,47 +267,91 @@ export function TeamPage() {
             onRetry={() => void invitations.refetch()}
           />
         ) : invitations.data.length ? (
-          <div className="team-table-wrap">
-            <table className="team-table">
-              <caption className="sr-only">Workspace invitations</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Email</th>
-                  <th scope="col">Role</th>
-                  <th scope="col">Expires</th>
-                  <th scope="col">Status</th>
-                  <th scope="col">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invitations.data.map((i) => {
-                  const state = invitationState(i)
-                  return (
-                    <tr key={i.id}>
-                      <td data-label="Email">{i.email}</td>
-                      <td data-label="Role">
-                        <Badge>{roleLabel(i.role)}</Badge>
-                      </td>
-                      <td data-label="Expires">{formatDate(i.expiresAt)}</td>
-                      <td data-label="Status">{state}</td>
-                      <td data-label="Actions">
-                        {state === 'Pending' ? (
-                          <Button
-                            variant="ghost"
-                            onClick={() =>
-                              setDialog({ kind: 'revoke', invitationId: i.id })
-                            }
-                          >
-                            Revoke
-                          </Button>
-                        ) : null}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+          <>
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full table-fixed border-collapse">
+                <caption className="sr-only">Workspace invitations</caption>
+                <colgroup>
+                  <col className="w-[34%]" />
+                  <col className="w-[16%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[16%]" />
+                  <col className="w-[16%]" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th scope="col">Email</th>
+                    <th scope="col">Role</th>
+                    <th scope="col">Expires</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invitations.data.map((i) => {
+                    const state = invitationState(i)
+                    return (
+                      <tr
+                        className="border-t border-border align-middle"
+                        key={i.id}
+                      >
+                        <td
+                          className="break-words px-6 py-4"
+                          data-label="Email"
+                        >
+                          {i.email}
+                        </td>
+                        <td className="px-6 py-4" data-label="Role">
+                          <Badge>{roleLabel(i.role)}</Badge>
+                        </td>
+                        <td className="px-6 py-4" data-label="Expires">
+                          {formatDate(i.expiresAt)}
+                        </td>
+                        <td className="px-6 py-4" data-label="Status">
+                          {state}
+                        </td>
+                        <td className="px-6 py-4" data-label="Actions">
+                          {state === 'Pending' ? (
+                            <Button
+                              variant="ghost"
+                              onClick={() =>
+                                setDialog({
+                                  kind: 'revoke',
+                                  invitationId: i.id,
+                                })
+                              }
+                            >
+                              Revoke
+                            </Button>
+                          ) : null}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="grid gap-3 px-3 pb-3 md:hidden">
+              {invitations.data.map((i) => {
+                const state = invitationState(i)
+                return (
+                  <InvitationCard
+                    key={i.id}
+                    email={i.email}
+                    role={roleLabel(i.role)}
+                    expires={formatDate(i.expiresAt)}
+                    state={state}
+                    onRevoke={
+                      state === 'Pending'
+                        ? () =>
+                            setDialog({ kind: 'revoke', invitationId: i.id })
+                        : undefined
+                    }
+                  />
+                )
+              })}
+            </div>
+          </>
         ) : (
           <EmptyState
             title="No pending invitations"
@@ -349,8 +426,10 @@ function TeamSection({
   children: ReactNode
 }) {
   return (
-    <section className="team-section">
-      <h2>{title}</h2>
+    <section className="mt-7 min-w-0 overflow-hidden rounded-card border border-border bg-surface shadow-sm">
+      <h2 className="border-b border-border px-4 py-4 text-base font-bold sm:px-6">
+        {title}
+      </h2>
       {children}
     </section>
   )
@@ -367,21 +446,35 @@ function MemberRow({
   onRemove: () => void
 }) {
   return (
-    <tr>
-      <td data-label="Member / Email">
-        <strong>{member.user.email}</strong>
+    <tr className="border-t border-border align-middle hover:bg-primary-soft/40 max-md:mx-3 max-md:my-3 max-md:block max-md:rounded-control max-md:border max-md:p-3 max-md:shadow-sm">
+      <td
+        className="break-words px-6 py-4 max-md:block max-md:px-1 max-md:py-2"
+        data-label="Member / Email"
+      >
+        <strong className="block break-words">{member.user.email}</strong>
       </td>
-      <td data-label="Role">
+      <td
+        className="px-6 py-4 max-md:flex max-md:items-center max-md:justify-between max-md:gap-3 max-md:px-1 max-md:py-2"
+        data-label="Role"
+      >
         <Badge>{roleLabel(member.role)}</Badge>
       </td>
-      <td data-label="Joined">{formatDate(member.joinedAt)}</td>
-      <td data-label="Actions">
-        <div className="team-actions">
-          {' '}
+      <td
+        className="px-6 py-4 max-md:flex max-md:items-center max-md:justify-between max-md:gap-3 max-md:px-1 max-md:py-2"
+        data-label="Joined"
+      >
+        {formatDate(member.joinedAt)}
+      </td>
+      <td
+        className="px-6 py-4 max-md:block max-md:px-1 max-md:py-2"
+        data-label="Actions"
+      >
+        <div className="flex flex-wrap items-center justify-end gap-2 max-md:mt-2 max-md:grid max-md:w-full">
           <label className="sr-only" htmlFor={`role-${member.id}`}>
             Role for {member.user.email}
           </label>
           <Select
+            className="w-auto min-w-32"
             id={`role-${member.id}`}
             value={member.role}
             onChange={(e) => onRole(e.target.value as TeamRole)}
@@ -399,5 +492,97 @@ function MemberRow({
         </div>
       </td>
     </tr>
+  )
+}
+
+function MemberCard({
+  member,
+  self,
+  onRole,
+  onRemove,
+}: {
+  member: MemberDto
+  self: boolean
+  onRole: (role: TeamRole) => void
+  onRemove: () => void
+}) {
+  return (
+    <article className="min-w-0 rounded-control border border-border p-4 shadow-sm">
+      <strong className="block break-words text-sm">{member.user.email}</strong>
+      <div className="mt-4 grid gap-3 text-sm">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-text-secondary">Role</span>
+          <Badge>{roleLabel(member.role)}</Badge>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-text-secondary">Joined</span>
+          <span>{formatDate(member.joinedAt)}</span>
+        </div>
+        <div className="grid gap-2 border-t border-border pt-3">
+          <label
+            className="text-sm font-bold"
+            htmlFor={`mobile-role-${member.id}`}
+          >
+            Change role
+          </label>
+          <Select
+            id={`mobile-role-${member.id}`}
+            value={member.role}
+            onChange={(e) => onRole(e.target.value as TeamRole)}
+            aria-label={`Change role for ${member.user.email}`}
+          >
+            {TEAM_ROLES.map((r) => (
+              <option key={r} value={r}>
+                {roleLabel(r)}
+              </option>
+            ))}
+          </Select>
+          <Button className="w-full" variant="danger" onClick={onRemove}>
+            {self ? 'Leave workspace' : 'Remove'}
+          </Button>
+        </div>
+      </div>
+    </article>
+  )
+}
+
+function InvitationCard({
+  email,
+  role,
+  expires,
+  state,
+  onRevoke,
+}: {
+  email: string
+  role: string
+  expires: string
+  state: string
+  onRevoke?: () => void
+}) {
+  return (
+    <article className="min-w-0 rounded-control border border-border p-4 shadow-sm">
+      <strong className="block break-words text-sm">{email}</strong>
+      <dl className="mt-4 grid gap-3 text-sm">
+        <div className="flex items-center justify-between gap-3">
+          <dt className="text-text-secondary">Role</dt>
+          <dd>
+            <Badge>{role}</Badge>
+          </dd>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <dt className="text-text-secondary">Expires</dt>
+          <dd>{expires}</dd>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <dt className="text-text-secondary">Status</dt>
+          <dd>{state}</dd>
+        </div>
+      </dl>
+      {onRevoke ? (
+        <Button className="mt-4 w-full" variant="ghost" onClick={onRevoke}>
+          Revoke
+        </Button>
+      ) : null}
+    </article>
   )
 }

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Label } from './Label'
 
 export interface FieldDescriptionProps {
   describedBy: string | undefined
@@ -27,19 +28,19 @@ export function Field({
   const describedBy = [helperId, errorId].filter(Boolean).join(' ') || undefined
 
   return (
-    <div className="ui-field">
-      <label className="ui-field__label" htmlFor={id}>
+    <div className="ui-field grid min-w-0 gap-2">
+      <Label className="text-sm font-semibold" htmlFor={id}>
         {label}
         {required ? <span aria-hidden="true"> *</span> : null}
-      </label>
+      </Label>
       {children({ describedBy, invalid: Boolean(error) })}
       {helperText ? (
-        <p className="ui-field__hint" id={helperId}>
+        <p className="text-sm text-text-secondary" id={helperId}>
           {helperText}
         </p>
       ) : null}
       {error ? (
-        <p className="ui-field__error" id={errorId} role="alert">
+        <p className="text-sm text-error" id={errorId} role="alert">
           {error}
         </p>
       ) : null}

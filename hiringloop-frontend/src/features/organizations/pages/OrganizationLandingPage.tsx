@@ -36,18 +36,18 @@ export function OrganizationLandingPage() {
   if (!organizations.data?.length)
     return <LoadingState label="Opening organization setup" />
   return (
-    <section className="organization-selection">
+    <section className="mx-auto w-full max-w-3xl min-w-0 px-4 py-10 sm:px-8 lg:px-12 lg:py-14">
       <p className="eyebrow">Your workspaces</p>
       <h1>Choose an organization</h1>
       <p>Select a workspace to continue.</p>
-      <div className="organization-selection__list">
+      <div className="my-6 grid gap-3">
         {organizations.data.map((organization) => (
           <Link
-            className="organization-selection__item"
+            className="flex min-h-13 min-w-0 items-center justify-between gap-3 rounded-control border border-border bg-surface p-4 text-text-primary no-underline shadow-sm hover:border-primary hover:bg-primary-soft"
             key={organization.id}
             to={`/app/organizations/${organization.id}`}
           >
-            <span>{organization.name}</span>
+            <span className="min-w-0 break-words">{organization.name}</span>
             <span aria-hidden="true">→</span>
           </Link>
         ))}

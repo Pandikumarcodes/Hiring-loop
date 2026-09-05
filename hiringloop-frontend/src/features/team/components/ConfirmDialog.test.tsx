@@ -74,6 +74,7 @@ describe('ConfirmDialog keyboard accessibility', () => {
     await user.click(screen.getByRole('button', { name: 'Open confirmation' }))
     const background = screen.getByRole('button', {
       name: 'Background control',
+      hidden: true,
     })
 
     document.body.focus()

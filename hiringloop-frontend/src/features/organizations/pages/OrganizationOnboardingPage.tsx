@@ -57,17 +57,17 @@ export function OrganizationOnboardingPage({
 
   return (
     <section
-      className="organization-onboarding"
+      className="mx-auto grid w-full max-w-7xl min-w-0 gap-8 px-4 py-10 sm:px-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(16rem,0.8fr)] lg:gap-16 lg:px-12 lg:py-14"
       aria-labelledby="organization-onboarding-title"
     >
-      <div className="organization-onboarding__content">
+      <div className="min-w-0 max-w-2xl">
         <p className="eyebrow">Get started</p>
         <h1 id="organization-onboarding-title">
           {organizationCount
             ? 'Create a new organization'
             : 'Create your first organization'}
         </h1>
-        <p className="organization-onboarding__intro">
+        <p className="mt-3 mb-8 max-w-2xl text-lg leading-7 text-text-secondary">
           Set up the workspace where your hiring team will stay aligned.
         </p>
         {createOrganization.isError ? (
@@ -76,7 +76,7 @@ export function OrganizationOnboardingPage({
             again.
           </AuthAlert>
         ) : null}
-        <form className="organization-form" onSubmit={submit} noValidate>
+        <form className="grid min-w-0 gap-6" onSubmit={submit} noValidate>
           <Field
             error={errors.name}
             helperText="This is the name your team will see in HiringLoop."
@@ -143,7 +143,7 @@ export function OrganizationOnboardingPage({
             )}
           </Field>
           <Button
-            className="organization-form__submit"
+            className="w-full sm:w-auto"
             loading={createOrganization.isPending}
             type="submit"
           >
@@ -154,16 +154,20 @@ export function OrganizationOnboardingPage({
         </form>
       </div>
       <aside
-        className="organization-onboarding__guidance"
+        className="self-start rounded-card border border-teal-200 bg-primary-soft p-5 shadow-sm sm:p-8"
         aria-labelledby="organization-guidance-title"
       >
-        <p className="organization-onboarding__guidance-mark">HL</p>
-        <h2 id="organization-guidance-title">A focused home for hiring</h2>
-        <p>
+        <p className="mb-8 font-extrabold tracking-[0.12em] text-primary-dark">
+          HL
+        </p>
+        <h2 className="text-xl font-bold" id="organization-guidance-title">
+          A focused home for hiring
+        </h2>
+        <p className="mt-3 leading-6 text-text-secondary">
           You will be the first member and organization admin. You can invite
           your team when that experience is ready.
         </p>
-        <ul>
+        <ul className="mt-6 grid gap-3 pl-5 leading-6 text-text-primary">
           <li>Keep hiring work in one shared workspace</li>
           <li>Give your team a clear source of truth</li>
         </ul>

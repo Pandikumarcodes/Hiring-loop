@@ -35,7 +35,7 @@ export function VerifyEmailPage() {
   if (!token) {
     return (
       <AuthLayout>
-        <div className="auth-result">
+        <div className="grid min-w-0 justify-items-start gap-6">
           <AuthPageHeader
             title="Invalid verification link"
             description="This verification link is missing required information."
@@ -51,8 +51,11 @@ export function VerifyEmailPage() {
     const returnTo = getSafeReturnTo(location.state && location.state.from)
     return (
       <AuthLayout>
-        <div className="auth-result">
-          <span className="auth-result__icon" aria-hidden="true">
+        <div className="grid min-w-0 justify-items-start gap-6">
+          <span
+            className="grid h-12 w-12 place-items-center rounded-full bg-emerald-100 text-xl font-extrabold text-success"
+            aria-hidden="true"
+          >
             ✓
           </span>
           <AuthPageHeader
@@ -60,11 +63,17 @@ export function VerifyEmailPage() {
             description="Your email has been successfully verified."
           />
           {location.state && location.state.from ? (
-            <Link className="ui-button ui-button--primary" to={returnTo}>
+            <Link
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary-dark"
+              to={returnTo}
+            >
               Continue
             </Link>
           ) : (
-            <Link className="ui-button ui-button--primary" to="/login">
+            <Link
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary-dark"
+              to="/login"
+            >
               Sign in
             </Link>
           )}
@@ -76,7 +85,7 @@ export function VerifyEmailPage() {
   if (verify.isError && isInvalidAuthToken(verify.error)) {
     return (
       <AuthLayout>
-        <div className="auth-result">
+        <div className="grid min-w-0 justify-items-start gap-6">
           <AuthPageHeader
             title="Verification link unavailable"
             description="This verification link is invalid or has expired."
@@ -103,14 +112,14 @@ export function VerifyEmailPage() {
         </AuthAlert>
       ) : null}
       <Button
-        className="auth-form__submit"
+        className="w-full"
         loading={verify.isPending}
         onClick={verifyToken}
         type="button"
       >
         {verify.isPending ? 'Verifying…' : 'Verify email'}
       </Button>
-      <p className="auth-footer-copy">
+      <p className="mt-6 text-center text-[0.9375rem] leading-6 text-text-secondary [overflow-wrap:anywhere]">
         <Link to="/login">Back to sign in</Link>
       </p>
     </AuthLayout>

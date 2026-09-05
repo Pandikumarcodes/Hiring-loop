@@ -5,3 +5,4 @@ export interface FormErrors {
   fields?: FieldErrors
   form?: string
 }
+export { cn } from './cn'

@@ -52,19 +52,25 @@ export function RegisterPage() {
   if (register.isSuccess) {
     return (
       <AuthLayout>
-        <div className="auth-result">
-          <span className="auth-result__icon" aria-hidden="true">
+        <div className="grid min-w-0 justify-items-start gap-6">
+          <span
+            className="grid h-12 w-12 place-items-center rounded-full bg-emerald-100 text-xl font-extrabold text-success"
+            aria-hidden="true"
+          >
             ✓
           </span>
           <AuthPageHeader
             title="Check your inbox"
             description="We've sent a verification link to your email address."
           />
-          <p className="auth-result__note">
+          <p className="text-sm leading-6 text-text-secondary">
             For privacy, this confirmation is the same whether or not an account
             already exists.
           </p>
-          <Link className="ui-button ui-button--primary" to="/login">
+          <Link
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary-dark"
+            to="/login"
+          >
             Go to sign in
           </Link>
           <ResendVerificationForm initialEmail={email.trim()} />
@@ -87,7 +93,11 @@ export function RegisterPage() {
               genericMutationError(register.error))}
         </AuthAlert>
       ) : null}
-      <form className="auth-form" onSubmit={submit} noValidate>
+      <form
+        className="grid min-w-0 gap-[1.125rem]"
+        onSubmit={submit}
+        noValidate
+      >
         <Field
           error={errors.email}
           id="register-email"
@@ -119,22 +129,18 @@ export function RegisterPage() {
           onChange={setPassword}
           value={password}
         />
-        <Button
-          className="auth-form__submit"
-          loading={register.isPending}
-          type="submit"
-        >
+        <Button className="w-full" loading={register.isPending} type="submit">
           {register.isPending ? 'Creating account…' : 'Create account'}
         </Button>
       </form>
       {deliveryFailed ? (
         <ResendVerificationForm initialEmail={email.trim()} />
       ) : null}
-      <div className="auth-divider">
+      <div className="my-7 flex items-center gap-3 text-sm text-text-secondary before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
         <span>or</span>
       </div>
       <GoogleButton disabled={register.isPending} />
-      <p className="auth-footer-copy">
+      <p className="mt-6 text-center text-[0.9375rem] leading-6 text-text-secondary [overflow-wrap:anywhere]">
         Already have an account? <Link to="/login">Sign in</Link>
       </p>
     </AuthLayout>

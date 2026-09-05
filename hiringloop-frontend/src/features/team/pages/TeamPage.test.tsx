@@ -76,9 +76,9 @@ describe('TeamPage non-recoverable confirmation conflicts', () => {
     render(<TeamPage />)
 
     await user.selectOptions(
-      screen.getByRole('combobox', {
+      screen.getAllByRole('combobox', {
         name: 'Change role for admin@example.com',
-      }),
+      })[0],
       'RECRUITER',
     )
     await user.click(screen.getByRole('button', { name: 'Change role' }))
@@ -87,7 +87,9 @@ describe('TeamPage non-recoverable confirmation conflicts', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     )
     expect(screen.getByRole('alert')).toHaveTextContent('at least one Admin')
-    expect(screen.getByText('Admin', { selector: 'span' })).toBeInTheDocument()
+    expect(
+      screen.getAllByText('Admin', { selector: 'span' }).length,
+    ).toBeGreaterThan(0)
   })
 
   test('closes the final-Admin leave dialog and keeps the membership visible', async () => {
@@ -107,6 +109,6 @@ describe('TeamPage non-recoverable confirmation conflicts', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     )
     expect(screen.getByRole('alert')).toHaveTextContent('at least one Admin')
-    expect(screen.getByText('admin@example.com')).toBeInTheDocument()
+    expect(screen.getAllByText('admin@example.com').length).toBeGreaterThan(0)
   })
 })

@@ -43,12 +43,15 @@ export function ResetPasswordPage() {
   if (!token) {
     return (
       <AuthLayout>
-        <div className="auth-result">
+        <div className="grid min-w-0 justify-items-start gap-6">
           <AuthPageHeader
             title="Invalid reset link"
             description="This password reset link is missing required information."
           />
-          <Link className="ui-button ui-button--primary" to="/forgot-password">
+          <Link
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary-dark"
+            to="/forgot-password"
+          >
             Request a new reset link
           </Link>
         </div>
@@ -59,15 +62,21 @@ export function ResetPasswordPage() {
   if (reset.isSuccess) {
     return (
       <AuthLayout>
-        <div className="auth-result">
-          <span className="auth-result__icon" aria-hidden="true">
+        <div className="grid min-w-0 justify-items-start gap-6">
+          <span
+            className="grid h-12 w-12 place-items-center rounded-full bg-emerald-100 text-xl font-extrabold text-success"
+            aria-hidden="true"
+          >
             ✓
           </span>
           <AuthPageHeader
             title="Password updated"
             description="Your password has been changed successfully. Please sign in again."
           />
-          <Link className="ui-button ui-button--primary" to="/login">
+          <Link
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary-dark"
+            to="/login"
+          >
             Sign in
           </Link>
         </div>
@@ -78,12 +87,15 @@ export function ResetPasswordPage() {
   if (reset.isError && isInvalidAuthToken(reset.error)) {
     return (
       <AuthLayout>
-        <div className="auth-result">
+        <div className="grid min-w-0 justify-items-start gap-6">
           <AuthPageHeader
             title="Reset link unavailable"
             description="The password reset link is invalid or has expired."
           />
-          <Link className="ui-button ui-button--primary" to="/forgot-password">
+          <Link
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary-dark"
+            to="/forgot-password"
+          >
             Request a new reset link
           </Link>
         </div>
@@ -105,7 +117,11 @@ export function ResetPasswordPage() {
               : 'We could not update your password right now. Please try again.')}
         </AuthAlert>
       ) : null}
-      <form className="auth-form" onSubmit={submit} noValidate>
+      <form
+        className="grid min-w-0 gap-[1.125rem]"
+        onSubmit={submit}
+        noValidate
+      >
         <PasswordField
           autoComplete="new-password"
           disabled={reset.isPending}
@@ -125,15 +141,11 @@ export function ResetPasswordPage() {
           onChange={setConfirmation}
           value={confirmation}
         />
-        <Button
-          className="auth-form__submit"
-          loading={reset.isPending}
-          type="submit"
-        >
+        <Button className="w-full" loading={reset.isPending} type="submit">
           {reset.isPending ? 'Updating password…' : 'Update password'}
         </Button>
       </form>
-      <p className="auth-footer-copy">
+      <p className="mt-6 text-center text-[0.9375rem] leading-6 text-text-secondary [overflow-wrap:anywhere]">
         <Link to="/login">Back to sign in</Link>
       </p>
     </AuthLayout>

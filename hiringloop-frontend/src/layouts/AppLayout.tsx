@@ -1,120 +1,91 @@
-import { useEffect, useRef, useState } from 'react'
 import { Link, Outlet, useNavigate } from 'react-router-dom'
-
+import { ChevronDown } from 'lucide-react'
 import { AuthAlert } from '../features/auth/components'
 import { useLogout } from '../features/auth/hooks/mutations'
 import { useCurrentUser } from '../features/auth/hooks/queries'
 import { genericMutationError } from '../features/auth/utils/ui-utils'
 import { OrganizationSwitcher } from '../features/organizations'
 import { BrandMark } from '../features/auth/components/BrandMark'
+import {
+  Avatar,
+  AvatarFallback,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '../shared/components/ui'
 
 export function AppLayout() {
   const navigate = useNavigate()
   const logout = useLogout()
   const currentUser = useCurrentUser()
-  const [accountOpen, setAccountOpen] = useState(false)
-  const accountRef = useRef<HTMLDivElement>(null)
-  const accountTriggerRef = useRef<HTMLButtonElement>(null)
   const email = currentUser.user?.email ?? 'Account'
   const initial = email[0]?.toUpperCase() ?? 'P'
-
-  useEffect(() => {
-    if (!accountOpen) return
-    function closeOnOutside(event: MouseEvent) {
-      if (!accountRef.current?.contains(event.target as Node))
-        setAccountOpen(false)
-    }
-    function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        setAccountOpen(false)
-        accountTriggerRef.current?.focus()
-      }
-    }
-    document.addEventListener('mousedown', closeOnOutside)
-    document.addEventListener('keydown', closeOnEscape)
-    return () => {
-      document.removeEventListener('mousedown', closeOnOutside)
-      document.removeEventListener('keydown', closeOnEscape)
-    }
-  }, [accountOpen])
-
   async function handleLogout() {
     if (logout.isPending) return
     try {
       await logout.mutateAsync()
       navigate('/login', { replace: true })
     } catch {
-      // The shell stays available so the user can retry a recoverable failure.
+      /* shown in shell */
     }
   }
-
   return (
-    <div className="app-frame">
-      <header className="app-header">
-        <div className="app-header__inner">
-          <Link className="brand" to="/" aria-label="HiringLoop home">
+    <div className="app-frame min-h-dvh bg-background">
+      <header className="border-b border-border bg-surface shadow-sm">
+        <div className="mx-auto grid w-full max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 px-4 py-2.5 sm:px-6 lg:grid lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-6 lg:px-8">
+          <Link
+            className="inline-flex shrink-0 items-center text-primary-dark"
+            to="/"
+            aria-label="HiringLoop home"
+          >
             <BrandMark className="app-brand" />
           </Link>
           <nav
-            className="app-header__controls"
             aria-label="Application shell navigation"
+            className="col-span-2 row-start-2 flex min-w-0 items-center gap-2 lg:col-start-2 lg:col-span-1 lg:row-start-1 lg:justify-end lg:gap-4"
           >
             <OrganizationSwitcher />
-            <div className="account-menu" ref={accountRef}>
-              <button
-                className="account-menu__trigger"
-                ref={accountTriggerRef}
-                type="button"
-                aria-haspopup="menu"
-                aria-expanded={accountOpen}
-                aria-label={`Open account menu for ${email}`}
-                onClick={() => setAccountOpen((open) => !open)}
-              >
-                <span className="account-menu__avatar" aria-hidden="true">
-                  {initial}
-                </span>
-                <span className="account-menu__chevron" aria-hidden="true">
-                  <svg viewBox="0 0 16 16" focusable="false">
-                    <path d="m4 6 4 4 4-4" />
-                  </svg>
-                </span>
-              </button>
-              {accountOpen ? (
-                <div
-                  className="account-menu__panel"
-                  role="menu"
-                  aria-label="Account menu"
-                >
-                  <div className="account-menu__panel-identity">
-                    <span
-                      className="account-menu__panel-avatar"
-                      aria-hidden="true"
-                    >
-                      {initial}
-                    </span>
-                    <div className="account-menu__panel-copy">
-                      <strong
-                        className="account-menu__panel-email"
-                        title={email}
-                      >
-                        {email}
-                      </strong>
-                      <span>Signed in account</span>
-                    </div>
-                  </div>
-                  <button
-                    className="account-menu__item"
-                    role="menuitem"
-                    type="button"
-                    disabled={logout.isPending}
-                    onClick={() => void handleLogout()}
-                  >
-                    {logout.isPending ? 'Signing out…' : 'Sign out'}
-                  </button>
-                </div>
-              ) : null}
-            </div>
           </nav>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-control p-1 text-text-primary hover:bg-primary-soft focus-visible:outline-3 focus-visible:outline-primary-dark focus-visible:outline-offset-2"
+                aria-label={`Open account menu for ${email}`}
+              >
+                <Avatar>
+                  <AvatarFallback>{initial}</AvatarFallback>
+                </Avatar>
+                <ChevronDown
+                  className="h-4 w-4 text-text-secondary"
+                  aria-hidden="true"
+                />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" aria-label="Account menu">
+              <div className="flex min-w-0 items-center gap-3 px-3 py-3">
+                <Avatar>
+                  <AvatarFallback>{initial}</AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <strong className="block truncate text-sm" title={email}>
+                    {email}
+                  </strong>
+                  <span className="text-xs text-text-secondary">
+                    Signed in account
+                  </span>
+                </div>
+              </div>
+              <DropdownMenuSeparator className="my-1 bg-border" />
+              <DropdownMenuItem
+                disabled={logout.isPending}
+                onSelect={() => void handleLogout()}
+              >
+                {logout.isPending ? 'Signing out…' : 'Sign out'}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
       {logout.isError ? (
@@ -122,7 +93,7 @@ export function AppLayout() {
           {genericMutationError(logout.error)} Please try signing out again.
         </AuthAlert>
       ) : null}
-      <main id="main-content" tabIndex={-1}>
+      <main id="main-content" tabIndex={-1} className="min-w-0 outline-none">
         <Outlet />
       </main>
     </div>

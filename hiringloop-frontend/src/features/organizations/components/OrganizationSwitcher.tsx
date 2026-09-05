@@ -35,26 +35,29 @@ export function OrganizationSwitcher() {
     : organizations.data[0]
 
   return (
-    <div className="organization-context">
+    <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3 lg:max-w-3xl">
       {organizations.data.length === 1 ? (
-        <div className="organization-switcher organization-switcher--single">
-          <span className="organization-switcher__label">Workspace</span>
+        <div className="flex min-w-0 max-w-[min(18rem,55vw)] flex-1 items-center gap-2">
+          <span className="shrink-0 text-xs font-bold text-text-secondary">
+            Workspace
+          </span>
           <span
-            className="organization-switcher__current"
+            className="min-w-0 truncate text-sm"
             title={current?.name ?? 'Organization unavailable'}
           >
             {current?.name ?? 'Organization unavailable'}
           </span>
         </div>
       ) : (
-        <div className="organization-switcher">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           <label
-            className="organization-switcher__label"
+            className="shrink-0 text-xs font-bold text-text-secondary"
             htmlFor="organization-switcher"
           >
             Workspace
           </label>
           <Select
+            className="min-w-0 flex-1 lg:max-w-[31.25rem]"
             aria-label="Switch organization"
             id="organization-switcher"
             value={current ? current.id : ''}
@@ -72,7 +75,10 @@ export function OrganizationSwitcher() {
           </Select>
         </div>
       )}
-      <Link className="create-workspace-link" to="/app/organizations/new">
+      <Link
+        className="inline-flex min-h-11 shrink-0 items-center rounded-control border border-teal-200 bg-primary-soft px-3 text-xs font-bold text-primary-dark hover:bg-teal-100"
+        to="/app/organizations/new"
+      >
         <span aria-hidden="true">+</span> New workspace
       </Link>
     </div>

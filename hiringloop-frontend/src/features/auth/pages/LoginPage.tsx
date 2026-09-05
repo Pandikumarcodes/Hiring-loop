@@ -86,7 +86,11 @@ export function LoginPage() {
         </AuthAlert>
       ) : null}
       {loginError ? <AuthAlert>{loginError}</AuthAlert> : null}
-      <form className="auth-form" onSubmit={submit} noValidate>
+      <form
+        className="grid min-w-0 gap-[1.125rem]"
+        onSubmit={submit}
+        noValidate
+      >
         <Field error={errors.email} id="login-email" label="Email" required>
           {({ describedBy, invalid }) => (
             <Input
@@ -107,8 +111,11 @@ export function LoginPage() {
             />
           )}
         </Field>
-        <div className="auth-form__password-group">
-          <Link className="auth-form__inline-link" to="/forgot-password">
+        <div className="relative min-w-0">
+          <Link
+            className="absolute right-0 top-0 z-10 max-w-full text-sm font-semibold text-primary-dark hover:underline"
+            to="/forgot-password"
+          >
             Forgot password?
           </Link>
           <PasswordField
@@ -125,19 +132,15 @@ export function LoginPage() {
             value={password}
           />
         </div>
-        <Button
-          className="auth-form__submit"
-          loading={login.isPending}
-          type="submit"
-        >
+        <Button className="w-full" loading={login.isPending} type="submit">
           {login.isPending ? 'Signing in…' : 'Sign in'}
         </Button>
       </form>
-      <div className="auth-divider">
+      <div className="my-7 flex items-center gap-3 text-sm text-text-secondary before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
         <span>or</span>
       </div>
       <GoogleButton disabled={login.isPending} />
-      <p className="auth-footer-copy">
+      <p className="mt-6 text-center text-[0.9375rem] leading-6 text-text-secondary [overflow-wrap:anywhere]">
         New to HiringLoop? <Link to="/register">Create an account</Link>
       </p>
     </AuthLayout>

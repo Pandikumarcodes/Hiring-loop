@@ -25,7 +25,7 @@ export function GoogleButton({ disabled, onStart }: GoogleButtonProps) {
 
   return (
     <Button
-      className="auth-google-button"
+      className="w-full"
       disabled={disabled || isNavigating}
       onClick={handleGoogleStart}
       type="button"
@@ -33,7 +33,7 @@ export function GoogleButton({ disabled, onStart }: GoogleButtonProps) {
       aria-label={isNavigating ? 'Opening Google sign-in' : undefined}
       aria-busy={isNavigating || undefined}
     >
-      <svg aria-hidden="true" viewBox="0 0 24 24">
+      <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24">
         <path
           d="M21.6 12.23c0-.71-.06-1.4-.18-2.07H12v3.91h5.38a4.6 4.6 0 0 1-2 3.02v2.54h3.24c1.9-1.75 2.98-4.33 2.98-7.4Z"
           fill="#4285F4"

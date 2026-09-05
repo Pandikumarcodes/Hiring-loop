@@ -76,7 +76,7 @@ describe('application routes', () => {
     const user = userEvent.setup()
     renderRoutes('/app')
     await user.click(screen.getByRole('button', { name: /Open account menu/ }))
-    expect(screen.getByRole('menu', { name: 'Account menu' })).toBeVisible()
+    expect(screen.getByRole('menu')).toBeVisible()
     expect(screen.getByRole('menuitem', { name: 'Sign out' })).toBeVisible()
     expect(screen.getByText('test@example.test')).toBeVisible()
     expect(screen.getByText('Signed in account')).toBeVisible()

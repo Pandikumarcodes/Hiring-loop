@@ -5,10 +5,13 @@ interface BrandMarkProps {
 
 export function BrandMark({ compact = false, className = '' }: BrandMarkProps) {
   return (
-    <div className={`auth-brand ${className}`.trim()} aria-label="HiringLoop">
+    <div
+      className={`inline-flex items-center gap-3 text-xl font-bold tracking-tight ${className}`.trim()}
+      aria-label="HiringLoop"
+    >
       <svg
         aria-hidden="true"
-        className="auth-brand__mark"
+        className="h-9 w-9 text-primary"
         viewBox="0 0 40 40"
         xmlns="http://www.w3.org/2000/svg"
       >

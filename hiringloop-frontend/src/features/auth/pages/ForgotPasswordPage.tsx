@@ -33,15 +33,21 @@ export function ForgotPasswordPage() {
   if (forgot.isSuccess) {
     return (
       <AuthLayout>
-        <div className="auth-result">
-          <span className="auth-result__icon" aria-hidden="true">
+        <div className="grid min-w-0 justify-items-start gap-6">
+          <span
+            className="grid h-12 w-12 place-items-center rounded-full bg-emerald-100 text-xl font-extrabold text-success"
+            aria-hidden="true"
+          >
             ✓
           </span>
           <AuthPageHeader
             title="Check your email"
             description="If an account is eligible, password reset instructions have been sent."
           />
-          <Link className="ui-button ui-button--primary" to="/login">
+          <Link
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary-dark"
+            to="/login"
+          >
             Back to sign in
           </Link>
         </div>
@@ -60,7 +66,11 @@ export function ForgotPasswordPage() {
           {rateLimitMessage(forgot.error) ?? genericMutationError(forgot.error)}
         </AuthAlert>
       ) : null}
-      <form className="auth-form" onSubmit={submit} noValidate>
+      <form
+        className="grid min-w-0 gap-[1.125rem]"
+        onSubmit={submit}
+        noValidate
+      >
         <Field error={emailError} id="forgot-email" label="Email" required>
           {({ describedBy, invalid }) => (
             <Input
@@ -80,17 +90,13 @@ export function ForgotPasswordPage() {
             />
           )}
         </Field>
-        <Button
-          className="auth-form__submit"
-          loading={forgot.isPending}
-          type="submit"
-        >
+        <Button className="w-full" loading={forgot.isPending} type="submit">
           {forgot.isPending
             ? 'Sending instructions…'
             : 'Send reset instructions'}
         </Button>
       </form>
-      <p className="auth-footer-copy">
+      <p className="mt-6 text-center text-[0.9375rem] leading-6 text-text-secondary [overflow-wrap:anywhere]">
         <Link to="/login">Back to sign in</Link>
       </p>
     </AuthLayout>
