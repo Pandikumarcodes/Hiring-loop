@@ -92,6 +92,7 @@ model Organization {
   updatedAt   DateTime                 @updatedAt @db.Timestamptz(6)
   memberships OrganizationMembership[]
   invitations Invitation[]
+  jobs        Job[]
 }
 
 model OrganizationMembership {
@@ -128,4 +129,50 @@ model Invitation {
 
   @@index([organizationId, email])
   @@index([organizationId, createdAt])
+}
+
+enum JobStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  ARCHIVED
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  TEMPORARY
+  INTERNSHIP
+  OTHER
+}
+
+enum WorkplaceType {
+  ONSITE
+  HYBRID
+  REMOTE
+}
+
+model Job {
+  id             String         @id @db.Uuid
+  organizationId String         @db.Uuid
+  title          String         @db.VarChar(160)
+  department     String?        @db.VarChar(100)
+  employmentType EmploymentType?
+  workplaceType  WorkplaceType?
+  location       String?        @db.VarChar(160)
+  description    String?        @db.Text
+  openings       Int            @default(1)
+  status         JobStatus      @default(DRAFT)
+  openedAt       DateTime?      @db.Timestamptz(6)
+  closedAt       DateTime?      @db.Timestamptz(6)
+  archivedAt     DateTime?      @db.Timestamptz(6)
+  version        Int            @default(1)
+  createdAt      DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime       @updatedAt @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([organizationId, updatedAt])
+  @@index([organizationId, status, updatedAt])
 }

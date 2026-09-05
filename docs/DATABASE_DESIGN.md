@@ -2507,3 +2507,15 @@ User
 Authentication records are global identity infrastructure and are not tenant-owned. None contains `organizationId`. `PasswordCredential.userId` is unique; password hashes, session-secret hashes, and one-time token hashes are persisted only as hashes. `AuthTokenPurpose` is limited to `EMAIL_VERIFICATION` and `PASSWORD_RESET`. Google identities use globally unique `(provider, providerSubject)` values.
 
 All four authentication-record foreign keys reference `User.id` with `ON DELETE CASCADE ON UPDATE RESTRICT`, preventing orphaned authentication records while preserving the existing restrictive `OrganizationMembership` behavior. Authentication indexes are limited to unique lookup keys, session `userId`/`expiresAt`, token `(userId, purpose, consumedAt)`/`expiresAt`, and provider-identity `userId`. These support the approved lookup, revocation, active-token invalidation, cleanup, and account-lifecycle queries without speculative indexes.
+
+## Phase 08 Job Management Database Foundation
+
+Phase 08 Prompt 1 adds only the tenant-owned `Job` foundation. `Job.organizationId` is a required direct foreign key to `Organization` with restrictive deletion behavior. A Job has no creator-membership or hiring-team relationship yet; `createdByMembershipId` is deferred until creator attribution is an approved business fact for this feature.
+
+The Job fields are: `id`, `organizationId`, `title`, `department`, `employmentType`, `workplaceType`, `location`, `description`, `openings`, `status`, `openedAt`, `closedAt`, `archivedAt`, `version`, `createdAt`, and `updatedAt`. `title`, `department`, and `location` use bounded varchar storage; `description` is PostgreSQL `text` and application validation will enforce its later content limit. Department remains a string because a Department entity and its ownership/lifecycle policy are not part of this slice.
+
+The approved enums are `JobStatus` (`DRAFT`, `OPEN`, `CLOSED`, `ARCHIVED`), `EmploymentType` (`FULL_TIME`, `PART_TIME`, `CONTRACT`, `TEMPORARY`, `INTERNSHIP`, `OTHER`), and `WorkplaceType` (`ONSITE`, `HYBRID`, `REMOTE`). The database defaults `status` to `DRAFT`, `openings` to `1`, and `version` to `1`. PostgreSQL CHECK constraints enforce `1 <= openings <= 1000`, `version >= 1`, and lifecycle timestamp consistency. Valid archived Jobs may be archived directly from Draft or after Closed, so archived rows require `archivedAt` but do not require `openedAt` or `closedAt`.
+
+The initial business indexes are `(organizationId, updatedAt)` for tenant-scoped newest/most-recently-updated listing and `(organizationId, status, updatedAt)` for tenant-scoped status filtering with updated-time ordering. Job titles are intentionally not unique: duplicate titles within one organization are valid and title uniqueness would impose an unapproved business rule.
+
+Job history/activity is deferred. The current row stores lifecycle timestamps only; a later activity/history design will preserve transition facts without adding an unapproved history table to this migration.
