@@ -11,6 +11,9 @@ vi.mock('../../features/jobs', () => ({
   JobDetailPage: () => <h1>Detail route</h1>,
   EditJobPage: () => <h1>Edit route</h1>,
 }))
+vi.mock('../../features/pipelines', () => ({
+  PipelineConfigurationPage: () => <h1>Pipeline route</h1>,
+}))
 vi.mock('../../features/organizations/hooks/queries', () => ({
   useOrganizations: () => ({ data: [] }),
 }))
@@ -24,6 +27,7 @@ describe('Job route matching', () => {
     ['/app/organizations/org-1/jobs/new', 'Create route'],
     ['/app/organizations/org-1/jobs/job-1', 'Detail route'],
     ['/app/organizations/org-1/jobs/job-1/edit', 'Edit route'],
+    ['/app/organizations/org-1/jobs/job-1/pipeline', 'Pipeline route'],
   ])('%s renders %s', (path, heading) => {
     render(
       <MemoryRouter initialEntries={[path]}>

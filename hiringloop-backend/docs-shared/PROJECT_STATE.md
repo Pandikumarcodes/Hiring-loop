@@ -89,13 +89,21 @@ No Phase 08 work remains. Preserve the completed Phase 08 scope and handoff.
 
 ## Next Phase Status
 
-Phase 09 — Pipeline Configuration is NOT STARTED. Its objective is to configure
-organization/job pipeline stages and valid transitions. Do not begin it as part
-of Phase 08 closure.
+Phase 09 — Pipeline Configuration is IN PROGRESS. Database, backend, and
+frontend implementation are complete; engineering audit and manual QA remain.
+No Phase 10 work has begun.
 
 ## Documentation Gaps
 
 - No repository-local PRD file is currently present. The roadmap records supplied functional requirement identifiers for traceability and recommends adding the authoritative PRD before feature implementation expands.
+
+## Phase 09 Backend Status
+
+Database COMPLETE. Backend COMPLETE: exactly five Pipeline Configuration APIs,
+tenant-scoped repositories, centralized Pipeline permissions, transactional
+stage mutation, and Pipeline optimistic concurrency are implemented. Frontend
+implementation is complete. Phase 09 remains IN PROGRESS; no Phase 10 work has
+begun.
 
 ## Deferred Work
 

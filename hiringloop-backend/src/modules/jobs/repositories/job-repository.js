@@ -51,10 +51,26 @@ export function createJobRepository(prisma) {
   }
 
   return {
-    async create({ organizationId, id, data }) {
-      return prisma.job.create({
-        data: { id, organizationId, ...data },
-        select: DETAIL_SELECT,
+    async create({ organizationId, id, data, pipeline }) {
+      return prisma.$transaction(async (transaction) => {
+        const job = await transaction.job.create({
+          data: { id, organizationId, ...data },
+          select: DETAIL_SELECT,
+        });
+        await transaction.pipeline.create({
+          data: {
+            id: pipeline.id,
+            jobId: job.id,
+            stages: {
+              createMany: {
+                data: pipeline.stages.map(
+                  ({ pipelineId: _pipelineId, ...stage }) => stage,
+                ),
+              },
+            },
+          },
+        });
+        return job;
       });
     },
     findByIdForOrganization,

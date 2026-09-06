@@ -6,7 +6,7 @@ M0 — Architecture and Project Foundation
 
 ## Current Phase
 
-Phase 08 — Job Management
+Phase 09 — Pipeline Configuration
 
 ## Previous Phase
 
@@ -14,8 +14,8 @@ Phase 07 — Team Management & Authorization — COMPLETE
 
 ## Phase Status
 
-COMPLETE — Phase 08 implementation, engineering audit, targeted manual-QA fix,
-and final manual browser QA passed
+IN PROGRESS — Phase 09 implementation is complete; engineering audit and
+manual QA remain pending. Phase 08 remains complete.
 
 ## Completed
 
@@ -87,11 +87,14 @@ and verified. Final manual browser QA passed.
 
 No Phase 08 work remains. Preserve the completed Phase 08 scope and handoff.
 
-## Next Phase Status
+## Phase 09 Status
 
-Phase 09 — Pipeline Configuration is NOT STARTED. Its objective is to configure
-organization/job pipeline stages and valid transitions. Do not begin it as part
-of Phase 08 closure.
+Phase 09 — Pipeline Configuration: planning, database, backend, frontend
+implementation is complete. Engineering audit and manual QA remain pending.
+It adds one Pipeline and one PipelineStage model, exactly five configuration
+APIs, and one Pipeline Configuration screen. It intentionally has no transition
+graph or later-phase ATS behavior. Do not mark the phase complete until manual
+QA passes.
 
 ## Documentation Gaps
 

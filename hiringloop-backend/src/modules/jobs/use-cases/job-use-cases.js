@@ -6,6 +6,7 @@ import {
   jobVersionConflictError,
 } from '../../../errors/application-error.js';
 import { generateEntityId } from '../../../utils/ids.js';
+import { createDefaultPipelineData } from '../../pipelines/domain/pipeline-defaults.js';
 import { toJobDetailDto, toJobListDto } from '../domain/job-dto.js';
 
 function failMutation(result, expectedVersion) {
@@ -87,6 +88,7 @@ export function createJobUseCases({ jobRepository, clock = () => new Date() }) {
           organizationId,
           id: generateEntityId(),
           data,
+          pipeline: createDefaultPipelineData(),
         }),
       ),
     list: async (input) => {

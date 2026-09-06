@@ -27,6 +27,8 @@ export const PERMISSIONS = Object.freeze({
   JOB_CLOSE: 'job:close',
   JOB_REOPEN: 'job:reopen',
   JOB_ARCHIVE: 'job:archive',
+  PIPELINE_VIEW: 'pipeline:view',
+  PIPELINE_CONFIGURE: 'pipeline:configure',
 });
 
 const ADMIN_PERMISSIONS = Object.freeze(Object.values(PERMISSIONS));
@@ -38,6 +40,7 @@ const JOB_MANAGER_PERMISSIONS = Object.freeze([
   PERMISSIONS.JOB_OPEN,
   PERMISSIONS.JOB_CLOSE,
   PERMISSIONS.JOB_REOPEN,
+  PERMISSIONS.PIPELINE_VIEW,
 ]);
 
 // Keep this matrix in application code until product and security decisions
@@ -47,6 +50,7 @@ export const ROLE_PERMISSIONS = Object.freeze({
   RECRUITER: Object.freeze([
     ...JOB_MANAGER_PERMISSIONS,
     PERMISSIONS.JOB_ARCHIVE,
+    PERMISSIONS.PIPELINE_CONFIGURE,
   ]),
   HIRING_MANAGER: JOB_MANAGER_PERMISSIONS,
   INTERVIEWER: Object.freeze([]),

@@ -26,6 +26,7 @@ import {
   JobDetailPage,
   JobsPage,
 } from '../../features/jobs'
+import { PipelineConfigurationPage } from '../../features/pipelines'
 
 function OrganizationOnboardingRoute() {
   const organizations = useOrganizations()
@@ -81,6 +82,10 @@ export function AppRoutes() {
           <Route
             path="organizations/:organizationId/jobs/:jobId/edit"
             element={<EditJobPage />}
+          />
+          <Route
+            path="organizations/:organizationId/jobs/:jobId/pipeline"
+            element={<PipelineConfigurationPage />}
           />
           <Route path="organizations" element={<OrganizationLandingPage />} />
           <Route path="*" element={<NotFoundPage />} />

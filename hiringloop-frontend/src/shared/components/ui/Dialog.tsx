@@ -20,7 +20,6 @@ export function DialogContent({
       >
         {children}
         <DialogPrimitive.Close
-          tabIndex={-1}
           className="absolute right-4 top-4 rounded p-1 text-text-secondary hover:bg-background"
           aria-label="Close"
         >

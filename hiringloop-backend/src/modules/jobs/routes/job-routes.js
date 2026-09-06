@@ -18,6 +18,7 @@ export function createJobRouter({
   requireCsrf,
   tenantContextMiddleware,
   jobUseCases,
+  pipelineRouter,
 }) {
   const router = express.Router({ mergeParams: true });
   const controller = createJobController(jobUseCases);
@@ -32,6 +33,8 @@ export function createJobRouter({
     tenantContextMiddleware,
     requirePermission(permission),
   ];
+
+  if (pipelineRouter) router.use('/:jobId/pipeline', pipelineRouter);
 
   router.post(
     '/',

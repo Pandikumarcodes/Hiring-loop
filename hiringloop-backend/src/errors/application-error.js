@@ -16,6 +16,15 @@ export const ERROR_CODES = Object.freeze({
   JOB_INVALID_TRANSITION: 'JOB_INVALID_TRANSITION',
   JOB_NOT_READY_TO_OPEN: 'JOB_NOT_READY_TO_OPEN',
   JOB_ARCHIVED: 'JOB_ARCHIVED',
+  PIPELINE_NOT_FOUND: 'PIPELINE_NOT_FOUND',
+  PIPELINE_STAGE_NOT_FOUND: 'PIPELINE_STAGE_NOT_FOUND',
+  PIPELINE_VERSION_CONFLICT: 'PIPELINE_VERSION_CONFLICT',
+  PIPELINE_JOB_LOCKED: 'PIPELINE_JOB_LOCKED',
+  PIPELINE_DUPLICATE_STAGE_NAME: 'PIPELINE_DUPLICATE_STAGE_NAME',
+  PIPELINE_STAGE_LIMIT_REACHED: 'PIPELINE_STAGE_LIMIT_REACHED',
+  PIPELINE_ENTRY_DELETE_FORBIDDEN: 'PIPELINE_ENTRY_DELETE_FORBIDDEN',
+  PIPELINE_ENTRY_MOVE_FORBIDDEN: 'PIPELINE_ENTRY_MOVE_FORBIDDEN',
+  PIPELINE_INVALID_STAGE_ORDER: 'PIPELINE_INVALID_STAGE_ORDER',
 });
 
 export class ApplicationError extends Error {
@@ -158,4 +167,58 @@ export const jobArchivedError = () =>
   jobError({
     code: ERROR_CODES.JOB_ARCHIVED,
     message: 'Archived jobs are read-only',
+  });
+
+function pipelineError({ code, message, details, status = 409 }) {
+  return new ApplicationError({ status, code, message, details });
+}
+export const pipelineNotFoundError = () =>
+  pipelineError({
+    status: 404,
+    code: ERROR_CODES.PIPELINE_NOT_FOUND,
+    message: 'Pipeline not found',
+  });
+export const pipelineStageNotFoundError = () =>
+  pipelineError({
+    status: 404,
+    code: ERROR_CODES.PIPELINE_STAGE_NOT_FOUND,
+    message: 'Pipeline stage not found',
+  });
+export const pipelineVersionConflictError = () =>
+  pipelineError({
+    code: ERROR_CODES.PIPELINE_VERSION_CONFLICT,
+    message: 'Pipeline version is stale',
+  });
+export const pipelineJobLockedError = (details) =>
+  pipelineError({
+    code: ERROR_CODES.PIPELINE_JOB_LOCKED,
+    message:
+      'Pipeline configuration is unavailable for this job lifecycle state',
+    details,
+  });
+export const pipelineDuplicateNameError = () =>
+  pipelineError({
+    code: ERROR_CODES.PIPELINE_DUPLICATE_STAGE_NAME,
+    message: 'A stage with this name already exists',
+  });
+export const pipelineStageLimitError = () =>
+  pipelineError({
+    code: ERROR_CODES.PIPELINE_STAGE_LIMIT_REACHED,
+    message: 'A pipeline cannot contain more than 20 stages',
+  });
+export const pipelineEntryDeleteError = () =>
+  pipelineError({
+    code: ERROR_CODES.PIPELINE_ENTRY_DELETE_FORBIDDEN,
+    message: 'The entry stage cannot be deleted',
+  });
+export const pipelineEntryMoveError = () =>
+  pipelineError({
+    code: ERROR_CODES.PIPELINE_ENTRY_MOVE_FORBIDDEN,
+    message: 'The entry stage must remain first',
+  });
+export const pipelineInvalidOrderError = () =>
+  pipelineError({
+    status: 400,
+    code: ERROR_CODES.PIPELINE_INVALID_STAGE_ORDER,
+    message: 'Stage order must contain every pipeline stage exactly once',
   });

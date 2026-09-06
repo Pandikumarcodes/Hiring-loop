@@ -23,6 +23,8 @@ export type OrganizationPermission =
   | 'job:close'
   | 'job:reopen'
   | 'job:archive'
+  | 'pipeline:view'
+  | 'pipeline:configure'
 
 export interface CreateOrganizationInput {
   readonly name: string

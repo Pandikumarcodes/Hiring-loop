@@ -9,4 +9,6 @@ export const jobRoutes = {
     `${organizationJobsPath(organizationId)}/${encodeURIComponent(jobId)}`,
   edit: (organizationId: string, jobId: string) =>
     `${organizationJobsPath(organizationId)}/${encodeURIComponent(jobId)}/edit`,
+  pipeline: (organizationId: string, jobId: string) =>
+    `${organizationJobsPath(organizationId)}/${encodeURIComponent(jobId)}/pipeline`,
 }

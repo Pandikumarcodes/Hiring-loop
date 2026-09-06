@@ -31,6 +31,20 @@ describe('Job management repository', () => {
   });
 
   afterAll(async () => {
+    await prisma.pipelineStage.deleteMany({
+      where: {
+        pipeline: {
+          job: {
+            organizationId: { in: [organizationId, otherOrganizationId] },
+          },
+        },
+      },
+    });
+    await prisma.pipeline.deleteMany({
+      where: {
+        job: { organizationId: { in: [organizationId, otherOrganizationId] } },
+      },
+    });
     await prisma.job.deleteMany({
       where: { organizationId: { in: [organizationId, otherOrganizationId] } },
     });
@@ -64,6 +78,22 @@ describe('Job management repository', () => {
       openings: 1,
       version: 1,
     });
+    const pipeline = await prisma.pipeline.findUnique({
+      where: { jobId: created.id },
+      include: { stages: { orderBy: { position: 'asc' } } },
+    });
+    expect(
+      pipeline.stages.map(({ name, kind, position }) => ({
+        name,
+        kind,
+        position,
+      })),
+    ).toEqual([
+      { name: 'Applied', kind: 'ENTRY', position: 1 },
+      { name: 'Screening', kind: 'STANDARD', position: 2 },
+      { name: 'Interview', kind: 'STANDARD', position: 3 },
+      { name: 'Offer', kind: 'STANDARD', position: 4 },
+    ]);
     expect(
       await repository.findByIdForOrganization({
         organizationId: otherOrganizationId,

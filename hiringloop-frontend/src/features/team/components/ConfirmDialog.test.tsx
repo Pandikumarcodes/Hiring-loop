@@ -52,18 +52,23 @@ describe('ConfirmDialog keyboard accessibility', () => {
     expect(trigger).toHaveFocus()
   })
 
-  test('wraps Tab and Shift+Tab within the dialog', async () => {
+  test('keeps every dialog control, including Close, in the keyboard focus loop', async () => {
     const user = userEvent.setup()
     renderDialog()
     await user.click(screen.getByRole('button', { name: 'Open confirmation' }))
     const cancel = screen.getByRole('button', { name: 'Cancel' })
     const confirm = screen.getByRole('button', { name: 'Remove member' })
+    const close = screen.getByRole('button', { name: 'Close' })
 
     confirm.focus()
+    await user.tab()
+    expect(close).toHaveFocus()
     await user.tab()
     expect(cancel).toHaveFocus()
 
     cancel.focus()
+    await user.tab({ shift: true })
+    expect(close).toHaveFocus()
     await user.tab({ shift: true })
     expect(confirm).toHaveFocus()
   })

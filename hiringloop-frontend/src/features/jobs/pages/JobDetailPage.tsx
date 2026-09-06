@@ -69,12 +69,24 @@ export function JobDetailPage() {
           </span>
         }
         actions={
-          <JobActions
-            job={j}
-            onEdit={() => navigate(jobRoutes.edit(organizationId, jobId))}
-            onAction={setAction}
-            permissions={organization.data.permissions}
-          />
+          <div className="flex items-center gap-2">
+            {can(organization.data.permissions, 'pipeline:view') ? (
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  navigate(jobRoutes.pipeline(organizationId, jobId))
+                }
+              >
+                Pipeline
+              </Button>
+            ) : null}
+            <JobActions
+              job={j}
+              onEdit={() => navigate(jobRoutes.edit(organizationId, jobId))}
+              onAction={setAction}
+              permissions={organization.data.permissions}
+            />
+          </div>
         }
       />
       {transition.isError ? (
