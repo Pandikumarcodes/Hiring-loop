@@ -22,8 +22,16 @@ describe('Pipeline configuration repository', () => {
     });
     await prisma.organization.createMany({
       data: [
-        { id: organizationId, name: 'A' },
-        { id: otherOrganizationId, name: 'B' },
+        {
+          id: organizationId,
+          name: 'A',
+          slug: `pipeline-a-${organizationId.slice(0, 8)}`,
+        },
+        {
+          id: otherOrganizationId,
+          name: 'B',
+          slug: `pipeline-b-${otherOrganizationId.slice(0, 8)}`,
+        },
       ],
     });
   });

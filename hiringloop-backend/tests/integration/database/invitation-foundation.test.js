@@ -38,8 +38,16 @@ describe('invitation database foundation', () => {
     });
     await prisma.organization.createMany({
       data: [
-        { id: organizationId, name: 'Invitation Organization' },
-        { id: otherOrganizationId, name: 'Other Invitation Organization' },
+        {
+          id: organizationId,
+          name: 'Invitation Organization',
+          slug: `invitation-${organizationId.slice(-12)}`,
+        },
+        {
+          id: otherOrganizationId,
+          name: 'Other Invitation Organization',
+          slug: `other-invitation-${otherOrganizationId.slice(-12)}`,
+        },
       ],
     });
     await prisma.organizationMembership.create({

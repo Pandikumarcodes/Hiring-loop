@@ -33,8 +33,16 @@ async function createFixture() {
   });
   await prisma.organization.createMany({
     data: [
-      { id: fixture.organizationId, name: 'Member Organization' },
-      { id: fixture.otherOrganizationId, name: 'Other Organization' },
+      {
+        id: fixture.organizationId,
+        name: 'Member Organization',
+        slug: `member-${fixture.organizationId.slice(-12)}`,
+      },
+      {
+        id: fixture.otherOrganizationId,
+        name: 'Other Organization',
+        slug: `other-member-${fixture.otherOrganizationId.slice(-12)}`,
+      },
     ],
   });
   await prisma.organizationMembership.createMany({

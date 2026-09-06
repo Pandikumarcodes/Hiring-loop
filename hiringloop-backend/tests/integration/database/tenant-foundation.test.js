@@ -31,7 +31,11 @@ async function createFixture(prisma, fixture = newFixture()) {
     data: { id: fixture.userId, email: `${fixture.userId}@example.test` },
   });
   await prisma.organization.create({
-    data: { id: fixture.organizationAId, name: 'Integration Organization A' },
+    data: {
+      id: fixture.organizationAId,
+      name: 'Integration Organization A',
+      slug: `integration-organization-a-${fixture.organizationAId.slice(0, 8)}`,
+    },
   });
   return fixture;
 }
@@ -134,6 +138,7 @@ describe('tenant foundation database integration', () => {
         data: {
           id: fixture.organizationBId,
           name: 'Integration Organization B',
+          slug: `integration-organization-b-${fixture.organizationBId.slice(0, 8)}`,
         },
       });
       await prisma.organizationMembership.createMany({

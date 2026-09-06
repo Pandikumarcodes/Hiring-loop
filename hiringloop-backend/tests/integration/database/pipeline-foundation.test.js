@@ -29,7 +29,11 @@ describe('Pipeline database foundation', () => {
     prisma = getPrismaClient();
     await prisma.$connect();
     await prisma.organization.create({
-      data: { id: organizationId, name: 'Pipeline Test Organization' },
+      data: {
+        id: organizationId,
+        name: 'Pipeline Test Organization',
+        slug: `pipeline-test-${organizationId.slice(0, 8)}`,
+      },
     });
     jobs = createJobUseCases({ jobRepository: createJobRepository(prisma) });
   });

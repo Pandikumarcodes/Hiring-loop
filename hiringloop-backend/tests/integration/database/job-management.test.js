@@ -24,8 +24,16 @@ describe('Job management repository', () => {
     jobs = createJobUseCases({ jobRepository: repository });
     await prisma.organization.createMany({
       data: [
-        { id: organizationId, name: 'Jobs Organization' },
-        { id: otherOrganizationId, name: 'Other Jobs Organization' },
+        {
+          id: organizationId,
+          name: 'Jobs Organization',
+          slug: `jobs-${organizationId.slice(-12)}`,
+        },
+        {
+          id: otherOrganizationId,
+          name: 'Other Jobs Organization',
+          slug: `other-jobs-${otherOrganizationId.slice(-12)}`,
+        },
       ],
     });
   });

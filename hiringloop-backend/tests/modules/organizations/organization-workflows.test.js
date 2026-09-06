@@ -10,10 +10,15 @@ import { errorHandler } from '../../../src/middleware/error-handler.js';
 import { createOrganizationRouter } from '../../../src/modules/organizations/routes/organization-routes.js';
 import { createCreateOrganizationForUser } from '../../../src/modules/organizations/use-cases/create-organization-for-user.js';
 import { createGetOrganizationById } from '../../../src/modules/organizations/use-cases/get-organization-by-id.js';
+import {
+  normalizeOrganizationSlug,
+  slugForAttempt,
+} from '../../../src/modules/organizations/domain/organization-slug.js';
 
 const organization = {
   id: '01990b72-7c3a-7b2d-b6bb-9a6a7a1c0001',
   name: 'HiringLoop',
+  slug: 'hiringloop',
   website: 'https://hiringloop.example',
   description: 'Recruiting workspace',
   createdAt: new Date('2026-09-03T00:00:00.000Z'),
@@ -106,12 +111,12 @@ describe('organization use cases and routes', () => {
     ).toHaveBeenCalledTimes(1);
   });
 
-  it('translates membership uniqueness failures into a conflict', async () => {
+  it('translates bounded slug allocation exhaustion into a conflict', async () => {
     const createOrganizationForUser = createCreateOrganizationForUser({
       organizationRepository: {
         createOrganizationWithAdminMembership: vi.fn(async () => {
           const error = new Error('duplicate');
-          error.code = 'P2002';
+          error.code = 'ORGANIZATION_SLUG_ALLOCATION_EXHAUSTED';
           throw error;
         }),
       },
@@ -122,6 +127,26 @@ describe('organization use cases and routes', () => {
         organizationInput: { name: 'HiringLoop' },
       }),
     ).rejects.toMatchObject({ status: 409, code: 'CONFLICT' });
+  });
+
+  it.each([
+    ['Acme Technologies', 'acme-technologies'],
+    ['  Acme   Technologies  ', 'acme-technologies'],
+    ['ACME', 'acme'],
+    ['Acme_Tech', 'acme-tech'],
+    ['--Acme...Tech__', 'acme-tech'],
+    ['Cr\u00e8me Br\u00fbl\u00e9e', 'creme-brulee'],
+    ['!!!', 'organization'],
+    ['A', 'organization'],
+  ])('normalizes %j into the canonical slug %j', (name, slug) => {
+    expect(normalizeOrganizationSlug(name)).toBe(slug);
+  });
+
+  it('allocates deterministic numeric collision suffixes within the canonical length', () => {
+    expect(slugForAttempt('Acme', 1)).toBe('acme');
+    expect(slugForAttempt('Acme', 2)).toBe('acme-2');
+    expect(slugForAttempt('ACME', 3)).toBe('acme-3');
+    expect(slugForAttempt('a'.repeat(80), 12)).toHaveLength(63);
   });
 
   it('requires authentication and CSRF for creation and validates input', async () => {
@@ -144,6 +169,12 @@ describe('organization use cases and routes', () => {
       .send({ name: 'HiringLoop', website: 'https://hiringloop.example' });
     expect(created.status).toBe(201);
     expect(created.body.data.organization).not.toHaveProperty('role');
+
+    const userControlledSlug = await request(app)
+      .post('/api/v1/organizations')
+      .set('x-csrf-token', 'valid-csrf')
+      .send({ name: 'HiringLoop', slug: 'user-controlled' });
+    expect(userControlledSlug.status).toBe(400);
 
     const unauthenticated = makeApp({}, { authenticated: false });
     const denied = await request(unauthenticated.app)

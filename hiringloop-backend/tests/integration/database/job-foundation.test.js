@@ -29,8 +29,16 @@ describe('Job database foundation', () => {
     otherOrganizationId = generateEntityId();
     await prisma.organization.createMany({
       data: [
-        { id: organizationId, name: 'Job Test Organization' },
-        { id: otherOrganizationId, name: 'Other Job Test Organization' },
+        {
+          id: organizationId,
+          name: 'Job Test Organization',
+          slug: `job-test-${organizationId.slice(-12)}`,
+        },
+        {
+          id: otherOrganizationId,
+          name: 'Other Job Test Organization',
+          slug: `other-job-test-${otherOrganizationId.slice(-12)}`,
+        },
       ],
     });
   });
@@ -145,7 +153,7 @@ describe('Job database foundation', () => {
     }
   });
 
-  it('exposes the two approved composite business indexes', async () => {
+  it('exposes the approved composite business indexes', async () => {
     const indexes = await prisma.$queryRaw`
       SELECT indexname
       FROM pg_indexes
@@ -155,5 +163,6 @@ describe('Job database foundation', () => {
 
     expect(names).toContain('Job_organizationId_updatedAt_idx');
     expect(names).toContain('Job_organizationId_status_updatedAt_idx');
+    expect(names).toContain('Job_organizationId_status_openedAt_idx');
   });
 });

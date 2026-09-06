@@ -14,8 +14,8 @@ export function createCreateOrganizationForUser({ organizationRepository }) {
         });
       return toOrganizationDto(organization);
     } catch (error) {
-      if (error?.code === 'P2002') {
-        throw conflictError('Organization membership already exists.');
+      if (error?.code === 'ORGANIZATION_SLUG_ALLOCATION_EXHAUSTED') {
+        throw conflictError('Unable to allocate a unique organization slug.');
       }
       throw error;
     }
