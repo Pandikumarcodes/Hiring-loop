@@ -19,6 +19,11 @@ export const AUTH_RATE_LIMIT_POLICIES = Object.freeze({
   passwordChange: Object.freeze({ limit: 10, windowMs: 15 * MINUTE_MS }),
 });
 
+export const PUBLIC_CAREER_RATE_LIMIT_POLICY = Object.freeze({
+  limit: 120,
+  windowMs: HOUR_MS,
+});
+
 function emailFingerprint(request) {
   const email = request.body?.email;
   if (typeof email !== 'string') return null;
@@ -67,6 +72,19 @@ function createLimiter(name, policy, keyGenerator, overrides = {}) {
     handler: (_request, _response, next) => next(rateLimitError()),
   });
 }
+
+export function createPublicCareerReadRateLimiter({
+  policyOverrides = {},
+} = {}) {
+  return createLimiter(
+    'public-career-read',
+    { ...PUBLIC_CAREER_RATE_LIMIT_POLICY, ...policyOverrides },
+    ipKey,
+    policyOverrides,
+  );
+}
+
+export const publicCareerReadRateLimiter = createPublicCareerReadRateLimiter();
 
 /**
  * Build isolated named infrastructure limiters. The default store is the

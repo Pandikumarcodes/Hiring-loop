@@ -1,112 +1,50 @@
 # HiringLoop Project State
 
-## Current Milestone
+## Current milestone
 
-M0 — Architecture and Project Foundation
+Software Engineering
 
-## Current Phase
+## Current phase
 
-Phase 08 — Job Management
+Phase 10 — Public Career Site: **COMPLETE**
 
-## Previous Phase
+## Next phase
 
-Phase 07 — Team Management & Authorization — COMPLETE
+Phase 11 — Application Form Builder: **NOT STARTED**
 
-## Phase Status
+## Phase 10 final status
 
-COMPLETE — Phase 08 implementation, engineering audit, targeted manual-QA fix,
-and final manual browser QA passed
+Phase 10 is complete: database, backend, and frontend work are complete.
 
-## Completed
+- Exactly 2 anonymous public APIs, 2 candidate-facing public screens, and 2 public routes.
+- Organization public slugs support safe backfill and collision handling.
+- OPEN-only visibility and tenant/resource-scoped public detail lookup are enforced.
+- Engineering audit passed with targeted pagination and SEO fixes.
+- Manual QA passed, including the public-detail metadata-layout fix.
+- Final security verification passed, including HTTP/HTTPS-only public websites.
+- Full frontend suite: 30 files / 175 tests PASS; typecheck, lint, format,
+  production build, and `git diff --check` PASS.
+- Backend non-database and PostgreSQL integration suites, Prisma validation,
+  lint, format, and diff checks passed after final code changes.
 
-- HiringLoop PRD preparation recorded; repository-local PRD file is currently unavailable
-- Software-engineering-first development strategy selected
-- AI engineering deferred until the software engineering milestone is complete
-- Modular monolith backend architecture selected
-- Separate frontend and backend applications selected
-- Single Git repository and shared documentation structure established
-- Phase 00 through Phase 05 foundation and handoffs — COMPLETE
-- Phase 06 Organization & Multi-Tenancy — COMPLETE
-- Phase 07 Team Management & Authorization — COMPLETE
-- Phase 08 Job Management database — COMPLETE
-- Phase 08 Job Management backend — COMPLETE: exactly 8 APIs
-- Phase 08 Job Management frontend — COMPLETE: exactly 4 main screens
-- Phase 08 end-to-end engineering audit — COMPLETE
-- Phase 08 targeted manual-QA navigation fix — COMPLETE
-- Phase 08 final manual browser QA — PASSED
-- Phase 08 handoff: `docs/architecture/PHASE_08_HANDOFF.md`
+## Architecture constraints retained
 
-## Repository Structure
+- PostgreSQL remains authoritative; Organization remains the tenant boundary.
+- Public Organization identity is immutable `Organization.slug`; public Job
+  identity is Organization slug plus immutable Job ID.
+- `Job.status === OPEN` is the sole public visibility rule.
+- No CareerSite entity, Job slug, publication field/state machine, Apply
+  button, Application Form Builder, Candidate/Application flow, resume upload,
+  public search/filter, customization, custom domains, Redis/realtime, or AI
+  was added in Phase 10.
 
-Frontend: `hiringloop-frontend/`
-Backend: `hiringloop-backend/`
-Authoritative documentation: repository root and `docs/`
+## Key references
 
-## AI Status
+- `docs/architecture/PHASE_10_HANDOFF.md`
+- `docs/architecture/PHASE_10_ENGINEERING_AUDIT.md`
+- `hiringloop-backend/docs-shared/PUBLIC_CAREER_SITE_DATABASE.md`
 
-NOT STARTED
+## AI status
 
-Do not implement AI functionality during the current software engineering phases.
-
-## Architecture Decisions
-
-- Modular monolith with a bounded Job backend module
-- Separate frontend/backend applications
-- PostgreSQL source of truth
-- Organization is the tenant boundary
-- Centralized backend-authoritative permissions
-- Explicit Job lifecycle operations; no DELETE or generic status PATCH
-- Optimistic concurrency for Job mutations
-- Organization-specific TanStack Query keys and absolute Job route builders
-- Background workers reserved for justified async workloads
-- AI deferred
-
-## Current Work
-
-Phase 08 Job Management is complete. It provides one 16-field Job entity,
-three Job enums, two business indexes, eight organization-scoped APIs, and four
-organization-scoped frontend screens. Draft, Open, Closed, and terminal
-Archived behavior; readiness validation; tenant isolation; permissions;
-optimistic concurrency; responsive UX; and create/open recovery are implemented
-and verified. Final manual browser QA passed.
-
-## Phase 08 Verification Evidence
-
-- Backend focused Job verification: 1 file / 42 tests PASS
-- PostgreSQL focused Job integration: 1 file / 4 tests PASS
-- PostgreSQL full integration verification: 7 files / 50 tests PASS
-- Backend full non-database verification: 27 files / 190 tests PASS
-- Frontend focused Job verification: 5 files / 15 tests PASS
-- Frontend full verification: 24 files / 153 tests PASS
-- Backend lint, format check, and Prisma validation: PASS
-- Frontend lint, format check, typecheck, and production build: PASS
-- `git diff --check`: PASS
-- Final manual browser QA: PASS
-
-## Next Task
-
-No Phase 08 work remains. Preserve the completed Phase 08 scope and handoff.
-
-## Next Phase Status
-
-Phase 09 — Pipeline Configuration is IN PROGRESS. Database, backend, and
-frontend implementation are complete; engineering audit and manual QA remain.
-No Phase 10 work has begun.
-
-## Documentation Gaps
-
-- No repository-local PRD file is currently present. The roadmap records supplied functional requirement identifiers for traceability and recommends adding the authoritative PRD before feature implementation expands.
-
-## Phase 09 Backend Status
-
-Database COMPLETE. Backend COMPLETE: exactly five Pipeline Configuration APIs,
-tenant-scoped repositories, centralized Pipeline permissions, transactional
-stage mutation, and Pipeline optimistic concurrency are implemented. Frontend
-implementation is complete. Phase 09 remains IN PROGRESS; no Phase 10 work has
-begun.
-
-## Deferred Work
-
-Pipeline configuration and every later ATS domain remain deferred to their
-approved roadmap phases. Applications, Candidates, Interviews, Offers,
-Analytics, Redis, BullMQ, realtime, and AI are not started.
+NOT STARTED. AI remains deferred until the Software Engineering roadmap is
+complete.

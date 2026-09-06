@@ -24,6 +24,7 @@ import { OrganizationWorkspacePage } from './pages/OrganizationWorkspacePage'
 const one: OrganizationDto = {
   id: '123e4567-e89b-12d3-a456-426614174000',
   name: 'Acme Hiring',
+  slug: 'acme-hiring',
   website: null,
   description: null,
   createdAt: '2026-01-01T00:00:00.000Z',

@@ -15,6 +15,16 @@ const LIST_SELECT = {
   updatedAt: true,
 };
 const DETAIL_SELECT = { ...LIST_SELECT, description: true };
+const PUBLIC_LIST_SELECT = {
+  id: true,
+  title: true,
+  employmentType: true,
+  workplaceType: true,
+  location: true,
+  openings: true,
+  openedAt: true,
+};
+const PUBLIC_DETAIL_SELECT = { ...PUBLIC_LIST_SELECT, description: true };
 
 export function createJobRepository(prisma) {
   const findByIdForOrganization = ({ organizationId, jobId }) =>
@@ -74,6 +84,26 @@ export function createJobRepository(prisma) {
       });
     },
     findByIdForOrganization,
+    async listOpenPublicJobsForOrganization({ organizationId, page, limit }) {
+      const where = { organizationId, status: 'OPEN' };
+      const [jobs, totalItems] = await prisma.$transaction([
+        prisma.job.findMany({
+          where,
+          select: PUBLIC_LIST_SELECT,
+          orderBy: [{ openedAt: 'desc' }, { id: 'desc' }],
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        prisma.job.count({ where }),
+      ]);
+      return { jobs, totalItems };
+    },
+    async findOpenPublicJobForOrganization({ organizationId, jobId }) {
+      return prisma.job.findFirst({
+        where: { id: jobId, organizationId, status: 'OPEN' },
+        select: PUBLIC_DETAIL_SELECT,
+      });
+    },
     async list({
       organizationId,
       page,

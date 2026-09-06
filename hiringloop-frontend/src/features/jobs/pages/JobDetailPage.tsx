@@ -80,6 +80,16 @@ export function JobDetailPage() {
                 Pipeline
               </Button>
             ) : null}
+            {j.status === 'OPEN' && organization.data.slug ? (
+              <a
+                className="inline-flex min-h-11 items-center justify-center rounded-control border border-border bg-surface px-4 py-2.5 text-sm font-bold text-text-primary transition-colors hover:bg-background focus-visible:outline-3 focus-visible:outline-primary-dark focus-visible:outline-offset-2"
+                href={`/careers/${encodeURIComponent(organization.data.slug)}/jobs/${encodeURIComponent(j.id)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                View public posting
+              </a>
+            ) : null}
             <JobActions
               job={j}
               onEdit={() => navigate(jobRoutes.edit(organizationId, jobId))}

@@ -13,6 +13,14 @@ const ORGANIZATION_SELECT = {
   updatedAt: true,
 };
 
+const PUBLIC_ORGANIZATION_SELECT = {
+  id: true,
+  name: true,
+  slug: true,
+  website: true,
+  description: true,
+};
+
 export function createOrganizationRepository(prisma) {
   return {
     async createOrganizationWithAdminMembership({
@@ -92,6 +100,13 @@ export function createOrganizationRepository(prisma) {
       return prisma.organization.findUnique({
         where: { id: organizationId },
         select: ORGANIZATION_SELECT,
+      });
+    },
+
+    async findPublicOrganizationBySlug(slug) {
+      return prisma.organization.findUnique({
+        where: { slug },
+        select: PUBLIC_ORGANIZATION_SELECT,
       });
     },
   };

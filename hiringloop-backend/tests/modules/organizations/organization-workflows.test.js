@@ -158,6 +158,13 @@ describe('organization use cases and routes', () => {
     expect(invalid.status).toBe(400);
     expect(services.createOrganizationForUser).not.toHaveBeenCalled();
 
+    const unsafeWebsite = await request(app)
+      .post('/api/v1/organizations')
+      .set('x-csrf-token', 'valid-csrf')
+      .send({ name: 'Unsafe website', website: 'javascript:alert(1)' });
+    expect(unsafeWebsite.status).toBe(400);
+    expect(services.createOrganizationForUser).not.toHaveBeenCalled();
+
     const missingCsrf = await request(app)
       .post('/api/v1/organizations')
       .send({ name: 'HiringLoop' });

@@ -1,5 +1,6 @@
 const MAX_SLUG_LENGTH = 63;
 const FALLBACK_SLUG = 'organization';
+export const ORGANIZATION_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export function normalizeOrganizationSlug(name) {
   const normalized = String(name ?? '')

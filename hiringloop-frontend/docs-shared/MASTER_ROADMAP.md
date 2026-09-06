@@ -1,6 +1,20 @@
 # HiringLoop Master Roadmap
 
+> Current-state supersession (Phase 10 audit): Phase 10 Public Career Site is
+> **COMPLETE**. Phase 11 — Application Form Builder is **NOT STARTED**.
+> Historical task detail below is retained for roadmap traceability where it
+> does not conflict with current status.
+
 ## Authority and Status
+
+### Current phase status
+
+- Phase 10 — Public Career Site — **COMPLETE**. It provides exactly 2 public
+  APIs, 2 public screens, and 2 public routes; Organization slugs; OPEN-only
+  visibility; scoped public DTOs; pagination; rate limiting; and accessible
+  public routing. Application forms, submissions, and candidate/application
+  flows remain deferred.
+- Phase 11 — Application Form Builder — **NOT STARTED**.
 
 This document is the authoritative end-to-end implementation roadmap for HiringLoop. It is governed by `PROJECT_INSTRUCTIONS.md`, `PROJECT_STATE.md`, and the architecture documents under `docs/architecture/` and `docs/adr/`.
 
@@ -319,20 +333,24 @@ Phase 07G final authorization audit is complete. The handoff is recorded in
 - **Definition of Done:** authorized users can manage jobs through valid lifecycle transitions with tested tenant isolation.
 
 Phase 08 is complete. Its implementation and verification handoff is recorded
-in `docs/architecture/PHASE_08_HANDOFF.md`. Phase 09 remains not started.
+in `docs/architecture/PHASE_08_HANDOFF.md`. Phase 09 implementation is
+complete; engineering audit and manual QA remain pending.
 
-## Phase 09 — Pipeline Configuration — NOT STARTED
+## Phase 09 — Pipeline Configuration — IMPLEMENTATION COMPLETE / AUDIT AND MANUAL QA PENDING
 
-- **Objective:** configure organization/job pipeline stages and valid transitions.
-- **Features/sub-features:** default stages; custom stages; ordering; transition rules; stage history contract.
+- **Objective:** configure the ordered stages for one Job pipeline.
+- **Features/sub-features:** atomic default stages; custom standard stages;
+  ENTRY protection; ordering; aggregate optimistic concurrency.
 - **Engineering concepts to learn:** workflow modeling, invariants, configuration ownership, event history.
 - **Frontend work:** stage configuration UI and validation.
 - **Backend work:** pipeline configuration use cases, transition validation, collaboration contracts.
 - **Database work:** pipeline/stage configuration and constraints; no candidate movement yet.
 - **Security considerations:** restrict configuration to authorized roles; tenant scope and audit.
 - **Performance considerations:** load configuration efficiently; avoid repeated stage queries.
-- **Reliability considerations:** prevent invalid/deleting-in-use stages; transactional updates.
-- **Testing expectations:** transition/configuration matrix and concurrency tests.
+- **Reliability considerations:** prevent invalid stage aggregates and use
+  transactional updates. Application-aware deletion behavior is deferred.
+- **Testing expectations:** configuration, tenant-isolation, lifecycle, and
+  concurrency matrices.
 - **Documentation outputs:** pipeline configuration contract and state diagram.
 - **Dependencies:** Phases 06–08.
 - **Definition of Done:** valid pipeline configuration is persisted and safely consumable by later application workflows.

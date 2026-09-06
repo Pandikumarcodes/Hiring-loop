@@ -1,5 +1,8 @@
 # HiringLoop
 
+Current phase: Phase 10 Public Career Site — COMPLETE. Next phase: Phase 11
+Application Form Builder — NOT STARTED.
+
 HiringLoop is a production-style multi-tenant recruitment SaaS platform.
 
 Repository structure:
@@ -8,34 +11,22 @@ Repository structure:
 - `hiringloop-backend` — Node.js backend
 - `docs` — architecture and engineering documentation
 
-Current development strategy:
-
-Shared Codex context is kept in synchronized reference copies under each
-application's `docs-shared/` directory. The authoritative documentation lives
-at the repository root and in root `docs/` directories.
-
-Synchronize the approved shared files with:
+Shared Codex context is synchronized from authoritative root documentation:
 
 ```text
 node scripts/sync-shared-docs.js
 ```
 
-Software Engineering
-→ Production stabilization
-→ AI Engineering later
-
 Current status:
 
 - Phase 08 — Job Management — COMPLETE
-- Next implementation phase: Phase 09 — Pipeline Configuration (not started)
-- Authentication uses PostgreSQL-backed opaque sessions, HttpOnly cookies, and
-  backend-enforced security controls. Phase 07 adds ADMIN-only team
-  authorization, tenant-scoped member/invitation operations, and final-Admin
-  protection; recruiting product data, Redis/BullMQ, realtime, and AI remain
-  outside the current boundary.
-- See [the Phase 06 handoff](docs/architecture/PHASE_06_HANDOFF.md) for the
-  verified architecture, APIs, security, testing, and manual QA checklist.
-- See [the Phase 07G authorization audit](docs/architecture/PHASE_07G_FINAL_AUTHORIZATION_AUDIT.md)
-  for Team-management completion evidence and security decisions.
-- See [the Phase 08 handoff](docs/architecture/PHASE_08_HANDOFF.md) for the
-  completed Job schema, lifecycle, APIs, frontend workflows, and verification.
+- Phase 10 — Public Career Site — COMPLETE: 2 public APIs, 2 public screens,
+  and 2 public routes.
+- Phase 11 — Application Form Builder — NOT STARTED.
+- Redis/BullMQ, realtime, and AI remain outside the completed Phase 10 boundary.
+
+References:
+
+- [Phase 08 handoff](docs/architecture/PHASE_08_HANDOFF.md)
+- [Phase 10 handoff](docs/architecture/PHASE_10_HANDOFF.md)
+- [Phase 10 engineering audit](docs/architecture/PHASE_10_ENGINEERING_AUDIT.md)

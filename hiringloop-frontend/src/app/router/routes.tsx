@@ -27,6 +27,10 @@ import {
   JobsPage,
 } from '../../features/jobs'
 import { PipelineConfigurationPage } from '../../features/pipelines'
+import {
+  PublicCareerPage,
+  PublicJobDetailPage,
+} from '../../features/public-careers/pages'
 
 function OrganizationOnboardingRoute() {
   const organizations = useOrganizations()
@@ -50,6 +54,14 @@ export function AppRoutes() {
       <Route path="invitations/accept" element={<InvitationAcceptancePage />} />
       <Route element={<PublicLayout />}>
         <Route index element={<FoundationPage />} />
+        <Route
+          path="careers/:organizationSlug"
+          element={<PublicCareerPage />}
+        />
+        <Route
+          path="careers/:organizationSlug/jobs/:jobId"
+          element={<PublicJobDetailPage />}
+        />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
       <Route element={<ProtectedRoute />}>

@@ -1,6 +1,20 @@
 # HiringLoop Master Roadmap
 
+> Current-state supersession (Phase 10 audit): Phase 10 Public Career Site is
+> **COMPLETE**. Phase 11 — Application Form Builder is **NOT STARTED**.
+> Historical task detail below is retained for roadmap traceability where it
+> does not conflict with current status.
+
 ## Authority and Status
+
+### Current phase status
+
+- Phase 10 — Public Career Site — **COMPLETE**. It provides exactly 2 public
+  APIs, 2 public screens, and 2 public routes; Organization slugs; OPEN-only
+  visibility; scoped public DTOs; pagination; rate limiting; and accessible
+  public routing. Application forms, submissions, and candidate/application
+  flows remain deferred.
+- Phase 11 — Application Form Builder — **NOT STARTED**.
 
 This document is the authoritative end-to-end implementation roadmap for HiringLoop. It is governed by `PROJECT_INSTRUCTIONS.md`, `PROJECT_STATE.md`, and the architecture documents under `docs/architecture/` and `docs/adr/`.
 

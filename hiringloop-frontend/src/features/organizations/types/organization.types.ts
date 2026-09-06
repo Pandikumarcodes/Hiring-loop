@@ -1,6 +1,7 @@
 export interface OrganizationDto {
   readonly id: string
   readonly name: string
+  readonly slug: string
   readonly website: string | null
   readonly description: string | null
   readonly createdAt: string
