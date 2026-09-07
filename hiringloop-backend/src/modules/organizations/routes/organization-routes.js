@@ -17,6 +17,7 @@ export function createOrganizationRouter({
   invitationRouter,
   memberRouter,
   jobRouter,
+  candidateManagementRouter,
 }) {
   const router = express.Router();
   const controller = createOrganizationController({
@@ -33,6 +34,9 @@ export function createOrganizationRouter({
   }
   if (jobRouter) {
     router.use('/:organizationId/jobs', jobRouter);
+  }
+  if (candidateManagementRouter) {
+    router.use('/:organizationId', candidateManagementRouter);
   }
 
   router.get('/', authenticateSession, controller.list);

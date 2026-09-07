@@ -3,7 +3,7 @@
 > Current-state supersession (Phase 10 audit): Phase 10 Public Career Site is
 > **COMPLETE**. Phase 11 — Application Form Builder is **COMPLETE**; Phase 12
 > — Candidate Application Flow is **COMPLETE**; Phase 13 — Candidate
-> Management is **NOT STARTED**.
+> Management is **COMPLETE**.
 > Historical task detail below is retained for roadmap traceability where it
 > does not conflict with current status.
 
@@ -14,8 +14,7 @@
 - Phase 10 — Public Career Site — **COMPLETE**. It provides exactly 2 public
   APIs, 2 public screens, and 2 public routes; Organization slugs; OPEN-only
   visibility; scoped public DTOs; pagination; rate limiting; and accessible
-  public routing. Application forms, submissions, and candidate/application
-  flows remain deferred.
+  public routing. Its public-career scope remains bounded to those capabilities.
 - Phase 11 — Application Form Builder — **COMPLETE**. Database, backend,
   frontend, audit, final handoff, and Manual QA are complete; it provides
   exactly 8 authenticated recruiter configuration APIs.
@@ -23,7 +22,12 @@
   3 public APIs and 1 public Apply route, organization-scoped
   Candidate/Application persistence, immutable form-version answers, private
   direct S3 resume upload, idempotency, and initial pipeline placement.
-- Phase 13 — Candidate Management — **NOT STARTED**.
+- Phase 13 — Candidate Management — **COMPLETE**. It provides exactly 4
+  authenticated candidate-management APIs and 3 recruiter routes for
+  tenant-scoped candidate/application review and secure resume access. ADMIN
+  and RECRUITER are allowed; HIRING_MANAGER and INTERVIEWER are denied.
+  Final engineering audit and focused verification passed; see
+  `docs/architecture/PHASE_13_HANDOFF.md`.
 
 This document is the authoritative end-to-end implementation roadmap for HiringLoop. It is governed by `PROJECT_INSTRUCTIONS.md`, `PROJECT_STATE.md`, and the architecture documents under `docs/architecture/` and `docs/adr/`.
 
@@ -397,21 +401,21 @@ complete; engineering audit and manual QA remain pending.
 - **Dependencies:** Phase 11; public-career foundations.
 - **Definition of Done:** not started.
 
-## Phase 13 — Hiring Pipeline, Activity & Search — NOT STARTED
+## Phase 13 — Candidate Management — COMPLETE
 
-- **Objective:** move applications through hiring workflows, expose activity timelines, and provide scoped search. (FR-12, FR-13, FR-22)
-- **Features/sub-features:** application stage movement; history; activity timeline; filters; keyword search; pagination.
-- **Engineering concepts to learn:** workflow orchestration, append-only history, search tradeoffs, query design.
-- **Frontend work:** pipeline board/list, candidate activity timeline, search/filter UX and states.
-- **Backend work:** transition use cases, activity generation, search endpoints, DTOs and policy checks.
-- **Database work:** stage history/activity records and query-supporting indexes based on measured patterns.
-- **Security considerations:** scoped search/results, redact sensitive activity, distinguish activity from audit.
-- **Performance considerations:** pagination, query plans, avoid N+1 board loading, bounded search.
-- **Reliability considerations:** transactional stage changes/history, idempotent commands, consistent ordering.
-- **Testing expectations:** transition invariants, search relevance/scope, pagination, concurrency, audit/activity tests.
-- **Documentation outputs:** workflow/state docs, search contract, activity-vs-audit guidance.
-- **Dependencies:** Phases 09 and 11–12.
-- **Definition of Done:** authorized teams can manage and search application workflows with durable, tenant-scoped history.
+- **Objective:** provide authorized recruiters with tenant-scoped candidate and application review. (FR-08, FR-09)
+- **Features/sub-features:** candidate list search/filter/sort/pagination; Candidate detail; Application detail; submitted answers; stage history; secure resume access.
+- **Frontend work:** recruiter list/detail/application routes, URL-owned filters, responsive states, and accessible document action.
+- **Backend work:** four authenticated APIs, DTOs, permission checks, tenant-scoped repositories, and S3 GET signing.
+- **Database work:** uses the Phase 12 Candidate, Application, Answer, Document, and StageHistory models; no speculative schema changes.
+- **Security considerations:** ADMIN/RECRUITER only; HIRING_MANAGER and INTERVIEWER denied; organization-scoped lookups; private short-lived document URLs.
+- **Performance considerations:** bounded database-side pagination, one list query, no candidate-row detail requests, and user-action-only signing.
+- **Testing expectations:** focused candidate/application/document, authorization, tenant-scope, routing, and list-control coverage.
+- **Documentation outputs:** `docs/architecture/PHASE_13_HANDOFF.md`.
+- **Dependencies:** Phases 07–09 and 11–12.
+- **Definition of Done:** the Phase 13 Candidate Management slice is complete;
+  later workflow-management, activity, and broader search capabilities remain
+  future scope.
 
 ## Phase 14 — Interview Scheduling & Calendar — NOT STARTED
 

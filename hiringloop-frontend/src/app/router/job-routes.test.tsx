@@ -20,6 +20,11 @@ vi.mock('../../features/application-form', () => ({
 vi.mock('../../features/candidate-application', () => ({
   PublicApplyPage: () => <h1>Apply route</h1>,
 }))
+vi.mock('../../features/candidate-management', () => ({
+  CandidatesPage: () => <h1>Candidates route</h1>,
+  CandidateDetailPage: () => <h1>Candidate detail route</h1>,
+  ApplicationDetailPage: () => <h1>Application detail route</h1>,
+}))
 vi.mock('../../features/organizations/hooks/queries', () => ({
   useOrganizations: () => ({ data: [] }),
 }))
@@ -37,6 +42,15 @@ describe('Job route matching', () => {
     [
       '/app/organizations/org-1/jobs/job-1/application-form',
       'Application form route',
+    ],
+    ['/app/organizations/org-1/candidates', 'Candidates route'],
+    [
+      '/app/organizations/org-1/candidates/candidate-1',
+      'Candidate detail route',
+    ],
+    [
+      '/app/organizations/org-1/applications/application-1',
+      'Application detail route',
     ],
     ['/careers/acme/jobs/job-1/apply', 'Apply route'],
   ])('%s renders %s', (path, heading) => {

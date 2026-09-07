@@ -53,6 +53,22 @@ export function createAwsS3ApplicationStorage({ bucket, region, expiresIn }) {
       }
     },
 
+    async createSignedGetUrl({ objectKey, expiresIn: getUrlExpiresIn }) {
+      try {
+        const runtime = await client();
+        const command = new runtime.s3.GetObjectCommand({
+          Bucket: bucket,
+          Key: objectKey,
+        });
+        return runtime.presigner.getSignedUrl(runtime.client, command, {
+          expiresIn: getUrlExpiresIn,
+        });
+      } catch (error) {
+        if (error instanceof StorageProviderError) throw error;
+        throw new StorageProviderError();
+      }
+    },
+
     async headObject({ objectKey }) {
       try {
         const runtime = await client();

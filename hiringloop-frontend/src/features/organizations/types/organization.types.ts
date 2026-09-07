@@ -28,6 +28,9 @@ export type OrganizationPermission =
   | 'pipeline:configure'
   | 'application-form:view'
   | 'application-form:configure'
+  | 'candidate:list'
+  | 'candidate:read'
+  | 'candidate-document:access'
 
 export interface CreateOrganizationInput {
   readonly name: string

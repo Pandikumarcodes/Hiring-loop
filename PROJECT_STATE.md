@@ -6,7 +6,16 @@ Software Engineering
 
 ## Current phase
 
-Phase 12 — Candidate Application Flow: **COMPLETE**
+Phase 13 — Candidate Management: **COMPLETE**
+
+## Phase 13 final status
+
+- Database, backend, and frontend implementation are complete.
+- Exactly 4 authenticated candidate-management APIs and 3 recruiter routes.
+- Candidate list/search/filter/sort/pagination, Candidate detail, Application detail, submitted answers, stage history, and secure resume access are complete.
+- ADMIN and RECRUITER are allowed; HIRING_MANAGER and INTERVIEWER remain denied.
+- Final engineering audit passed with no targeted code fixes required.
+- Final handoff: `docs/architecture/PHASE_13_HANDOFF.md`.
 
 ## Phase 12 final status
 
@@ -27,7 +36,7 @@ Manual QA: **PASS**
 
 ## Next phase
 
-Phase 13 — Candidate Management: **NOT STARTED**
+Phase 14 — Interview Scheduling & Calendar: **NOT STARTED**
 
 ## Phase 10 final status
 

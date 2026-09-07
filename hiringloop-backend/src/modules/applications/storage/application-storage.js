@@ -16,5 +16,9 @@ export function createUnavailableApplicationStorage() {
   const unavailable = async () => {
     throw new StorageProviderError();
   };
-  return { createSignedPutUrl: unavailable, headObject: unavailable };
+  return {
+    createSignedPutUrl: unavailable,
+    createSignedGetUrl: unavailable,
+    headObject: unavailable,
+  };
 }

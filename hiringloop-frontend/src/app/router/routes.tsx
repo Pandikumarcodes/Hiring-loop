@@ -33,6 +33,11 @@ import {
   PublicJobDetailPage,
 } from '../../features/public-careers/pages'
 import { PublicApplyPage } from '../../features/candidate-application'
+import {
+  ApplicationDetailPage,
+  CandidateDetailPage,
+  CandidatesPage,
+} from '../../features/candidate-management'
 
 function OrganizationOnboardingRoute() {
   const organizations = useOrganizations()
@@ -108,6 +113,18 @@ export function AppRoutes() {
           <Route
             path="organizations/:organizationId/jobs/:jobId/application-form"
             element={<ApplicationFormBuilderPage />}
+          />
+          <Route
+            path="organizations/:organizationId/candidates"
+            element={<CandidatesPage />}
+          />
+          <Route
+            path="organizations/:organizationId/candidates/:candidateId"
+            element={<CandidateDetailPage />}
+          />
+          <Route
+            path="organizations/:organizationId/applications/:applicationId"
+            element={<ApplicationDetailPage />}
           />
           <Route path="organizations" element={<OrganizationLandingPage />} />
           <Route path="*" element={<NotFoundPage />} />

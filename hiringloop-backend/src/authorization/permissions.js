@@ -31,6 +31,9 @@ export const PERMISSIONS = Object.freeze({
   PIPELINE_CONFIGURE: 'pipeline:configure',
   APPLICATION_FORM_VIEW: 'application-form:view',
   APPLICATION_FORM_CONFIGURE: 'application-form:configure',
+  CANDIDATE_LIST: 'candidate:list',
+  CANDIDATE_READ: 'candidate:read',
+  CANDIDATE_DOCUMENT_ACCESS: 'candidate-document:access',
 });
 
 const ADMIN_PERMISSIONS = Object.freeze(Object.values(PERMISSIONS));
@@ -55,6 +58,9 @@ export const ROLE_PERMISSIONS = Object.freeze({
     PERMISSIONS.PIPELINE_CONFIGURE,
     PERMISSIONS.APPLICATION_FORM_VIEW,
     PERMISSIONS.APPLICATION_FORM_CONFIGURE,
+    PERMISSIONS.CANDIDATE_LIST,
+    PERMISSIONS.CANDIDATE_READ,
+    PERMISSIONS.CANDIDATE_DOCUMENT_ACCESS,
   ]),
   // Hiring Managers retain the same read scope as JOB_READ: they can inspect
   // a job's current application configuration, but cannot configure it.
