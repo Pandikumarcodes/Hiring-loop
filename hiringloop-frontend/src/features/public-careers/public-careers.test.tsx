@@ -127,7 +127,7 @@ describe('public careers', () => {
     ).toBeVisible()
     expect(screen.getByRole('button', { name: 'Try again' })).toBeVisible()
   })
-  test('renders public job detail without an apply action', () => {
+  test('renders public job detail with the apply action', () => {
     mocks.job.mockReturnValue({
       isPending: false,
       isError: false,
@@ -144,7 +144,9 @@ describe('public careers', () => {
     expect(
       screen.getByRole('link', { name: 'All open positions' }),
     ).toHaveAttribute('href', '/careers/acme')
-    expect(screen.queryByText(/^Apply( now)?$/i)).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Apply for this role' }),
+    ).toHaveAttribute('href', '/careers/acme/jobs/job-1/apply')
   })
   test('does not render a non-http organization website as a link', () => {
     mocks.jobs.mockReturnValue({

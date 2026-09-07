@@ -17,6 +17,9 @@ vi.mock('../../features/pipelines', () => ({
 vi.mock('../../features/application-form', () => ({
   ApplicationFormBuilderPage: () => <h1>Application form route</h1>,
 }))
+vi.mock('../../features/candidate-application', () => ({
+  PublicApplyPage: () => <h1>Apply route</h1>,
+}))
 vi.mock('../../features/organizations/hooks/queries', () => ({
   useOrganizations: () => ({ data: [] }),
 }))
@@ -35,6 +38,7 @@ describe('Job route matching', () => {
       '/app/organizations/org-1/jobs/job-1/application-form',
       'Application form route',
     ],
+    ['/careers/acme/jobs/job-1/apply', 'Apply route'],
   ])('%s renders %s', (path, heading) => {
     render(
       <MemoryRouter initialEntries={[path]}>

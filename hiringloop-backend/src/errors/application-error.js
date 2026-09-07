@@ -32,6 +32,20 @@ export const ERROR_CODES = Object.freeze({
   APPLICATION_FORM_DRAFT_NOT_FOUND: 'APPLICATION_FORM_DRAFT_NOT_FOUND',
   APPLICATION_FORM_QUESTION_LIMIT_REACHED:
     'APPLICATION_FORM_QUESTION_LIMIT_REACHED',
+  APPLICATION_FORM_UNAVAILABLE: 'APPLICATION_FORM_UNAVAILABLE',
+  JOB_NOT_ACCEPTING_APPLICATIONS: 'JOB_NOT_ACCEPTING_APPLICATIONS',
+  INVALID_FORM_VERSION: 'INVALID_FORM_VERSION',
+  INVALID_APPLICATION_ANSWER: 'INVALID_APPLICATION_ANSWER',
+  REQUIRED_ANSWER_MISSING: 'REQUIRED_ANSWER_MISSING',
+  INVALID_APPLICATION_UPLOAD: 'INVALID_APPLICATION_UPLOAD',
+  APPLICATION_UPLOAD_EXPIRED: 'APPLICATION_UPLOAD_EXPIRED',
+  APPLICATION_UPLOAD_ALREADY_CONSUMED: 'APPLICATION_UPLOAD_ALREADY_CONSUMED',
+  DUPLICATE_APPLICATION: 'DUPLICATE_APPLICATION',
+  IDEMPOTENCY_CONFLICT: 'IDEMPOTENCY_CONFLICT',
+  FILE_TYPE_NOT_ALLOWED: 'FILE_TYPE_NOT_ALLOWED',
+  FILE_TOO_LARGE: 'FILE_TOO_LARGE',
+  APPLICATION_STORAGE_UNAVAILABLE: 'APPLICATION_STORAGE_UNAVAILABLE',
+  INITIAL_PIPELINE_STAGE_UNAVAILABLE: 'INITIAL_PIPELINE_STAGE_UNAVAILABLE',
 });
 
 export class ApplicationError extends Error {
@@ -267,4 +281,92 @@ export const applicationFormQuestionLimitError = () =>
     status: 400,
     code: ERROR_CODES.APPLICATION_FORM_QUESTION_LIMIT_REACHED,
     message: 'An application form cannot contain more than 100 questions',
+  });
+
+function publicApplicationError({ code, message, status = 409 }) {
+  return new ApplicationError({ status, code, message });
+}
+export const applicationFormUnavailableError = () =>
+  publicApplicationError({
+    status: 404,
+    code: ERROR_CODES.APPLICATION_FORM_UNAVAILABLE,
+    message: 'Application form is unavailable',
+  });
+export const jobNotAcceptingApplicationsError = () =>
+  publicApplicationError({
+    status: 409,
+    code: ERROR_CODES.JOB_NOT_ACCEPTING_APPLICATIONS,
+    message: 'This job is not accepting applications',
+  });
+export const invalidFormVersionError = () =>
+  publicApplicationError({
+    status: 400,
+    code: ERROR_CODES.INVALID_FORM_VERSION,
+    message: 'The application form version is invalid',
+  });
+export const invalidApplicationAnswerError = () =>
+  publicApplicationError({
+    status: 400,
+    code: ERROR_CODES.INVALID_APPLICATION_ANSWER,
+    message: 'An application answer is invalid',
+  });
+export const requiredAnswerMissingError = () =>
+  publicApplicationError({
+    status: 400,
+    code: ERROR_CODES.REQUIRED_ANSWER_MISSING,
+    message: 'A required application answer is missing',
+  });
+export const invalidApplicationUploadError = () =>
+  publicApplicationError({
+    status: 400,
+    code: ERROR_CODES.INVALID_APPLICATION_UPLOAD,
+    message: 'The resume upload is invalid',
+  });
+export const applicationUploadExpiredError = () =>
+  publicApplicationError({
+    status: 409,
+    code: ERROR_CODES.APPLICATION_UPLOAD_EXPIRED,
+    message: 'The resume upload has expired',
+  });
+export const applicationUploadAlreadyConsumedError = () =>
+  publicApplicationError({
+    status: 409,
+    code: ERROR_CODES.APPLICATION_UPLOAD_ALREADY_CONSUMED,
+    message: 'The resume upload has already been used',
+  });
+export const duplicateApplicationError = () =>
+  publicApplicationError({
+    status: 409,
+    code: ERROR_CODES.DUPLICATE_APPLICATION,
+    message: 'An application for this job already exists',
+  });
+export const idempotencyConflictError = () =>
+  publicApplicationError({
+    status: 409,
+    code: ERROR_CODES.IDEMPOTENCY_CONFLICT,
+    message: 'The idempotency key was reused with a different submission',
+  });
+export const fileTypeNotAllowedError = () =>
+  publicApplicationError({
+    status: 400,
+    code: ERROR_CODES.FILE_TYPE_NOT_ALLOWED,
+    message: 'The resume file type is not allowed',
+  });
+export const fileTooLargeError = () =>
+  publicApplicationError({
+    status: 400,
+    code: ERROR_CODES.FILE_TOO_LARGE,
+    message: 'The resume file is too large',
+  });
+export const applicationStorageUnavailableError = () =>
+  publicApplicationError({
+    status: 503,
+    code: ERROR_CODES.APPLICATION_STORAGE_UNAVAILABLE,
+    message: 'Resume storage is temporarily unavailable',
+  });
+export const initialPipelineStageUnavailableError = () =>
+  publicApplicationError({
+    status: 409,
+    code: ERROR_CODES.INITIAL_PIPELINE_STAGE_UNAVAILABLE,
+    message: 'This job cannot accept applications at this time',
   });

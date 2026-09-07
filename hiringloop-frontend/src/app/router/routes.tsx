@@ -32,6 +32,7 @@ import {
   PublicCareerPage,
   PublicJobDetailPage,
 } from '../../features/public-careers/pages'
+import { PublicApplyPage } from '../../features/candidate-application'
 
 function OrganizationOnboardingRoute() {
   const organizations = useOrganizations()
@@ -62,6 +63,10 @@ export function AppRoutes() {
         <Route
           path="careers/:organizationSlug/jobs/:jobId"
           element={<PublicJobDetailPage />}
+        />
+        <Route
+          path="careers/:organizationSlug/jobs/:jobId/apply"
+          element={<PublicApplyPage />}
         />
         <Route path="*" element={<NotFoundPage />} />
       </Route>

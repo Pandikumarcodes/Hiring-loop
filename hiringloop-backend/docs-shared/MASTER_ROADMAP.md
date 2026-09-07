@@ -2,7 +2,8 @@
 
 > Current-state supersession (Phase 10 audit): Phase 10 Public Career Site is
 > **COMPLETE**. Phase 11 — Application Form Builder is **COMPLETE**; Phase 12
-> — Candidate Application Flow is **NOT STARTED**.
+> — Candidate Application Flow is **COMPLETE**; Phase 13 — Candidate
+> Management is **NOT STARTED**.
 > Historical task detail below is retained for roadmap traceability where it
 > does not conflict with current status.
 
@@ -18,7 +19,11 @@
 - Phase 11 — Application Form Builder — **COMPLETE**. Database, backend,
   frontend, audit, final handoff, and Manual QA are complete; it provides
   exactly 8 authenticated recruiter configuration APIs.
-- Phase 12 — Candidate Application Flow — **NOT STARTED**.
+- Phase 12 — Candidate Application Flow — **COMPLETE**. It provides exactly
+  3 public APIs and 1 public Apply route, organization-scoped
+  Candidate/Application persistence, immutable form-version answers, private
+  direct S3 resume upload, idempotency, and initial pipeline placement.
+- Phase 13 — Candidate Management — **NOT STARTED**.
 
 This document is the authoritative end-to-end implementation roadmap for HiringLoop. It is governed by `PROJECT_INSTRUCTIONS.md`, `PROJECT_STATE.md`, and the architecture documents under `docs/architecture/` and `docs/adr/`.
 
@@ -384,7 +389,7 @@ complete; engineering audit and manual QA remain pending.
 - **Definition of Done:** complete; candidate and submission functionality is
   explicitly deferred.
 
-## Phase 12 — Candidate Application Flow — NOT STARTED
+## Phase 12 — Candidate Application Flow — COMPLETE
 
 - **Objective:** accept a candidate's application against a published Job form.
 - **Features/sub-features:** candidate/application creation, answers tied to a

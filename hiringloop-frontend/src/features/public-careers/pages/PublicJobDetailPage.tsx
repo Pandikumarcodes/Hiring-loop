@@ -133,6 +133,14 @@ export function PublicJobDetailPage() {
             </a>
           ) : null}
         </section>
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Link
+            className="inline-flex min-h-11 items-center justify-center rounded-control bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-dark focus-visible:outline-3 focus-visible:outline-primary-dark focus-visible:outline-offset-2"
+            to={`/careers/${encodeURIComponent(organizationSlug)}/jobs/${encodeURIComponent(jobId)}/apply`}
+          >
+            Apply for this role
+          </Link>
+        </div>
       </article>
     </Wrap>
   )

@@ -119,6 +119,12 @@ export function createJobRepository(prisma) {
         select: PUBLIC_DETAIL_SELECT,
       });
     },
+    async findPublicApplicationJobForOrganization({ organizationId, jobId }) {
+      return prisma.job.findFirst({
+        where: { id: jobId, organizationId },
+        select: { id: true, title: true, status: true },
+      });
+    },
     async list({
       organizationId,
       page,

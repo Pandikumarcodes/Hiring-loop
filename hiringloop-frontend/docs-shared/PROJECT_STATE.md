@@ -6,9 +6,9 @@ Software Engineering
 
 ## Current phase
 
-Phase 11 — Application Form Builder: **COMPLETE**
+Phase 12 — Candidate Application Flow: **COMPLETE**
 
-## Phase 11 final status
+## Phase 12 final status
 
 Prompt 1 Database: **COMPLETE**
 
@@ -21,14 +21,13 @@ Prompt 4 Audit: **COMPLETE**
 Manual QA: **PASS**
 
 - Database, backend, and frontend implementation are complete.
-- Prompt 4 audit passed with targeted fixes, including active-version ownership
-  integrity.
-- The final recruiter configuration API count is **8**.
-- Final handoff: `docs/architecture/PHASE_11_HANDOFF.md`.
+- Final engineering audit passed with a targeted dynamic-form accessibility fix.
+- Exactly 3 public application APIs and 1 public Apply route.
+- Final handoff: `docs/architecture/PHASE_12_HANDOFF.md`.
 
 ## Next phase
 
-Phase 12 — Candidate Application Flow: **NOT STARTED**
+Phase 13 — Candidate Management: **NOT STARTED**
 
 ## Phase 10 final status
 

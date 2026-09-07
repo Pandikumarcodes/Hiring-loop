@@ -20,5 +20,8 @@ describe('public career query keys', () => {
     expect(publicCareerKeys.job('acme', 'one')).not.toEqual(
       publicCareerKeys.job('acme', 'two'),
     )
+    expect(publicCareerKeys.applicationForm('acme', 'one')).not.toEqual(
+      publicCareerKeys.applicationForm('acme', 'two'),
+    )
   })
 })

@@ -24,6 +24,12 @@ export const PUBLIC_CAREER_RATE_LIMIT_POLICY = Object.freeze({
   windowMs: HOUR_MS,
 });
 
+export const PUBLIC_APPLICATION_RATE_LIMIT_POLICIES = Object.freeze({
+  form: Object.freeze({ limit: 60, windowMs: HOUR_MS }),
+  upload: Object.freeze({ limit: 12, windowMs: HOUR_MS }),
+  submission: Object.freeze({ limit: 8, windowMs: HOUR_MS }),
+});
+
 function emailFingerprint(request) {
   const email = request.body?.email;
   if (typeof email !== 'string') return null;
@@ -85,6 +91,38 @@ export function createPublicCareerReadRateLimiter({
 }
 
 export const publicCareerReadRateLimiter = createPublicCareerReadRateLimiter();
+
+export function createPublicApplicationRateLimiters({
+  policyOverrides = {},
+} = {}) {
+  const policy = (name) => ({
+    ...PUBLIC_APPLICATION_RATE_LIMIT_POLICIES[name],
+    ...(policyOverrides[name] ?? {}),
+  });
+  return {
+    applicationFormRateLimiter: createLimiter(
+      'public-application-form',
+      policy('form'),
+      ipKey,
+      policyOverrides.form,
+    ),
+    applicationUploadRateLimiter: createLimiter(
+      'public-application-upload',
+      policy('upload'),
+      ipKey,
+      policyOverrides.upload,
+    ),
+    applicationSubmissionRateLimiter: createLimiter(
+      'public-application-submission',
+      policy('submission'),
+      ipKey,
+      policyOverrides.submission,
+    ),
+  };
+}
+
+export const publicApplicationRateLimiters =
+  createPublicApplicationRateLimiters();
 
 /**
  * Build isolated named infrastructure limiters. The default store is the

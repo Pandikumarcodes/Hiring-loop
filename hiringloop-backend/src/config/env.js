@@ -31,6 +31,24 @@ const optionalEmailSchema = z.preprocess(
   z.string().email().optional(),
 );
 
+const optionalBucketSchema = z.preprocess(
+  (value) => (value === '' ? undefined : value),
+  z.string().min(3).max(63).optional(),
+);
+
+const optionalPositiveIntegerSchema = (minimum, maximum, fallback) =>
+  z.preprocess(
+    (value) => (value === undefined || value === '' ? String(fallback) : value),
+    z
+      .string()
+      .regex(/^\d+$/, 'must be a whole number')
+      .transform(Number)
+      .refine(
+        (value) => value >= minimum && value <= maximum,
+        `must be between ${minimum} and ${maximum}`,
+      ),
+  );
+
 const emailProviderSchema = z.enum(['sendgrid', 'console']).default('sendgrid');
 
 const frontendOriginSchema = z.preprocess(
@@ -62,6 +80,14 @@ const environmentInputSchema = z.object({
   GOOGLE_OIDC_CLIENT_ID: optionalSecretSchema,
   GOOGLE_OIDC_CLIENT_SECRET: optionalSecretSchema,
   GOOGLE_OIDC_REDIRECT_URI: optionalUrlSchema,
+
+  S3_BUCKET: optionalBucketSchema,
+  S3_REGION: optionalSecretSchema,
+  APPLICATION_UPLOAD_SIGNED_URL_TTL_SECONDS: optionalPositiveIntegerSchema(
+    300,
+    600,
+    600,
+  ),
 });
 
 const parsedEnvironment = environmentInputSchema.safeParse({
@@ -81,6 +107,11 @@ const parsedEnvironment = environmentInputSchema.safeParse({
   GOOGLE_OIDC_CLIENT_ID: process.env.GOOGLE_OIDC_CLIENT_ID,
   GOOGLE_OIDC_CLIENT_SECRET: process.env.GOOGLE_OIDC_CLIENT_SECRET,
   GOOGLE_OIDC_REDIRECT_URI: process.env.GOOGLE_OIDC_REDIRECT_URI,
+
+  S3_BUCKET: process.env.S3_BUCKET,
+  S3_REGION: process.env.S3_REGION,
+  APPLICATION_UPLOAD_SIGNED_URL_TTL_SECONDS:
+    process.env.APPLICATION_UPLOAD_SIGNED_URL_TTL_SECONDS,
 });
 
 if (!parsedEnvironment.success) {
@@ -103,7 +134,17 @@ const {
   GOOGLE_OIDC_CLIENT_ID,
   GOOGLE_OIDC_CLIENT_SECRET,
   GOOGLE_OIDC_REDIRECT_URI,
+  S3_BUCKET,
+  S3_REGION,
+  APPLICATION_UPLOAD_SIGNED_URL_TTL_SECONDS,
 } = parsedEnvironment.data;
+
+const s3Configured = Boolean(S3_BUCKET || S3_REGION);
+if (s3Configured && !(S3_BUCKET && S3_REGION)) {
+  throw new Error(
+    'Configuration error: S3_BUCKET and S3_REGION must be configured together for application uploads',
+  );
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -139,6 +180,12 @@ if (
 if (NODE_ENV === 'production' && EMAIL_PROVIDER === 'console') {
   throw new Error(
     'Configuration error: EMAIL_PROVIDER=console is not allowed in production',
+  );
+}
+
+if (NODE_ENV === 'production' && !s3Configured) {
+  throw new Error(
+    'Configuration error: S3_BUCKET and S3_REGION are required in production for application uploads',
   );
 }
 
@@ -240,6 +287,14 @@ export const config = Object.freeze({
     clientSecret: GOOGLE_OIDC_CLIENT_SECRET,
     redirectUri: GOOGLE_OIDC_REDIRECT_URI,
     issuer: 'https://accounts.google.com',
+  }),
+
+  applicationUploads: Object.freeze({
+    enabled: s3Configured,
+    bucket: S3_BUCKET,
+    region: S3_REGION,
+    signedUrlTtlSeconds: APPLICATION_UPLOAD_SIGNED_URL_TTL_SECONDS,
+    maxBytes: 5 * 1024 * 1024,
   }),
 
   authSession: Object.freeze({

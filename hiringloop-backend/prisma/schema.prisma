@@ -98,6 +98,12 @@ model Organization {
   applicationFormVersions ApplicationFormVersion[]
   applicationFormQuestions ApplicationFormQuestion[]
   applicationFormQuestionOptions ApplicationFormQuestionOption[]
+  candidates Candidate[]
+  applications Application[]
+  applicationAnswers ApplicationAnswer[]
+  candidateDocuments CandidateDocument[]
+  applicationUploads ApplicationUpload[]
+  applicationStageHistories ApplicationStageHistory[]
 }
 
 model OrganizationMembership {
@@ -184,6 +190,8 @@ model Job {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   pipeline     Pipeline?
   applicationForm ApplicationForm?
+  applications Application[]
+  applicationUploads ApplicationUpload[]
 
   @@index([organizationId, updatedAt])
   @@index([organizationId, status, updatedAt])
@@ -212,6 +220,9 @@ model PipelineStage {
   updatedAt      DateTime          @updatedAt @db.Timestamptz(6)
 
   pipeline Pipeline @relation(fields: [pipelineId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  currentApplications Application[] @relation("ApplicationCurrentStage")
+  stageHistoryTo ApplicationStageHistory[] @relation("ApplicationStageHistoryTo")
+  stageHistoryFrom ApplicationStageHistory[] @relation("ApplicationStageHistoryFrom")
 
   @@unique([pipelineId, position])
   @@unique([pipelineId, normalizedName])
@@ -264,6 +275,7 @@ model ApplicationFormVersion {
   applicationForm ApplicationForm @relation("ApplicationFormVersions", fields: [applicationFormId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   activeFor ApplicationForm? @relation("ApplicationFormActiveVersion")
   questions ApplicationFormQuestion[]
+  applications Application[]
 
   @@unique([applicationFormId, versionNumber])
   @@index([applicationFormId, status])
@@ -286,6 +298,7 @@ model ApplicationFormQuestion {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   applicationFormVersion ApplicationFormVersion @relation(fields: [applicationFormVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   options ApplicationFormQuestionOption[]
+  answers ApplicationAnswer[]
 
   @@unique([applicationFormVersionId, questionKey])
   @@index([applicationFormVersionId, sortOrder])
@@ -306,4 +319,147 @@ model ApplicationFormQuestionOption {
 
   @@unique([questionId, value])
   @@index([questionId, sortOrder])
+}
+
+enum CandidateDocumentType {
+  RESUME
+}
+
+enum ApplicationUploadStatus {
+  PENDING
+  CONSUMED
+  EXPIRED
+}
+
+model Candidate {
+  id              String   @id @db.Uuid
+  organizationId  String   @db.Uuid
+  normalizedEmail String   @db.VarChar(320)
+  email           String   @db.VarChar(320)
+  firstName       String   @db.VarChar(100)
+  lastName        String   @db.VarChar(100)
+  phone           String?  @db.VarChar(50)
+  createdAt       DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  applications Application[]
+  documents CandidateDocument[]
+
+  @@unique([organizationId, normalizedEmail])
+  @@unique([id, organizationId])
+}
+
+model Application {
+  id                       String   @id @db.Uuid
+  organizationId           String   @db.Uuid
+  jobId                    String   @db.Uuid
+  candidateId              String   @db.Uuid
+  applicationFormVersionId String   @db.Uuid
+  currentPipelineStageId   String   @db.Uuid
+  submittedFirstName       String   @db.VarChar(100)
+  submittedLastName        String   @db.VarChar(100)
+  submittedEmail           String   @db.VarChar(320)
+  submittedPhone           String?  @db.VarChar(50)
+  idempotencyKey           String   @db.Uuid
+  requestFingerprint       String   @db.Char(64)
+  submittedAt              DateTime @default(now()) @db.Timestamptz(6)
+  createdAt                DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt                DateTime @updatedAt @db.Timestamptz(6)
+
+  organization Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  job          Job                    @relation(fields: [jobId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  candidate    Candidate              @relation(fields: [candidateId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  formVersion  ApplicationFormVersion @relation(fields: [applicationFormVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  currentStage PipelineStage          @relation("ApplicationCurrentStage", fields: [currentPipelineStageId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  answers      ApplicationAnswer[]
+  documents    CandidateDocument[]
+  stageHistory ApplicationStageHistory[]
+  consumedUpload ApplicationUpload? @relation("ConsumedApplicationUpload")
+
+  @@unique([organizationId, jobId, candidateId])
+  @@unique([organizationId, jobId, idempotencyKey])
+  @@unique([id, organizationId])
+  @@index([organizationId, jobId, submittedAt])
+  @@index([applicationFormVersionId])
+  @@index([currentPipelineStageId])
+}
+
+model ApplicationAnswer {
+  id             String   @id @db.Uuid
+  organizationId String   @db.Uuid
+  applicationId  String   @db.Uuid
+  questionId     String   @db.Uuid
+  value          Json
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(6)
+
+  organization Organization            @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  application  Application             @relation(fields: [applicationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  question     ApplicationFormQuestion @relation(fields: [questionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([applicationId, questionId])
+  @@index([questionId])
+}
+
+model CandidateDocument {
+  id               String                @id @db.Uuid
+  organizationId   String                @db.Uuid
+  candidateId      String                @db.Uuid
+  applicationId    String                @db.Uuid
+  type             CandidateDocumentType
+  objectKey        String                @unique @db.VarChar(512)
+  originalFilename String                @db.VarChar(255)
+  mimeType         String                @db.VarChar(127)
+  sizeBytes        Int
+  createdAt        DateTime              @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime              @updatedAt @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  candidate    Candidate    @relation(fields: [candidateId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  application  Application  @relation(fields: [applicationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([organizationId, candidateId])
+  @@index([applicationId])
+}
+
+model ApplicationUpload {
+  id                    String                  @id @db.Uuid
+  organizationId        String                  @db.Uuid
+  jobId                 String                  @db.Uuid
+  objectKey             String                  @unique @db.VarChar(512)
+  originalFilename      String                  @db.VarChar(255)
+  mimeType              String                  @db.VarChar(127)
+  declaredSizeBytes     Int
+  status                ApplicationUploadStatus @default(PENDING)
+  expiresAt             DateTime                @db.Timestamptz(6)
+  consumedAt            DateTime?               @db.Timestamptz(6)
+  consumedApplicationId String?                 @unique @db.Uuid
+  createdAt             DateTime                @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime                @updatedAt @db.Timestamptz(6)
+
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  job                 Job          @relation(fields: [jobId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  consumedApplication Application? @relation("ConsumedApplicationUpload", fields: [consumedApplicationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([organizationId, jobId, status, expiresAt])
+  @@index([expiresAt])
+}
+
+model ApplicationStageHistory {
+  id             String   @id @db.Uuid
+  organizationId String   @db.Uuid
+  applicationId  String   @db.Uuid
+  fromStageId    String?  @db.Uuid
+  toStageId      String   @db.Uuid
+  event          String   @db.VarChar(64)
+  occurredAt     DateTime @default(now()) @db.Timestamptz(6)
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  application  Application   @relation(fields: [applicationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  fromStage    PipelineStage? @relation("ApplicationStageHistoryFrom", fields: [fromStageId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  toStage      PipelineStage  @relation("ApplicationStageHistoryTo", fields: [toStageId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([applicationId, occurredAt])
 }

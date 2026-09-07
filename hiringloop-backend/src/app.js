@@ -20,7 +20,12 @@ app.use(
       callback(null, origin ? origin === config.frontendOrigin : false),
     credentials: true,
     methods: ['GET', 'HEAD', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'X-Request-ID', 'X-CSRF-Token'],
+    allowedHeaders: [
+      'Content-Type',
+      'X-Request-ID',
+      'X-CSRF-Token',
+      'Idempotency-Key',
+    ],
     optionsSuccessStatus: 204,
   }),
 );
