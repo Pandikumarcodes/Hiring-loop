@@ -39,6 +39,25 @@ describe('Public career site database integration', () => {
   });
 
   afterAll(async () => {
+    await prisma.$transaction(async (transaction) => {
+      await transaction.$executeRawUnsafe('SET CONSTRAINTS ALL DEFERRED');
+      await transaction.applicationFormQuestionOption.deleteMany({
+        where: {
+          organizationId: { in: [organizationId, otherOrganizationId] },
+        },
+      });
+      await transaction.applicationFormQuestion.deleteMany({
+        where: {
+          organizationId: { in: [organizationId, otherOrganizationId] },
+        },
+      });
+      await transaction.$executeRawUnsafe(
+        `DELETE FROM "ApplicationFormVersion" WHERE "organizationId" IN ('${organizationId}', '${otherOrganizationId}')`,
+      );
+      await transaction.$executeRawUnsafe(
+        `DELETE FROM "ApplicationForm" WHERE "organizationId" IN ('${organizationId}', '${otherOrganizationId}')`,
+      );
+    });
     await prisma.pipelineStage.deleteMany({
       where: {
         pipeline: {

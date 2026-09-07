@@ -6,11 +6,29 @@ Software Engineering
 
 ## Current phase
 
-Phase 10 — Public Career Site: **COMPLETE**
+Phase 11 — Application Form Builder: **COMPLETE**
+
+## Phase 11 final status
+
+Prompt 1 Database: **COMPLETE**
+
+Prompt 2 Backend: **COMPLETE**
+
+Prompt 3 Frontend: **COMPLETE**
+
+Prompt 4 Audit: **COMPLETE**
+
+Manual QA: **PASS**
+
+- Database, backend, and frontend implementation are complete.
+- Prompt 4 audit passed with targeted fixes, including active-version ownership
+  integrity.
+- The final recruiter configuration API count is **8**.
+- Final handoff: `docs/architecture/PHASE_11_HANDOFF.md`.
 
 ## Next phase
 
-Phase 11 — Application Form Builder: **NOT STARTED**
+Phase 12 — Candidate Application Flow: **NOT STARTED**
 
 ## Phase 10 final status
 

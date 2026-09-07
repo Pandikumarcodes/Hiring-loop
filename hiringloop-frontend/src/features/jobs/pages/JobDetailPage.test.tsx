@@ -46,6 +46,38 @@ beforeEach(() => {
 afterEach(cleanup)
 
 describe('Job Detail state ordering', () => {
+  test('hides the Application form entry when an Interviewer lacks its view permission', () => {
+    mocks.organization.mockReturnValue({
+      isPending: false,
+      isError: false,
+      data: { permissions: ['job:read'], slug: 'acme-careers' },
+    })
+    mocks.job.mockReturnValue({
+      isPending: false,
+      isError: false,
+      data: {
+        id: 'job-1',
+        title: 'Engineer',
+        department: null,
+        employmentType: 'FULL_TIME',
+        workplaceType: 'REMOTE',
+        location: null,
+        description: null,
+        openings: 1,
+        status: 'DRAFT',
+        version: 1,
+        openedAt: null,
+        closedAt: null,
+        archivedAt: null,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
+    })
+    renderPage()
+    expect(
+      screen.queryByRole('button', { name: 'Application form' }),
+    ).not.toBeInTheDocument()
+  })
   test('does not show a not-found/error state while permissions are loading', () => {
     mocks.organization.mockReturnValue({ isPending: true, isError: false })
     mocks.job.mockReturnValue({ isPending: true, isError: false })

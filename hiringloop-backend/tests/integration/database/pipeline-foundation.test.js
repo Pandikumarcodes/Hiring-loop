@@ -39,6 +39,21 @@ describe('Pipeline database foundation', () => {
   });
 
   afterAll(async () => {
+    await prisma.$transaction(async (transaction) => {
+      await transaction.$executeRawUnsafe('SET CONSTRAINTS ALL DEFERRED');
+      await transaction.applicationFormQuestionOption.deleteMany({
+        where: { organizationId },
+      });
+      await transaction.applicationFormQuestion.deleteMany({
+        where: { organizationId },
+      });
+      await transaction.$executeRawUnsafe(
+        `DELETE FROM "ApplicationFormVersion" WHERE "organizationId" = '${organizationId}'`,
+      );
+      await transaction.$executeRawUnsafe(
+        `DELETE FROM "ApplicationForm" WHERE "organizationId" = '${organizationId}'`,
+      );
+    });
     await prisma.pipelineStage.deleteMany({
       where: { pipeline: { jobId: { in: createdJobIds } } },
     });

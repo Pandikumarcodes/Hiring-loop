@@ -25,6 +25,13 @@ export const ERROR_CODES = Object.freeze({
   PIPELINE_ENTRY_DELETE_FORBIDDEN: 'PIPELINE_ENTRY_DELETE_FORBIDDEN',
   PIPELINE_ENTRY_MOVE_FORBIDDEN: 'PIPELINE_ENTRY_MOVE_FORBIDDEN',
   PIPELINE_INVALID_STAGE_ORDER: 'PIPELINE_INVALID_STAGE_ORDER',
+  APPLICATION_FORM_NOT_FOUND: 'APPLICATION_FORM_NOT_FOUND',
+  APPLICATION_FORM_QUESTION_NOT_FOUND: 'APPLICATION_FORM_QUESTION_NOT_FOUND',
+  FORM_VERSION_CONFLICT: 'FORM_VERSION_CONFLICT',
+  APPLICATION_FORM_INVALID_ORDER: 'APPLICATION_FORM_INVALID_ORDER',
+  APPLICATION_FORM_DRAFT_NOT_FOUND: 'APPLICATION_FORM_DRAFT_NOT_FOUND',
+  APPLICATION_FORM_QUESTION_LIMIT_REACHED:
+    'APPLICATION_FORM_QUESTION_LIMIT_REACHED',
 });
 
 export class ApplicationError extends Error {
@@ -221,4 +228,43 @@ export const pipelineInvalidOrderError = () =>
     status: 400,
     code: ERROR_CODES.PIPELINE_INVALID_STAGE_ORDER,
     message: 'Stage order must contain every pipeline stage exactly once',
+  });
+
+function formError({ code, message, status = 409 }) {
+  return new ApplicationError({ status, code, message });
+}
+export const applicationFormNotFoundError = () =>
+  formError({
+    status: 404,
+    code: ERROR_CODES.APPLICATION_FORM_NOT_FOUND,
+    message: 'Application form not found',
+  });
+export const applicationFormDraftNotFoundError = () =>
+  formError({
+    status: 404,
+    code: ERROR_CODES.APPLICATION_FORM_DRAFT_NOT_FOUND,
+    message: 'Application form draft not found',
+  });
+export const applicationFormQuestionNotFoundError = () =>
+  formError({
+    status: 404,
+    code: ERROR_CODES.APPLICATION_FORM_QUESTION_NOT_FOUND,
+    message: 'Application form question not found',
+  });
+export const formVersionConflictError = () =>
+  formError({
+    code: ERROR_CODES.FORM_VERSION_CONFLICT,
+    message: 'Application form draft revision is stale',
+  });
+export const applicationFormInvalidOrderError = () =>
+  formError({
+    status: 400,
+    code: ERROR_CODES.APPLICATION_FORM_INVALID_ORDER,
+    message: 'Question order must contain every draft question exactly once',
+  });
+export const applicationFormQuestionLimitError = () =>
+  formError({
+    status: 400,
+    code: ERROR_CODES.APPLICATION_FORM_QUESTION_LIMIT_REACHED,
+    message: 'An application form cannot contain more than 100 questions',
   });

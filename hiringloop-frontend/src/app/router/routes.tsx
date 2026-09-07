@@ -27,6 +27,7 @@ import {
   JobsPage,
 } from '../../features/jobs'
 import { PipelineConfigurationPage } from '../../features/pipelines'
+import { ApplicationFormBuilderPage } from '../../features/application-form'
 import {
   PublicCareerPage,
   PublicJobDetailPage,
@@ -98,6 +99,10 @@ export function AppRoutes() {
           <Route
             path="organizations/:organizationId/jobs/:jobId/pipeline"
             element={<PipelineConfigurationPage />}
+          />
+          <Route
+            path="organizations/:organizationId/jobs/:jobId/application-form"
+            element={<ApplicationFormBuilderPage />}
           />
           <Route path="organizations" element={<OrganizationLandingPage />} />
           <Route path="*" element={<NotFoundPage />} />

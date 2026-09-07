@@ -94,6 +94,10 @@ model Organization {
   memberships OrganizationMembership[]
   invitations Invitation[]
   jobs        Job[]
+  applicationForms ApplicationForm[]
+  applicationFormVersions ApplicationFormVersion[]
+  applicationFormQuestions ApplicationFormQuestion[]
+  applicationFormQuestionOptions ApplicationFormQuestionOption[]
 }
 
 model OrganizationMembership {
@@ -179,6 +183,7 @@ model Job {
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   pipeline     Pipeline?
+  applicationForm ApplicationForm?
 
   @@index([organizationId, updatedAt])
   @@index([organizationId, status, updatedAt])
@@ -210,4 +215,95 @@ model PipelineStage {
 
   @@unique([pipelineId, position])
   @@unique([pipelineId, normalizedName])
+}
+
+enum ApplicationFormVersionStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum ApplicationFormQuestionType {
+  SHORT_TEXT
+  LONG_TEXT
+  NUMBER
+  YES_NO
+  SINGLE_SELECT
+  MULTI_SELECT
+  DATE
+  URL
+}
+
+model ApplicationForm {
+  id              String @id @db.Uuid
+  organizationId  String @db.Uuid
+  jobId           String @unique @db.Uuid
+  activeVersionId String @unique @db.Uuid
+  createdAt       DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  job          Job @relation(fields: [jobId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  activeVersion ApplicationFormVersion @relation("ApplicationFormActiveVersion", fields: [activeVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  versions     ApplicationFormVersion[] @relation("ApplicationFormVersions")
+
+  @@index([organizationId, jobId])
+}
+
+model ApplicationFormVersion {
+  id                String @id @db.Uuid
+  organizationId    String @db.Uuid
+  applicationFormId String @db.Uuid
+  versionNumber     Int
+  status            ApplicationFormVersionStatus
+  revision          Int @default(1)
+  publishedAt       DateTime? @db.Timestamptz(6)
+  createdAt         DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  applicationForm ApplicationForm @relation("ApplicationFormVersions", fields: [applicationFormId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  activeFor ApplicationForm? @relation("ApplicationFormActiveVersion")
+  questions ApplicationFormQuestion[]
+
+  @@unique([applicationFormId, versionNumber])
+  @@index([applicationFormId, status])
+}
+
+model ApplicationFormQuestion {
+  id                       String @id @db.Uuid
+  organizationId           String @db.Uuid
+  applicationFormVersionId String @db.Uuid
+  questionKey              String @db.VarChar(100)
+  type                     ApplicationFormQuestionType
+  label                    String @db.VarChar(500)
+  description              String? @db.Text
+  placeholder              String? @db.VarChar(500)
+  required                 Boolean @default(false)
+  sortOrder                Int
+  createdAt                DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt                DateTime @updatedAt @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  applicationFormVersion ApplicationFormVersion @relation(fields: [applicationFormVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  options ApplicationFormQuestionOption[]
+
+  @@unique([applicationFormVersionId, questionKey])
+  @@index([applicationFormVersionId, sortOrder])
+}
+
+model ApplicationFormQuestionOption {
+  id             String @id @db.Uuid
+  organizationId String @db.Uuid
+  questionId     String @db.Uuid
+  label          String @db.VarChar(500)
+  value          String @db.VarChar(200)
+  sortOrder      Int
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  question ApplicationFormQuestion @relation(fields: [questionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([questionId, value])
+  @@index([questionId, sortOrder])
 }

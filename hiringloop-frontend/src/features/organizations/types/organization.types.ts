@@ -26,6 +26,8 @@ export type OrganizationPermission =
   | 'job:archive'
   | 'pipeline:view'
   | 'pipeline:configure'
+  | 'application-form:view'
+  | 'application-form:configure'
 
 export interface CreateOrganizationInput {
   readonly name: string

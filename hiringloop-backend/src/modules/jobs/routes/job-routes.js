@@ -19,6 +19,7 @@ export function createJobRouter({
   tenantContextMiddleware,
   jobUseCases,
   pipelineRouter,
+  applicationFormRouter,
 }) {
   const router = express.Router({ mergeParams: true });
   const controller = createJobController(jobUseCases);
@@ -35,6 +36,9 @@ export function createJobRouter({
   ];
 
   if (pipelineRouter) router.use('/:jobId/pipeline', pipelineRouter);
+  if (applicationFormRouter) {
+    router.use('/:jobId/application-form', applicationFormRouter);
+  }
 
   router.post(
     '/',

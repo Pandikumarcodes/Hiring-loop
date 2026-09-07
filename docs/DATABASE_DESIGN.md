@@ -2521,3 +2521,65 @@ The approved enums are `JobStatus` (`DRAFT`, `OPEN`, `CLOSED`, `ARCHIVED`), `Emp
 The initial business indexes are `(organizationId, updatedAt)` for tenant-scoped newest/most-recently-updated listing and `(organizationId, status, updatedAt)` for tenant-scoped status filtering with updated-time ordering. Job titles are intentionally not unique: duplicate titles within one organization are valid and title uniqueness would impose an unapproved business rule.
 
 Job history/activity is deferred. The current row stores lifecycle timestamps only; a later activity/history design will preserve transition facts without adding an unapproved history table to this migration.
+
+## Phase 11 Application Form Builder Database Foundation
+
+Phase 11 Prompt 1 adds recruiter-side configuration only. The model is:
+
+```text
+Organization -> Job -> ApplicationForm -> ApplicationFormVersion
+                                          -> ApplicationFormQuestion
+                                             -> ApplicationFormQuestionOption
+```
+
+`ApplicationForm` is a stable, tenant-owned identity with exactly one row per
+`Job` (`UNIQUE(jobId)`). It stores `activeVersionId`, which is required and has
+a restrictive, deferred FK to `ApplicationFormVersion`. The deferred FK allows
+the Job creation transaction to insert a form and its initial version
+atomically. Migration
+`20260908124500_application_form_active_version_ownership` adds a deferred
+composite FK over `(activeVersionId, formId, organizationId)` so the active
+version must belong to that same form and tenant, not merely exist.
+
+`ApplicationFormVersion` is tenant-owned and has positive `versionNumber` and
+`revision` values, both starting at 1. `(applicationFormId, versionNumber)` is
+unique. `DRAFT` and `PUBLISHED` are the only statuses. A migration-managed
+partial unique index permits at most one Draft per form; published snapshots
+are historical records and any number may exist. `publishedAt` is required for
+Published rows and null for Draft rows. `revision` is the optimistic-concurrency
+token for Prompt 2. No creator/publisher user foreign keys were added because
+the existing Job model has no compatible actor-attribution fact.
+
+Questions are version-owned and use a durable positive numeric `sortOrder`
+(the application uses 1000 spacing). A `questionKey` is unique within a
+version but deliberately reusable across cloned versions, preserving logical
+question identity while each row has its own UUIDv7 ID. Supported types are
+`SHORT_TEXT`, `LONG_TEXT`, `NUMBER`, `YES_NO`, `SINGLE_SELECT`,
+`MULTI_SELECT`, `DATE`, and `URL`. There is no generic validation JSON engine,
+candidate field, answer, upload, or AI persistence. Options are normalized
+under a question and have unique `(questionId, value)` plus positive ordering;
+YES_NO uses system semantics rather than arbitrary default options.
+
+Migration `20260908120000_application_form_builder_foundation` backfills every
+existing Job missing a form with a deterministic UUIDv7-shaped form and empty
+published V1, revision 1, `publishedAt = Job.createdAt`, and `activeVersionId`
+set to V1. Its anti-join makes recovery re-execution idempotent in effect. New
+Jobs use the existing repository transaction to create the Job, default
+Pipeline, empty published form V1, and active link together.
+
+All four form tables carry `organizationId` and restrictive FKs to their
+immediate parent and Organization. The active-version composite FK enforces
+the critical active form/tenant alignment. Repositories/services still derive
+tenant scope from trusted context and verify the Job/form/version/question
+ownership chain for every request.
+Restrictive deletes protect historical published forms for Phase 12, whose
+applications will reference a historical version rather than mutable builder
+state.
+
+Indexes are intentionally limited to: `(organizationId, jobId)` for scoped
+form lookup; the version uniqueness plus `(applicationFormId, status)` for
+version/draft lookup; `(applicationFormVersionId, sortOrder)` for ordered
+question reads; `(questionId, sortOrder)` for ordered option reads; and the
+one-Draft partial unique index. Unique constraints cover duplicate form,
+version number, question key, and option value lookups without redundant
+indexes.

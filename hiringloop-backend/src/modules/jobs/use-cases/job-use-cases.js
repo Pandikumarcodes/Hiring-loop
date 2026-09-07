@@ -7,6 +7,7 @@ import {
 } from '../../../errors/application-error.js';
 import { generateEntityId } from '../../../utils/ids.js';
 import { createDefaultPipelineData } from '../../pipelines/domain/pipeline-defaults.js';
+import { createDefaultApplicationFormData } from '../../application-forms/domain/default-application-form.js';
 import { toJobDetailDto, toJobListDto } from '../domain/job-dto.js';
 
 function failMutation(result, expectedVersion) {
@@ -89,6 +90,7 @@ export function createJobUseCases({ jobRepository, clock = () => new Date() }) {
           id: generateEntityId(),
           data,
           pipeline: createDefaultPipelineData(),
+          applicationForm: createDefaultApplicationFormData(clock()),
         }),
       ),
     list: async (input) => {

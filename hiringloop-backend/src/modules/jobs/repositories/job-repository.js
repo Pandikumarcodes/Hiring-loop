@@ -61,7 +61,7 @@ export function createJobRepository(prisma) {
   }
 
   return {
-    async create({ organizationId, id, data, pipeline }) {
+    async create({ organizationId, id, data, pipeline, applicationForm }) {
       return prisma.$transaction(async (transaction) => {
         const job = await transaction.job.create({
           data: { id, organizationId, ...data },
@@ -78,6 +78,21 @@ export function createJobRepository(prisma) {
                 ),
               },
             },
+          },
+        });
+        await transaction.applicationForm.create({
+          data: {
+            id: applicationForm.id,
+            organizationId,
+            jobId: job.id,
+            activeVersionId: applicationForm.activeVersionId,
+          },
+        });
+        await transaction.applicationFormVersion.create({
+          data: {
+            ...applicationForm.version,
+            organizationId,
+            applicationFormId: applicationForm.id,
           },
         });
         return job;

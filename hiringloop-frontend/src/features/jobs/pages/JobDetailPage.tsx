@@ -80,6 +80,16 @@ export function JobDetailPage() {
                 Pipeline
               </Button>
             ) : null}
+            {can(organization.data.permissions, 'application-form:view') ? (
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  navigate(jobRoutes.applicationForm(organizationId, jobId))
+                }
+              >
+                Application form
+              </Button>
+            ) : null}
             {j.status === 'OPEN' && organization.data.slug ? (
               <a
                 className="inline-flex min-h-11 items-center justify-center rounded-control border border-border bg-surface px-4 py-2.5 text-sm font-bold text-text-primary transition-colors hover:bg-background focus-visible:outline-3 focus-visible:outline-primary-dark focus-visible:outline-offset-2"

@@ -29,6 +29,8 @@ export const PERMISSIONS = Object.freeze({
   JOB_ARCHIVE: 'job:archive',
   PIPELINE_VIEW: 'pipeline:view',
   PIPELINE_CONFIGURE: 'pipeline:configure',
+  APPLICATION_FORM_VIEW: 'application-form:view',
+  APPLICATION_FORM_CONFIGURE: 'application-form:configure',
 });
 
 const ADMIN_PERMISSIONS = Object.freeze(Object.values(PERMISSIONS));
@@ -51,8 +53,15 @@ export const ROLE_PERMISSIONS = Object.freeze({
     ...JOB_MANAGER_PERMISSIONS,
     PERMISSIONS.JOB_ARCHIVE,
     PERMISSIONS.PIPELINE_CONFIGURE,
+    PERMISSIONS.APPLICATION_FORM_VIEW,
+    PERMISSIONS.APPLICATION_FORM_CONFIGURE,
   ]),
-  HIRING_MANAGER: JOB_MANAGER_PERMISSIONS,
+  // Hiring Managers retain the same read scope as JOB_READ: they can inspect
+  // a job's current application configuration, but cannot configure it.
+  HIRING_MANAGER: Object.freeze([
+    ...JOB_MANAGER_PERMISSIONS,
+    PERMISSIONS.APPLICATION_FORM_VIEW,
+  ]),
   INTERVIEWER: Object.freeze([]),
 });
 

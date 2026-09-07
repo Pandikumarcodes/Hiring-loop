@@ -8,6 +8,7 @@ import { createJobRepository } from './repositories/job-repository.js';
 import { createJobUseCases } from './use-cases/job-use-cases.js';
 import { createJobRouter } from './routes/job-routes.js';
 import { pipelineRouter } from '../pipelines/pipeline-module.js';
+import { applicationFormRouter } from '../application-forms/application-form-module.js';
 
 const databaseUrl =
   config.environment === 'test' ? config.testDatabaseUrl : config.databaseUrl;
@@ -43,4 +44,5 @@ export const jobRouter = createJobRouter({
   }),
   jobUseCases: createJobUseCases({ jobRepository }),
   pipelineRouter,
+  applicationFormRouter,
 });

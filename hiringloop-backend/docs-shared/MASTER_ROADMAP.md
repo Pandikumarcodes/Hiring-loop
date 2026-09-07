@@ -1,7 +1,8 @@
 # HiringLoop Master Roadmap
 
 > Current-state supersession (Phase 10 audit): Phase 10 Public Career Site is
-> **COMPLETE**. Phase 11 — Application Form Builder is **NOT STARTED**.
+> **COMPLETE**. Phase 11 — Application Form Builder is **COMPLETE**; Phase 12
+> — Candidate Application Flow is **NOT STARTED**.
 > Historical task detail below is retained for roadmap traceability where it
 > does not conflict with current status.
 
@@ -14,7 +15,10 @@
   visibility; scoped public DTOs; pagination; rate limiting; and accessible
   public routing. Application forms, submissions, and candidate/application
   flows remain deferred.
-- Phase 11 — Application Form Builder — **NOT STARTED**.
+- Phase 11 — Application Form Builder — **COMPLETE**. Database, backend,
+  frontend, audit, final handoff, and Manual QA are complete; it provides
+  exactly 8 authenticated recruiter configuration APIs.
+- Phase 12 — Candidate Application Flow — **NOT STARTED**.
 
 This document is the authoritative end-to-end implementation roadmap for HiringLoop. It is governed by `PROJECT_INSTRUCTIONS.md`, `PROJECT_STATE.md`, and the architecture documents under `docs/architecture/` and `docs/adr/`.
 
@@ -371,37 +375,22 @@ complete; engineering audit and manual QA remain pending.
 - **Dependencies:** Phases 08–09.
 - **Definition of Done:** a public user can discover an eligible job and submit a validated application without exposing private tenant data.
 
-## Phase 11 — Applications & Candidates — NOT STARTED
+## Phase 11 — Application Form Builder — COMPLETE
 
-- **Objective:** manage reusable candidate profiles and job-specific applications. (FR-08)
-- **Features/sub-features:** candidate create/update/search; application review; deduplication/merge policy; source tracking; statuses.
-- **Engineering concepts to learn:** entity separation, identity resolution, aggregate boundaries, PII handling.
-- **Frontend work:** candidate/application list and detail views, review workflows, empty/loading/error states.
-- **Backend work:** candidate and application services, association rules, secure DTOs, cross-module orchestration.
-- **Database work:** candidate/application relationships, unique/foreign-key constraints, query indexes from real patterns.
-- **Security considerations:** PII access, tenant scope, field-level response control, audit critical changes.
-- **Performance considerations:** pagination, selective candidate/application joins, avoid N+1.
-- **Reliability considerations:** idempotent submission/import behavior, merge safety, transaction boundaries.
-- **Testing expectations:** candidate/application distinction, duplicate, access, lifecycle, and API tests.
-- **Documentation outputs:** candidate/application domain guide and workflows.
-- **Dependencies:** Phases 06, 07, 08, 10.
-- **Definition of Done:** candidate identity and application lifecycle are separate, scoped, tested concepts.
+- **Objective:** configure a Job-owned, versioned recruiter application form.
+- **Features/sub-features:** one form per Job; default published V1; draft,
+  question, option, ordering, publish, discard, revision, and preview flows.
+- **Documentation outputs:** `docs/architecture/PHASE_11_HANDOFF.md`.
+- **Definition of Done:** complete; candidate and submission functionality is
+  explicitly deferred.
 
-## Phase 12 — Resume & File Management — NOT STARTED
+## Phase 12 — Candidate Application Flow — NOT STARTED
 
-- **Objective:** add secure resume/file metadata and object-storage boundary. (FR-09)
-- **Features/sub-features:** upload request; metadata; replace/delete policy; download/access flow; file validation.
-- **Engineering concepts to learn:** object storage, signed URLs, content validation, asynchronous processing boundaries.
-- **Frontend work:** upload/progress/error/download UX and accessible file controls.
-- **Backend work:** file metadata service, storage adapter contract, authorization and signed URL issuance.
-- **Database work:** file metadata, ownership, version/status records.
-- **Security considerations:** private-by-default access, MIME/content checks, malware scanning boundary, server-side credentials.
-- **Performance considerations:** direct/object-storage transfer where appropriate; avoid proxying large files unnecessarily.
-- **Reliability considerations:** resumable/retryable uploads, orphan cleanup, provider failure status.
-- **Testing expectations:** authorization, file limits, signed URL, failure, and integration-contract tests.
-- **Documentation outputs:** file lifecycle and storage adapter documentation.
-- **Dependencies:** Phase 11; ARCH-04.
-- **Definition of Done:** authorized users can manage private files through an adapter without storing file bytes as domain truth in PostgreSQL.
+- **Objective:** accept a candidate's application against a published Job form.
+- **Features/sub-features:** candidate/application creation, answers tied to a
+  historical form version, confirmation, and approved pipeline placement.
+- **Dependencies:** Phase 11; public-career foundations.
+- **Definition of Done:** not started.
 
 ## Phase 13 — Hiring Pipeline, Activity & Search — NOT STARTED
 
