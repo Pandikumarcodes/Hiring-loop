@@ -13,4 +13,6 @@ export const jobRoutes = {
     `${organizationJobsPath(organizationId)}/${encodeURIComponent(jobId)}/pipeline`,
   applicationForm: (organizationId: string, jobId: string) =>
     `${organizationJobsPath(organizationId)}/${encodeURIComponent(jobId)}/application-form`,
+  scorecard: (organizationId: string, jobId: string) =>
+    `${organizationJobsPath(organizationId)}/${encodeURIComponent(jobId)}/scorecard`,
 }

@@ -4,7 +4,8 @@
 > **COMPLETE**. Phase 11 — Application Form Builder is **COMPLETE**; Phase 12
 > — Candidate Application Flow is **COMPLETE**; Phase 13 — Candidate
 > Management is **COMPLETE**. Phase 14 — Interview Scheduling & Calendar is
-> **COMPLETE**; Phase 15 — Scorecards & Collaboration is **NOT STARTED**.
+> **COMPLETE**; Phase 15 — Scorecards & Collaboration is **COMPLETE**. Phase 16 —
+> Candidate Communication & Notifications is **NOT STARTED** and is next.
 > Historical task detail below is retained for roadmap traceability where it
 > does not conflict with current status.
 
@@ -434,7 +435,7 @@ complete; engineering audit and manual QA remain pending.
 - **Dependencies:** Phases 11, 13, and ARCH-04.
 - **Definition of Done:** complete. HiringLoop-owned Interview records are authoritative in PostgreSQL; calendar-provider synchronization is intentionally deferred. See `docs/architecture/PHASE_14_HANDOFF.md`.
 
-## Phase 15 — Scorecards & Collaboration — NOT STARTED
+## Phase 15 — Scorecards & Collaboration — COMPLETE
 
 - **Objective:** collect interview scorecards and support team review workflows. (FR-15, FR-16)
 - **Features/sub-features:** scorecard templates; assignments; submission; review; mentions/comments as approved; collaboration states.
@@ -448,7 +449,7 @@ complete; engineering audit and manual QA remain pending.
 - **Testing expectations:** permission matrix, validation, concurrency, accessibility, API and integration tests.
 - **Documentation outputs:** scorecard model, visibility rules, collaboration workflow.
 - **Dependencies:** Phases 07 and 14.
-- **Definition of Done:** authorized interviewers can submit and review feedback with documented visibility and lifecycle rules.
+- **Definition of Done:** complete. Authorized interviewers can submit and review feedback with documented visibility and lifecycle rules. See `docs/architecture/PHASE_15_HANDOFF.md`.
 
 ## Phase 16 — Candidate Communication & Notifications — NOT STARTED
 

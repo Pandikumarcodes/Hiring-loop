@@ -39,6 +39,10 @@ import {
   CandidatesPage,
 } from '../../features/candidate-management'
 import { InterviewDetailPage, InterviewsPage } from '../../features/interviews'
+import {
+  MyScorecardPage,
+  ScorecardTemplatePage,
+} from '../../features/scorecards'
 
 function OrganizationOnboardingRoute() {
   const organizations = useOrganizations()
@@ -116,6 +120,10 @@ export function AppRoutes() {
             element={<ApplicationFormBuilderPage />}
           />
           <Route
+            path="organizations/:organizationId/jobs/:jobId/scorecard"
+            element={<ScorecardTemplatePage />}
+          />
+          <Route
             path="organizations/:organizationId/candidates"
             element={<CandidatesPage />}
           />
@@ -134,6 +142,10 @@ export function AppRoutes() {
           <Route
             path="organizations/:organizationId/interviews/:interviewId"
             element={<InterviewDetailPage />}
+          />
+          <Route
+            path="organizations/:organizationId/interviews/:interviewId/scorecard"
+            element={<MyScorecardPage />}
           />
           <Route path="organizations" element={<OrganizationLandingPage />} />
           <Route path="*" element={<NotFoundPage />} />

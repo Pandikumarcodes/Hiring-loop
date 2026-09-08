@@ -2591,3 +2591,38 @@ Migration `20260910120000_interview_scheduling_foundation` adds the tenant-owned
 Restrictive foreign keys preserve historical scheduling records. The composite `Interview(applicationId, organizationId)` FK verifies the application belongs to the Interview tenant. PostgreSQL checks require a positive time range and consistent cancellation state. `InterviewParticipant` has restrictive FKs and `UNIQUE(interviewId, userId)` to prevent duplicate assignments.
 
 Indexes are limited to `(organizationId, scheduledStartAt)` for bounded agenda queries, `(applicationId, scheduledStartAt)` for Application Detail history, and `(userId, interviewId)` for assigned-interviewer lookup. No provider/OAuth or speculative calendar indexes were added.
+
+## Phase 15 Scorecards and Collaboration Database Foundation
+
+Migration `20260911120000_scorecards_collaboration_foundation` adds six
+tenant-aware models: `ScorecardTemplate`, `ScorecardTemplateVersion`,
+`ScorecardCriterion`, `Scorecard`, `ScorecardResponse`, and `Note`.
+
+`ScorecardTemplate` is Job-scoped with one template per Job and an optional
+active version. Versions are `DRAFT` or `PUBLISHED`; version numbers are
+unique per template and a partial unique index permits at most one Draft.
+`ScorecardCriterion` is owned by a version and uses `RATING` or `TEXT` with
+unique positive positions. `Scorecard` is one evaluation per
+`InterviewParticipant`, pins a published template version, and is `DRAFT` or
+`SUBMITTED`. `ScorecardResponse` is unique per scorecard/criterion and stores
+either a 1-5 rating or text response. `Note` is a plain-text internal note
+scoped to an Application and its author User.
+
+Checks enforce bounded non-blank template/criterion/note text, positive
+criterion positions, rating range, and Draft/Published and Draft/Submitted
+timestamp state. Restrictive foreign keys protect historical records.
+Database guards require the active version to belong to its template and
+organization, require Scorecard Interview/Participant/organization and
+template-version/Job alignment, require response criteria to belong to the
+pinned version, and require Note Application/organization consistency.
+Published versions and their criteria are protected from database-level
+mutation. The final audit removed redundant index definitions; remaining
+indexes are limited to template organization/Job, version template/status,
+Scorecard organization/Interview/status and Interview, and Note
+organization/Application/created-at access paths.
+
+The application pins the published version when an interviewer first saves a
+scorecard. Draft template updates and publishing use optimistic revision
+guards. Scorecard save and submit workflows use conditional revision updates
+and transactions so independent interviewer feedback remains isolated and
+submitted feedback remains immutable.

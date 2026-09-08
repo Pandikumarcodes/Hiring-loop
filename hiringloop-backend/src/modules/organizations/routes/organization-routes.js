@@ -19,6 +19,7 @@ export function createOrganizationRouter({
   jobRouter,
   candidateManagementRouter,
   interviewRouter,
+  scorecardRouter,
 }) {
   const router = express.Router();
   const controller = createOrganizationController({
@@ -41,6 +42,9 @@ export function createOrganizationRouter({
   }
   if (interviewRouter) {
     router.use('/:organizationId', interviewRouter);
+  }
+  if (scorecardRouter) {
+    router.use('/:organizationId', scorecardRouter);
   }
 
   router.get('/', authenticateSession, controller.list);

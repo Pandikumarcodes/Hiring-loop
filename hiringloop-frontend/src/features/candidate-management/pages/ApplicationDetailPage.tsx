@@ -11,6 +11,10 @@ import { useOrganization } from '../../organizations/hooks/queries'
 import { useDocumentAccess } from '../hooks/mutations'
 import { useApplication } from '../hooks/queries'
 import { ApplicationInterviews } from '../../interviews'
+import {
+  ApplicationFeedback,
+  InternalNotes,
+} from '../../scorecards/components/FeedbackSections'
 import type {
   ApplicationDetailDto,
   ApplicationDocumentDto,
@@ -81,6 +85,17 @@ export function ApplicationDetailPage() {
       canSchedule={
         organization.data?.permissions?.includes('interview:create') ?? false
       }
+      canViewFeedback={
+        organization.data?.permissions?.includes('scorecard:view-submitted') ??
+        false
+      }
+      canManageNotes={
+        organization.data?.permissions?.includes('application-note:manage') ??
+        false
+      }
+      isAdmin={
+        organization.data?.permissions?.includes('member:role-change') ?? false
+      }
       documentAccess={documentAccess}
     />
   )
@@ -90,11 +105,17 @@ function ApplicationContent({
   application,
   organizationId,
   canSchedule,
+  canViewFeedback,
+  canManageNotes,
+  isAdmin,
   documentAccess,
 }: {
   application: ApplicationDetailDto
   organizationId: string
   canSchedule: boolean
+  canViewFeedback: boolean
+  canManageNotes: boolean
+  isAdmin: boolean
   documentAccess: ReturnType<typeof useDocumentAccess>
 }) {
   const [openingDocumentId, setOpeningDocumentId] = useState<string | null>(
@@ -127,6 +148,17 @@ function ApplicationContent({
             organizationId={organizationId}
             applicationId={application.id}
             canSchedule={canSchedule}
+          />
+          <ApplicationFeedback
+            organizationId={organizationId}
+            applicationId={application.id}
+            enabled={canViewFeedback}
+          />
+          <InternalNotes
+            organizationId={organizationId}
+            applicationId={application.id}
+            enabled={canManageNotes}
+            isAdmin={isAdmin}
           />
           <Section title="Candidate">
             <dl className="grid gap-5 sm:grid-cols-2">

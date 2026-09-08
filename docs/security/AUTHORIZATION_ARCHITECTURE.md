@@ -138,9 +138,11 @@ Permissions express capabilities. Roles group permissions. Policies evaluate res
 - `interview:view`
 - `interview:view-assigned`
 - `interview:update`
-- `feedback:create`
-- `feedback:view`
-- `feedback:view-private`
+- `scorecard-template:view`
+- `scorecard-template:manage`
+- `scorecard:view-submitted`
+- `scorecard:complete`
+- `application-note:manage`
 
 ### Communications, offers, reporting, and audit
 
@@ -151,7 +153,7 @@ Permissions express capabilities. Roles group permissions. Policies evaluate res
 - `analytics:view`
 - `audit:view`
 
-The permission names are an initial vocabulary, not a complete final matrix. Additional permissions, field-level restrictions, and role assignments require product/security review.
+The permission names are an initial vocabulary, not a complete final matrix. Phase 15 implements the scorecard and Application Note permissions above with the role and ownership rules in `docs/architecture/PHASE_15_HANDOFF.md`. Additional permissions, field-level restrictions, and role assignments require product/security review.
 
 ## Why RBAC Alone Is Insufficient
 

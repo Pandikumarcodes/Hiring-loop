@@ -275,10 +275,10 @@ Authentication records do not contain `organizationId`; authentication establish
 
 - **Purpose:** reusable evaluation criteria/questions.
 - **Identity/owner:** template/revision; Feedback.
-- **Tenant:** organization-owned; organization-wide vs Job-scoped is **Proposed / Requires Product Decision**.
-- **Lifecycle:** draft, active, retired; exact states are **Proposed / Requires Product Decision**.
-- **Relationships:** creates Scorecards; may relate to Job, Interview type, or Interview.
-- **Invariants:** revision changes do not reinterpret submitted feedback.
+- **Tenant:** organization-owned and Job-scoped in Phase 15; one template exists per Job.
+- **Lifecycle:** Draft -> Published; one Draft is allowed per template and published versions are immutable.
+- **Relationships:** one Job, many historical versions, and Scorecards pinned to a published version.
+- **Invariants:** the active version belongs to this template and the Interview/Application Job; version changes do not reinterpret submitted feedback.
 - **Time:** current configuration plus historical versions.
 
 #### Scorecard
@@ -286,7 +286,7 @@ Authentication records do not contain `organizationId`; authentication establish
 - **Purpose:** one evaluation assigned to an interviewer for an Interview.
 - **Identity/owner:** Interview–interviewer evaluation instance; Feedback.
 - **Tenant:** organization-owned through Interview/Application.
-- **Lifecycle:** requested/draft → submitted → locked or editable by policy; edit policy is **Proposed / Requires Product Decision**.
+- **Lifecycle:** Draft -> Submitted -> immutable for Phase 15.
 - **Relationships:** many → 1 Interview; evaluator User; template version; Responses.
 - **Invariants:** only permitted interviewer submits; correct Interview/Application/Job context; does not itself decide hire.
 - **Time:** current review state plus submission/edit history.
@@ -298,18 +298,18 @@ Authentication records do not contain `organizationId`; authentication establish
 - **Tenant:** organization-owned through Scorecard.
 - **Lifecycle:** draft/submitted/locked with Scorecard.
 - **Relationships:** one Scorecard and one criterion/version.
-- **Invariants:** format matches criterion; visibility follows a policy that is **Proposed / Requires Product Decision**.
+- **Invariants:** format matches criterion, the criterion belongs to the pinned template version, and visibility follows the Scorecard audience policy.
 - **Time:** current response plus edit/submission history.
 
 ### Collaboration, communication, offers, notifications, and records
 
-#### CandidateNote
+#### CandidateNote / Note
 
-- **Purpose:** internal recruiting note for Candidate or Application context.
+- **Purpose:** Phase 15 implements an internal plain-text Note for Application context.
 - **Identity/owner:** note identity; Collaboration.
 - **Tenant:** organization-owned.
-- **Lifecycle:** created, edited, archived/deleted subject to policy; mutability is **Proposed / Requires Product Decision**.
-- **Relationships:** Candidate, optional Application, author Membership/User.
+- **Lifecycle:** created, edited, or deleted under the Phase 15 role/ownership policy.
+- **Relationships:** one Application and author User; a general polymorphic Candidate/Interview target is not implemented.
 - **Invariants:** visibility/edit requires authorization; never crosses tenants.
 - **Time:** current content plus edit/activity/audit history.
 

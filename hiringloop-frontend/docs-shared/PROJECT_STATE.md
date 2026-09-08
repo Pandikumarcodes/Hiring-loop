@@ -6,7 +6,13 @@ Software Engineering
 
 ## Current phase
 
-Phase 14 — Interview Scheduling & Calendar: **COMPLETE**
+Phase 15 — Scorecards & Collaboration: **COMPLETE**
+
+## Phase 15 final status
+
+- Database, backend, frontend, automated verification, and manual QA are complete.
+- Database models added: 6; planned APIs: 14; actual APIs: 14; primary frontend routes: 2.
+- Final handoff: `docs/architecture/PHASE_15_HANDOFF.md`.
 
 ## Phase 14 final status
 
@@ -42,7 +48,7 @@ Manual QA: **PASS**
 
 ## Next phase
 
-Phase 15 — Scorecards & Collaboration: **NOT STARTED**
+Phase 16 — Candidate Communication & Notifications: **NOT STARTED**
 
 ## Phase 10 final status
 

@@ -194,6 +194,14 @@ Response
 
 An Interviewer path adds a resource policy: the User must be assigned to an Interview for the candidate/application or otherwise satisfy the approved access rule. An Organization B request for an Organization A candidate must fail before candidate data is returned.
 
+Phase 15 applies the same boundary to feedback and collaboration. An
+Interviewer may read and mutate only their own assigned Scorecard; review
+endpoints expose submitted feedback only to the recruiting-team roles. Notes
+are plain-text, Application-scoped, tenant-scoped, and editable/deletable by
+their author or an Admin according to the application policy. Database
+relationship guards reinforce the trusted tenant and Job/Application chains;
+they do not replace request authorization.
+
 ## Auditability
 
 Security and business-critical actions should later produce protected AuditRecords, including login/security events, membership changes, role/permission changes, job lifecycle changes, sensitive candidate/document changes, pipeline transitions, offer actions, and administrative operations. ActivityRecords remain the user-visible recruiting timeline; they are not a substitute for the security audit log.

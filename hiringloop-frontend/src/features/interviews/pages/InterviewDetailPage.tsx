@@ -23,6 +23,7 @@ import {
   safeMeetingUrl,
 } from '../utils/interview-utils'
 import { InterviewFormDialog } from '../components/InterviewFormDialog'
+import { InterviewFeedback } from '../../scorecards/components/FeedbackSections'
 export function InterviewDetailPage() {
   const { organizationId = '', interviewId = '' } = useParams(),
     org = useOrganization(organizationId),
@@ -112,6 +113,18 @@ export function InterviewDetailPage() {
             Cancelled{i.cancellation.reason ? `: ${i.cancellation.reason}` : ''}
           </p>
         ) : null}
+      </div>
+      <div className="mt-6">
+        <InterviewFeedback
+          organizationId={organizationId}
+          interviewId={interviewId}
+          canView={
+            org.data?.permissions?.includes('scorecard:view-submitted') ?? false
+          }
+          canComplete={
+            org.data?.permissions?.includes('scorecard:complete') ?? false
+          }
+        />
       </div>
       {edit ? (
         <MetadataDialog i={i} o={organizationId} close={() => setEdit(false)} />

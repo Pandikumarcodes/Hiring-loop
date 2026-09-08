@@ -25,6 +25,7 @@ model User {
   createdInterviews       Interview[]              @relation("InterviewCreatedBy")
   cancelledInterviews     Interview[]              @relation("InterviewCancelledBy")
   interviewParticipants   InterviewParticipant[]
+  authoredNotes           Note[]                   @relation("NoteAuthor")
 }
 
 model PasswordCredential {
@@ -108,6 +109,12 @@ model Organization {
   applicationUploads ApplicationUpload[]
   applicationStageHistories ApplicationStageHistory[]
   interviews Interview[]
+  scorecardTemplates ScorecardTemplate[]
+  scorecardTemplateVersions ScorecardTemplateVersion[]
+  scorecardCriteria ScorecardCriterion[]
+  scorecards Scorecard[]
+  scorecardResponses ScorecardResponse[]
+  notes Note[]
 }
 
 model OrganizationMembership {
@@ -196,6 +203,7 @@ model Job {
   applicationForm ApplicationForm?
   applications Application[]
   applicationUploads ApplicationUpload[]
+  scorecardTemplate ScorecardTemplate?
 
   @@index([organizationId, updatedAt])
   @@index([organizationId, status, updatedAt])
@@ -381,6 +389,7 @@ model Application {
   stageHistory ApplicationStageHistory[]
   interviews   Interview[]
   consumedUpload ApplicationUpload? @relation("ConsumedApplicationUpload")
+  notes Note[]
 
   @@unique([organizationId, jobId, candidateId])
   @@unique([organizationId, jobId, idempotencyKey])
@@ -504,6 +513,7 @@ model Interview {
   participants InterviewParticipant[]
   createdBy    User         @relation("InterviewCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   cancelledBy  User?        @relation("InterviewCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  scorecards Scorecard[]
 
   @@index([organizationId, scheduledStartAt])
   @@index([applicationId, scheduledStartAt])
@@ -517,7 +527,134 @@ model InterviewParticipant {
 
   interview Interview @relation(fields: [interviewId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   user      User      @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  scorecard Scorecard?
 
   @@unique([interviewId, userId])
   @@index([userId, interviewId])
+}
+
+enum ScorecardTemplateVersionStatus {
+  DRAFT
+  PUBLISHED
+}
+enum ScorecardCriterionType {
+  RATING
+  TEXT
+}
+enum ScorecardStatus {
+  DRAFT
+  SUBMITTED
+}
+enum ScorecardRecommendation {
+  STRONG_NO
+  NO
+  MIXED
+  YES
+  STRONG_YES
+}
+
+model ScorecardTemplate {
+  id String @id @db.Uuid
+  organizationId String @db.Uuid
+  jobId String @unique @db.Uuid
+  activeVersionId String? @unique @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  job Job @relation(fields: [jobId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  activeVersion ScorecardTemplateVersion? @relation("ScorecardTemplateActiveVersion", fields: [activeVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  versions ScorecardTemplateVersion[] @relation("ScorecardTemplateVersions")
+  @@index([organizationId, jobId])
+}
+
+model ScorecardTemplateVersion {
+  id String @id @db.Uuid
+  organizationId String @db.Uuid
+  templateId String @db.Uuid
+  versionNumber Int
+  status ScorecardTemplateVersionStatus
+  title String @db.VarChar(160)
+  instructions String? @db.Text
+  revision Int @default(1)
+  publishedAt DateTime? @db.Timestamptz(6)
+  createdByUserId String @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  template ScorecardTemplate @relation("ScorecardTemplateVersions", fields: [templateId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  activeFor ScorecardTemplate? @relation("ScorecardTemplateActiveVersion")
+  criteria ScorecardCriterion[]
+  scorecards Scorecard[]
+  @@unique([templateId, versionNumber])
+  @@index([templateId, status])
+}
+
+model ScorecardCriterion {
+  id String @id @db.Uuid
+  organizationId String @db.Uuid
+  templateVersionId String @db.Uuid
+  label String @db.VarChar(300)
+  description String? @db.Text
+  type ScorecardCriterionType
+  required Boolean @default(false)
+  position Int
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  templateVersion ScorecardTemplateVersion @relation(fields: [templateVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  responses ScorecardResponse[]
+  @@unique([templateVersionId, position])
+}
+
+model Scorecard {
+  id String @id @db.Uuid
+  organizationId String @db.Uuid
+  interviewId String @db.Uuid
+  interviewParticipantId String @unique @db.Uuid
+  templateVersionId String @db.Uuid
+  status ScorecardStatus @default(DRAFT)
+  overallRecommendation ScorecardRecommendation?
+  overallComment String? @db.Text
+  revision Int @default(1)
+  submittedAt DateTime? @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  interview Interview @relation(fields: [interviewId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  participant InterviewParticipant @relation(fields: [interviewParticipantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  templateVersion ScorecardTemplateVersion @relation(fields: [templateVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  responses ScorecardResponse[]
+  @@index([organizationId, interviewId, status])
+  @@index([interviewId])
+}
+
+model ScorecardResponse {
+  id String @id @db.Uuid
+  organizationId String @db.Uuid
+  scorecardId String @db.Uuid
+  criterionId String @db.Uuid
+  ratingValue Int?
+  textValue String? @db.Text
+  comment String? @db.Text
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  scorecard Scorecard @relation(fields: [scorecardId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  criterion ScorecardCriterion @relation(fields: [criterionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  @@unique([scorecardId, criterionId])
+}
+
+model Note {
+  id String @id @db.Uuid
+  organizationId String @db.Uuid
+  applicationId String @db.Uuid
+  authorUserId String @db.Uuid
+  body String @db.Text
+  revision Int @default(1)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  author User @relation("NoteAuthor", fields: [authorUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  @@index([organizationId, applicationId, createdAt])
 }

@@ -27,6 +27,10 @@ vi.mock('./hooks/mutations', () => ({
 vi.mock('../interviews', () => ({
   ApplicationInterviews: () => <section aria-label="Interviews" />,
 }))
+vi.mock('../scorecards/components/FeedbackSections', () => ({
+  ApplicationFeedback: () => null,
+  InternalNotes: () => null,
+}))
 
 import { ApplicationDetailPage } from './pages/ApplicationDetailPage'
 import { CandidateDetailPage } from './pages/CandidateDetailPage'

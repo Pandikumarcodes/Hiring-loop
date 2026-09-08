@@ -37,6 +37,11 @@ export type OrganizationPermission =
   | 'interview:update'
   | 'interview:reschedule'
   | 'interview:cancel'
+  | 'scorecard-template:view'
+  | 'scorecard-template:manage'
+  | 'scorecard:view-submitted'
+  | 'scorecard:complete'
+  | 'application-note:manage'
 
 export interface CreateOrganizationInput {
   readonly name: string
