@@ -38,6 +38,7 @@ import {
   CandidateDetailPage,
   CandidatesPage,
 } from '../../features/candidate-management'
+import { InterviewDetailPage, InterviewsPage } from '../../features/interviews'
 
 function OrganizationOnboardingRoute() {
   const organizations = useOrganizations()
@@ -125,6 +126,14 @@ export function AppRoutes() {
           <Route
             path="organizations/:organizationId/applications/:applicationId"
             element={<ApplicationDetailPage />}
+          />
+          <Route
+            path="organizations/:organizationId/interviews"
+            element={<InterviewsPage />}
+          />
+          <Route
+            path="organizations/:organizationId/interviews/:interviewId"
+            element={<InterviewDetailPage />}
           />
           <Route path="organizations" element={<OrganizationLandingPage />} />
           <Route path="*" element={<NotFoundPage />} />

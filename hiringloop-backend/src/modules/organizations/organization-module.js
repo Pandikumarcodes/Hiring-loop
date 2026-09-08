@@ -29,6 +29,7 @@ import { createUpdateMemberRole } from '../members/use-cases/update-member-role.
 import { createRemoveMember } from '../members/use-cases/remove-member.js';
 import { jobRouter } from '../jobs/job-module.js';
 import { candidateManagementRouter } from '../candidates/candidate-management-module.js';
+import { interviewRouter } from '../interviews/interview-module.js';
 
 const databaseUrl =
   config.environment === 'test' ? config.testDatabaseUrl : config.databaseUrl;
@@ -157,4 +158,5 @@ export const organizationRouter = createOrganizationRouter({
   memberRouter,
   jobRouter,
   candidateManagementRouter,
+  interviewRouter,
 });

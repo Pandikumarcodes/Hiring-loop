@@ -24,6 +24,9 @@ vi.mock('./hooks/queries', () => ({
 vi.mock('./hooks/mutations', () => ({
   useDocumentAccess: useDocumentAccessMock,
 }))
+vi.mock('../interviews', () => ({
+  ApplicationInterviews: () => <section aria-label="Interviews" />,
+}))
 
 import { ApplicationDetailPage } from './pages/ApplicationDetailPage'
 import { CandidateDetailPage } from './pages/CandidateDetailPage'

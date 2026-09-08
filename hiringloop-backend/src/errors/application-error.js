@@ -46,6 +46,12 @@ export const ERROR_CODES = Object.freeze({
   FILE_TOO_LARGE: 'FILE_TOO_LARGE',
   APPLICATION_STORAGE_UNAVAILABLE: 'APPLICATION_STORAGE_UNAVAILABLE',
   INITIAL_PIPELINE_STAGE_UNAVAILABLE: 'INITIAL_PIPELINE_STAGE_UNAVAILABLE',
+  INTERVIEW_NOT_FOUND: 'INTERVIEW_NOT_FOUND',
+  INTERVIEW_SCHEDULE_CONFLICT: 'INTERVIEW_SCHEDULE_CONFLICT',
+  INTERVIEW_ALREADY_CANCELLED: 'INTERVIEW_ALREADY_CANCELLED',
+  INTERVIEW_CANNOT_RESCHEDULE: 'INTERVIEW_CANNOT_RESCHEDULE',
+  INTERVIEW_CANNOT_UPDATE: 'INTERVIEW_CANNOT_UPDATE',
+  INVALID_INTERVIEW_PARTICIPANT: 'INVALID_INTERVIEW_PARTICIPANT',
 });
 
 export class ApplicationError extends Error {
@@ -369,4 +375,44 @@ export const initialPipelineStageUnavailableError = () =>
     status: 409,
     code: ERROR_CODES.INITIAL_PIPELINE_STAGE_UNAVAILABLE,
     message: 'This job cannot accept applications at this time',
+  });
+
+function interviewError({ code, message, details, status = 409 }) {
+  return new ApplicationError({ status, code, message, details });
+}
+
+export const interviewNotFoundError = () =>
+  interviewError({
+    status: 404,
+    code: ERROR_CODES.INTERVIEW_NOT_FOUND,
+    message: 'Interview not found',
+  });
+export const interviewScheduleConflictError = (details) =>
+  interviewError({
+    code: ERROR_CODES.INTERVIEW_SCHEDULE_CONFLICT,
+    message: 'An assigned participant has an overlapping scheduled interview',
+    details,
+  });
+export const interviewAlreadyCancelledError = () =>
+  interviewError({
+    code: ERROR_CODES.INTERVIEW_ALREADY_CANCELLED,
+    message: 'Interview is already cancelled',
+  });
+export const interviewCannotRescheduleError = () =>
+  interviewError({
+    code: ERROR_CODES.INTERVIEW_CANNOT_RESCHEDULE,
+    message: 'Cancelled interviews cannot be rescheduled',
+  });
+export const interviewCannotUpdateError = () =>
+  interviewError({
+    code: ERROR_CODES.INTERVIEW_CANNOT_UPDATE,
+    message: 'Cancelled interviews cannot be updated',
+  });
+export const invalidInterviewParticipantError = (details) =>
+  interviewError({
+    status: 400,
+    code: ERROR_CODES.INVALID_INTERVIEW_PARTICIPANT,
+    message:
+      'One or more interview participants are not valid organization members',
+    details,
   });

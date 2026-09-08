@@ -34,6 +34,12 @@ export const PERMISSIONS = Object.freeze({
   CANDIDATE_LIST: 'candidate:list',
   CANDIDATE_READ: 'candidate:read',
   CANDIDATE_DOCUMENT_ACCESS: 'candidate-document:access',
+  INTERVIEW_CREATE: 'interview:create',
+  INTERVIEW_VIEW: 'interview:view',
+  INTERVIEW_VIEW_ASSIGNED: 'interview:view-assigned',
+  INTERVIEW_UPDATE: 'interview:update',
+  INTERVIEW_RESCHEDULE: 'interview:reschedule',
+  INTERVIEW_CANCEL: 'interview:cancel',
 });
 
 const ADMIN_PERMISSIONS = Object.freeze(Object.values(PERMISSIONS));
@@ -61,14 +67,22 @@ export const ROLE_PERMISSIONS = Object.freeze({
     PERMISSIONS.CANDIDATE_LIST,
     PERMISSIONS.CANDIDATE_READ,
     PERMISSIONS.CANDIDATE_DOCUMENT_ACCESS,
+    PERMISSIONS.INTERVIEW_CREATE,
+    PERMISSIONS.INTERVIEW_VIEW,
+    PERMISSIONS.INTERVIEW_VIEW_ASSIGNED,
+    PERMISSIONS.INTERVIEW_UPDATE,
+    PERMISSIONS.INTERVIEW_RESCHEDULE,
+    PERMISSIONS.INTERVIEW_CANCEL,
   ]),
   // Hiring Managers retain the same read scope as JOB_READ: they can inspect
   // a job's current application configuration, but cannot configure it.
   HIRING_MANAGER: Object.freeze([
     ...JOB_MANAGER_PERMISSIONS,
     PERMISSIONS.APPLICATION_FORM_VIEW,
+    PERMISSIONS.INTERVIEW_VIEW,
+    PERMISSIONS.INTERVIEW_VIEW_ASSIGNED,
   ]),
-  INTERVIEWER: Object.freeze([]),
+  INTERVIEWER: Object.freeze([PERMISSIONS.INTERVIEW_VIEW_ASSIGNED]),
 });
 
 const KNOWN_PERMISSIONS = new Set(Object.values(PERMISSIONS));

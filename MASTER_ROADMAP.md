@@ -417,7 +417,7 @@ complete; engineering audit and manual QA remain pending.
   later workflow-management, activity, and broader search capabilities remain
   future scope.
 
-## Phase 14 — Interview Scheduling & Calendar — NOT STARTED
+## Phase 14 — Interview Scheduling & Calendar — IN PROGRESS (manual QA pending)
 
 - **Objective:** schedule interviews and integrate calendars through an adapter. (FR-14)
 - **Features/sub-features:** interview event CRUD; participants; reschedule/cancel; availability contract; provider sync boundary.

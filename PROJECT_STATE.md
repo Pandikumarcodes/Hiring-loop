@@ -36,7 +36,7 @@ Manual QA: **PASS**
 
 ## Next phase
 
-Phase 14 — Interview Scheduling & Calendar: **NOT STARTED**
+Phase 14 — Interview Scheduling & Calendar: **IN PROGRESS — implementation verified; manual QA pending**
 
 ## Phase 10 final status
 

@@ -10,6 +10,7 @@ import { isApiError } from '../../../shared/lib/apiErrors'
 import { useOrganization } from '../../organizations/hooks/queries'
 import { useDocumentAccess } from '../hooks/mutations'
 import { useApplication } from '../hooks/queries'
+import { ApplicationInterviews } from '../../interviews'
 import type {
   ApplicationDetailDto,
   ApplicationDocumentDto,
@@ -77,6 +78,9 @@ export function ApplicationDetailPage() {
     <ApplicationContent
       application={application.data}
       organizationId={organizationId}
+      canSchedule={
+        organization.data?.permissions?.includes('interview:create') ?? false
+      }
       documentAccess={documentAccess}
     />
   )
@@ -85,10 +89,12 @@ export function ApplicationDetailPage() {
 function ApplicationContent({
   application,
   organizationId,
+  canSchedule,
   documentAccess,
 }: {
   application: ApplicationDetailDto
   organizationId: string
+  canSchedule: boolean
   documentAccess: ReturnType<typeof useDocumentAccess>
 }) {
   const [openingDocumentId, setOpeningDocumentId] = useState<string | null>(
@@ -117,6 +123,11 @@ function ApplicationContent({
       />
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(18rem,0.7fr)]">
         <div className="grid gap-6">
+          <ApplicationInterviews
+            organizationId={organizationId}
+            applicationId={application.id}
+            canSchedule={canSchedule}
+          />
           <Section title="Candidate">
             <dl className="grid gap-5 sm:grid-cols-2">
               <Meta label="Name" value={application.candidate.name} />

@@ -22,6 +22,9 @@ model User {
   authTokens              AuthToken[]
   authProviderIdentities  AuthProviderIdentity[]
   organizationMemberships OrganizationMembership[]
+  createdInterviews       Interview[]              @relation("InterviewCreatedBy")
+  cancelledInterviews     Interview[]              @relation("InterviewCancelledBy")
+  interviewParticipants   InterviewParticipant[]
 }
 
 model PasswordCredential {
@@ -104,6 +107,7 @@ model Organization {
   candidateDocuments CandidateDocument[]
   applicationUploads ApplicationUpload[]
   applicationStageHistories ApplicationStageHistory[]
+  interviews Interview[]
 }
 
 model OrganizationMembership {
@@ -375,6 +379,7 @@ model Application {
   answers      ApplicationAnswer[]
   documents    CandidateDocument[]
   stageHistory ApplicationStageHistory[]
+  interviews   Interview[]
   consumedUpload ApplicationUpload? @relation("ConsumedApplicationUpload")
 
   @@unique([organizationId, jobId, candidateId])
@@ -462,4 +467,57 @@ model ApplicationStageHistory {
   toStage      PipelineStage  @relation("ApplicationStageHistoryTo", fields: [toStageId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   @@index([applicationId, occurredAt])
+}
+
+enum InterviewFormat {
+  VIDEO
+  PHONE
+  ONSITE
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  CANCELLED
+}
+
+model Interview {
+  id                 String          @id @db.Uuid
+  organizationId     String          @db.Uuid
+  applicationId      String          @db.Uuid
+  title              String          @db.VarChar(160)
+  format             InterviewFormat
+  scheduledStartAt   DateTime        @db.Timestamptz(6)
+  scheduledEndAt     DateTime        @db.Timestamptz(6)
+  timeZone           String          @db.VarChar(64)
+  meetingUrl         String?         @db.VarChar(2048)
+  location           String?         @db.VarChar(240)
+  status             InterviewStatus @default(SCHEDULED)
+  cancelledAt        DateTime?       @db.Timestamptz(6)
+  cancelledByUserId  String?         @db.Uuid
+  cancellationReason String?         @db.VarChar(500)
+  createdByUserId    String          @db.Uuid
+  createdAt          DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime        @updatedAt @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  application  Application  @relation(fields: [applicationId, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Restrict)
+  participants InterviewParticipant[]
+  createdBy    User         @relation("InterviewCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  cancelledBy  User?        @relation("InterviewCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([organizationId, scheduledStartAt])
+  @@index([applicationId, scheduledStartAt])
+}
+
+model InterviewParticipant {
+  id          String   @id @db.Uuid
+  interviewId String   @db.Uuid
+  userId      String   @db.Uuid
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+
+  interview Interview @relation(fields: [interviewId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([interviewId, userId])
+  @@index([userId, interviewId])
 }

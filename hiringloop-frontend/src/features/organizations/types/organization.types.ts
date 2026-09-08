@@ -31,6 +31,12 @@ export type OrganizationPermission =
   | 'candidate:list'
   | 'candidate:read'
   | 'candidate-document:access'
+  | 'interview:create'
+  | 'interview:view'
+  | 'interview:view-assigned'
+  | 'interview:update'
+  | 'interview:reschedule'
+  | 'interview:cancel'
 
 export interface CreateOrganizationInput {
   readonly name: string
