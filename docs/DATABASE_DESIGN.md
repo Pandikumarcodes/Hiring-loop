@@ -2583,3 +2583,11 @@ question reads; `(questionId, sortOrder)` for ordered option reads; and the
 one-Draft partial unique index. Unique constraints cover duplicate form,
 version number, question key, and option value lookups without redundant
 indexes.
+
+## Phase 14 Interview Scheduling Database Foundation
+
+Migration `20260910120000_interview_scheduling_foundation` adds the tenant-owned `Interview` and `InterviewParticipant` models. `InterviewFormat` is `VIDEO`, `PHONE`, or `ONSITE`; `InterviewStatus` is `SCHEDULED` or `CANCELLED`. Interviews store their organization and application, title, format, `TIMESTAMPTZ(6)` start/end instants, separately persisted IANA timezone, optional meeting URL/location, cancellation metadata, creator, and timestamps.
+
+Restrictive foreign keys preserve historical scheduling records. The composite `Interview(applicationId, organizationId)` FK verifies the application belongs to the Interview tenant. PostgreSQL checks require a positive time range and consistent cancellation state. `InterviewParticipant` has restrictive FKs and `UNIQUE(interviewId, userId)` to prevent duplicate assignments.
+
+Indexes are limited to `(organizationId, scheduledStartAt)` for bounded agenda queries, `(applicationId, scheduledStartAt)` for Application Detail history, and `(userId, interviewId)` for assigned-interviewer lookup. No provider/OAuth or speculative calendar indexes were added.

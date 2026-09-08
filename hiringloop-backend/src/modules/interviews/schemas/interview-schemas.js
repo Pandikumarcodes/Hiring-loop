@@ -59,13 +59,10 @@ const nullableUrl = z
       .trim()
       .max(2048)
       .url()
-      .refine(
-        (value) => {
-          const protocol = new URL(value).protocol;
-          return protocol === 'http:' || protocol === 'https:';
-        },
-        'Meeting URL must use HTTP or HTTPS',
-      )
+      .refine((value) => {
+        const protocol = new URL(value).protocol;
+        return protocol === 'http:' || protocol === 'https:';
+      }, 'Meeting URL must use HTTP or HTTPS')
       .transform((value) => value || null),
     z.null(),
   ])

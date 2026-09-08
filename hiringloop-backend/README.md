@@ -323,6 +323,18 @@ real requirement exists.
 
 ## Current scope
 
+## Local Phase 14 QA seed
+
+For local/manual Phase 14 interview-scheduling QA, run `npm run seed:qa` from
+this backend directory. It is development-only and refuses to run with
+`NODE_ENV=production`. The idempotent seed creates a dedicated QA admin,
+organization, open job with its normal default pipeline and published
+application form, plus one candidate and entry-stage application. It
+intentionally creates no resume, CandidateDocument, or S3 object; Phase 14 QA
+creates interviews through the UI. Never use this seed against production data.
+The local-only QA login is `qa-hiringloop@example.com` with password
+`Phase14Qa!2026`; rerunning the seed restores that QA password.
+
 Phase 03 Backend Foundation implementation is complete. The backend currently
 contains the Phase 01 application shell, Phase 02 database infrastructure, the
 shared HTTP validation/error foundation, and a database-independent test fixture

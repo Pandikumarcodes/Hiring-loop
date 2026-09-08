@@ -1,7 +1,7 @@
 # HiringLoop
 
-Current phase: Phase 13 Candidate Management — COMPLETE. Next phase:
-Phase 14 Interview Scheduling & Calendar — NOT STARTED.
+Current phase: Phase 14 Interview Scheduling & Calendar — COMPLETE. Next
+phase: Phase 15 Scorecards & Collaboration — NOT STARTED.
 
 HiringLoop is a production-style multi-tenant recruitment SaaS platform.
 
@@ -30,7 +30,11 @@ Current status:
 - Phase 13 — Candidate Management — COMPLETE: 4 authenticated APIs, 3
   recruiter routes, tenant-scoped candidate/application review, and secure
   signed resume access for ADMIN and RECRUITER.
-- Redis/BullMQ, realtime, and AI remain outside the completed Phase 13 scope.
+- Phase 14 — Interview Scheduling & Calendar — COMPLETE: 2 database models,
+  7 authenticated APIs, 2 primary routes, organization agenda, My Interviews,
+  timezone-safe scheduling, conflict detection, rescheduling, and cancellation.
+- Redis/BullMQ, realtime, Google Calendar synchronization, and AI remain
+  outside the completed Phase 14 scope.
 
 References:
 
@@ -40,3 +44,4 @@ References:
 - [Phase 11 handoff](docs/architecture/PHASE_11_HANDOFF.md)
 - [Phase 12 handoff](docs/architecture/PHASE_12_HANDOFF.md)
 - [Phase 13 handoff](docs/architecture/PHASE_13_HANDOFF.md)
+- [Phase 14 handoff](docs/architecture/PHASE_14_HANDOFF.md)

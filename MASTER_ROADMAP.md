@@ -3,7 +3,8 @@
 > Current-state supersession (Phase 10 audit): Phase 10 Public Career Site is
 > **COMPLETE**. Phase 11 — Application Form Builder is **COMPLETE**; Phase 12
 > — Candidate Application Flow is **COMPLETE**; Phase 13 — Candidate
-> Management is **COMPLETE**.
+> Management is **COMPLETE**. Phase 14 — Interview Scheduling & Calendar is
+> **COMPLETE**; Phase 15 — Scorecards & Collaboration is **NOT STARTED**.
 > Historical task detail below is retained for roadmap traceability where it
 > does not conflict with current status.
 
@@ -417,7 +418,7 @@ complete; engineering audit and manual QA remain pending.
   later workflow-management, activity, and broader search capabilities remain
   future scope.
 
-## Phase 14 — Interview Scheduling & Calendar — IN PROGRESS (manual QA pending)
+## Phase 14 — Interview Scheduling & Calendar — COMPLETE
 
 - **Objective:** schedule interviews and integrate calendars through an adapter. (FR-14)
 - **Features/sub-features:** interview event CRUD; participants; reschedule/cancel; availability contract; provider sync boundary.
@@ -431,7 +432,7 @@ complete; engineering audit and manual QA remain pending.
 - **Testing expectations:** timezone, authorization, adapter contract, retry/conflict, end-to-end tests.
 - **Documentation outputs:** scheduling state model and calendar integration contract.
 - **Dependencies:** Phases 11, 13, and ARCH-04.
-- **Definition of Done:** interview lifecycle is authoritative in PostgreSQL and calendar sync failures are visible and recoverable.
+- **Definition of Done:** complete. HiringLoop-owned Interview records are authoritative in PostgreSQL; calendar-provider synchronization is intentionally deferred. See `docs/architecture/PHASE_14_HANDOFF.md`.
 
 ## Phase 15 — Scorecards & Collaboration — NOT STARTED
 
