@@ -6,7 +6,28 @@ Software Engineering
 
 ## Current phase
 
-Phase 15 — Scorecards & Collaboration: **COMPLETE**
+Phase 17 - Offers, Hire/Reject & Talent Pool: **COMPLETE**
+
+## Phase 17 final status
+
+- Database, backend, frontend, automated verification, and final audit are complete.
+- Database changes: 5 new models, 2 altered models, 3 enums, and 1 forward migration.
+- Actual Phase 17 APIs: 18; dedicated frontend routes: 2.
+- Final verification: backend non-database 39 files / 250 tests; full integration 23 files / 111 tests; frontend 50 files / 274 tests.
+- Final handoff: `docs/architecture/PHASE_17_HANDOFF.md`.
+- No AI or Phase 18 implementation was added.
+
+## Phase 16 final status
+
+- Database, backend, frontend, automated verification, and final audit are complete.
+- Database models added: 4; actual APIs: 12; dedicated frontend routes: 1.
+- Outbound candidate email is tenant-scoped, recipient-locked, idempotent, rate-limited, and lifecycle-tracked.
+- Organization templates, own-user notifications, notification triggers, and preferences are complete.
+- Final handoff: `docs/architecture/PHASE_16_HANDOFF.md`.
+
+## Phase 17 status
+
+Phase 17 - Offers, Hire/Reject & Talent Pool: **COMPLETE**
 
 ## Phase 15 final status
 
@@ -48,7 +69,7 @@ Manual QA: **PASS**
 
 ## Next phase
 
-Phase 16 — Candidate Communication & Notifications: **NOT STARTED**
+Phase 18 — Analytics & Audit: **NOT STARTED**
 
 ## Phase 10 final status
 

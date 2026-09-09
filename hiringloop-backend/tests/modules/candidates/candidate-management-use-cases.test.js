@@ -50,6 +50,56 @@ function makeUseCases(overrides = {}) {
 }
 
 describe('candidate management use cases', () => {
+  it('includes outcome state and chronological history in the existing application detail DTO', async () => {
+    const { useCases } = makeUseCases({
+      repository: {
+        findApplication: async () => ({
+          id: 'application-1',
+          submittedAt: now,
+          applicationFormVersionId: 'form-1',
+          outcome: 'REJECTED',
+          outcomeRevision: 3,
+          outcomeUpdatedAt: now,
+          candidate: {
+            firstName: 'Ada',
+            lastName: 'Lovelace',
+            email: 'ada@example.test',
+            phone: null,
+          },
+          job: { id: 'job-1', title: 'Engineer' },
+          currentStage: null,
+          answers: [],
+          documents: [],
+          stageHistory: [],
+          outcomeEvents: [
+            {
+              id: 'event-1',
+              type: 'REJECTED',
+              reasonCode: 'QUALIFICATIONS',
+              reasonDetails: 'Missing required experience',
+              occurredAt: now,
+            },
+          ],
+        }),
+      },
+    });
+    await expect(
+      useCases.applicationDetail({
+        organizationId: 'org-1',
+        applicationId: 'application-1',
+      }),
+    ).resolves.toMatchObject({
+      outcome: 'REJECTED',
+      outcomeRevision: 3,
+      outcomeHistory: [
+        {
+          type: 'REJECTED',
+          reasonCode: 'QUALIFICATIONS',
+          reasonDetails: 'Missing required experience',
+        },
+      ],
+    });
+  });
   it('returns lightweight candidate rows with server pagination metadata', async () => {
     const { useCases, repository } = makeUseCases();
     const result = await useCases.list({

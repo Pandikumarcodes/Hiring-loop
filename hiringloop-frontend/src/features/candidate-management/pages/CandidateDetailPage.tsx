@@ -8,6 +8,7 @@ import { Badge, PageHeader } from '../../../shared/components/ui'
 import { isApiError } from '../../../shared/lib/apiErrors'
 import { useOrganization } from '../../organizations/hooks/queries'
 import { useCandidate } from '../hooks/queries'
+import { CandidateTalentPools } from '../../talent-pools'
 import type { CandidateDetailDto } from '../types/candidate-management.types'
 import {
   canReadCandidates,
@@ -67,6 +68,7 @@ export function CandidateDetailPage() {
     <CandidateContent
       candidate={candidate.data}
       organizationId={organizationId}
+      permissions={organization.data?.permissions ?? []}
     />
   )
 }
@@ -74,9 +76,11 @@ export function CandidateDetailPage() {
 function CandidateContent({
   candidate,
   organizationId,
+  permissions,
 }: {
   candidate: CandidateDetailDto
   organizationId: string
+  permissions: readonly string[]
 }) {
   return (
     <Wrap>
@@ -105,6 +109,11 @@ function CandidateContent({
           ) : null}
         </Section>
       </div>
+      <CandidateTalentPools
+        organizationId={organizationId}
+        candidateId={candidate.id}
+        permissions={permissions}
+      />
       <section
         className="mt-6 overflow-hidden rounded-card border border-border bg-surface shadow-sm"
         aria-labelledby="candidate-applications-title"

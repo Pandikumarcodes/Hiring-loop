@@ -221,3 +221,24 @@ Caching will be added only when measured or clearly repeated-read behavior justi
 ## Teaching Notes
 
 A modular monolith is one deployable backend organized internally into explicit domain modules. Module boundaries matter because they make ownership, allowed collaboration, testing, and future change visible before the codebase grows. Candidate and Application are separate because a person can apply to multiple jobs, while each application has its own job-specific status and history. Separate frontend and backend applications describe application boundaries, not a requirement for microservices. PostgreSQL remains the source of truth so domain state, transactions, reporting inputs, and recovery behavior have one authoritative home. The key concepts to learn from this task are boundaries, ownership, trust boundaries, orchestration, consistency, explicit contracts, and delaying complexity until evidence supports it.
+
+## Phase 17 implemented relationships
+
+Phase 17 adds the `offers`, `applications` outcome, and `talent-pools` domain
+modules to the modular monolith. Offer routes, outcome routes, and Talent Pool
+routes use the existing organization tenant boundary and follow the runtime
+flow `Route → Middleware → Controller → Use Case → Repository → Prisma →
+PostgreSQL`. Phase 17 controllers contain request mapping only; business rules
+and transactions remain in use cases and repositories.
+
+Offer delivery persists the Offer, immutable issued version, and Communication
+intent before the provider call. Provider dispatch occurs after the database
+transaction commits through the existing communication delivery boundary. Hire,
+Reject, Reopen, and optional Reject-to-Talent-Pool placement use one database
+transaction for current outcome, immutable event, and membership changes.
+
+The frontend keeps Offer and outcome UI under `features/offers`, Talent Pool
+UI under `features/talent-pools`, and existing Application/Candidate Detail
+integration under `features/candidate-management`. TanStack Query remains the
+server-state boundary; no new global state, Redis, worker, realtime, or AI
+component was introduced.

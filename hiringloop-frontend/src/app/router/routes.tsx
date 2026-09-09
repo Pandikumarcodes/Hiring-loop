@@ -41,6 +41,10 @@ import {
 import { InterviewDetailPage, InterviewsPage } from '../../features/interviews'
 import { NotificationsPage } from '../../features/notifications'
 import {
+  TalentPoolDetailPage,
+  TalentPoolsPage,
+} from '../../features/talent-pools'
+import {
   MyScorecardPage,
   ScorecardTemplatePage,
 } from '../../features/scorecards'
@@ -151,6 +155,14 @@ export function AppRoutes() {
           <Route
             path="organizations/:organizationId/notifications"
             element={<NotificationsPage />}
+          />
+          <Route
+            path="organizations/:organizationId/talent-pools"
+            element={<TalentPoolsPage />}
+          />
+          <Route
+            path="organizations/:organizationId/talent-pools/:talentPoolId"
+            element={<TalentPoolDetailPage />}
           />
           <Route path="organizations" element={<OrganizationLandingPage />} />
           <Route path="*" element={<NotFoundPage />} />

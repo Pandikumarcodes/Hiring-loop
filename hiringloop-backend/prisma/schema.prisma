@@ -30,6 +30,14 @@ model User {
   createdCommunicationTemplates CommunicationTemplate[] @relation("CommunicationTemplateCreatedBy")
   notifications           Notification[]           @relation("NotificationRecipient")
   notificationPreferences NotificationPreference[]
+  createdOffers Offer[] @relation("OfferCreatedBy")
+  offerAcceptances Offer[] @relation("OfferAcceptedBy")
+  offerDeclines Offer[] @relation("OfferDeclinedBy")
+  offerWithdrawals Offer[] @relation("OfferWithdrawnBy")
+  createdOfferVersions OfferVersion[] @relation("OfferVersionCreatedBy")
+  outcomeEvents ApplicationOutcomeEvent[]
+  createdTalentPools TalentPool[] @relation("TalentPoolCreatedBy")
+  addedTalentPoolMembers TalentPoolMember[] @relation("TalentPoolMemberAddedBy")
 }
 
 model PasswordCredential {
@@ -123,6 +131,11 @@ model Organization {
   communicationTemplates CommunicationTemplate[]
   notifications Notification[]
   notificationPreferences NotificationPreference[]
+  offers Offer[]
+  offerVersions OfferVersion[]
+  outcomeEvents ApplicationOutcomeEvent[]
+  talentPools TalentPool[]
+  talentPoolMembers TalentPoolMember[]
 }
 
 model OrganizationMembership {
@@ -366,6 +379,7 @@ model Candidate {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   applications Application[]
   documents CandidateDocument[]
+  talentPoolMembers TalentPoolMember[]
 
   @@unique([organizationId, normalizedEmail])
   @@unique([id, organizationId])
@@ -384,6 +398,9 @@ model Application {
   submittedPhone           String?  @db.VarChar(50)
   idempotencyKey           String   @db.Uuid
   requestFingerprint       String   @db.Char(64)
+  outcome                  ApplicationOutcome @default(ACTIVE)
+  outcomeUpdatedAt         DateTime @default(now()) @db.Timestamptz(6)
+  outcomeRevision          Int @default(1)
   submittedAt              DateTime @default(now()) @db.Timestamptz(6)
   createdAt                DateTime @default(now()) @db.Timestamptz(6)
   updatedAt                DateTime @updatedAt @db.Timestamptz(6)
@@ -401,6 +418,9 @@ model Application {
   notes Note[]
   communications Communication[]
   notifications Notification[]
+  offer Offer?
+  outcomeEvents ApplicationOutcomeEvent[]
+  talentPoolMembershipSources TalentPoolMember[] @relation("TalentPoolMemberSourceApplication")
 
   @@unique([organizationId, jobId, candidateId])
   @@unique([organizationId, jobId, idempotencyKey])
@@ -408,6 +428,136 @@ model Application {
   @@index([organizationId, jobId, submittedAt])
   @@index([applicationFormVersionId])
   @@index([currentPipelineStageId])
+}
+
+enum OfferStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  DECLINED
+  WITHDRAWN
+}
+enum ApplicationOutcome {
+  ACTIVE
+  HIRED
+  REJECTED
+}
+enum ApplicationOutcomeEventType {
+  HIRED
+  REJECTED
+  REOPENED
+}
+
+model Offer {
+  id String @id @db.Uuid
+  organizationId String @db.Uuid
+  applicationId String @unique @db.Uuid
+  status OfferStatus @default(DRAFT)
+  currentVersionId String? @unique @db.Uuid
+  createdByUserId String @db.Uuid
+  sentAt DateTime? @db.Timestamptz(6)
+  acceptedAt DateTime? @db.Timestamptz(6)
+  declinedAt DateTime? @db.Timestamptz(6)
+  withdrawnAt DateTime? @db.Timestamptz(6)
+  acceptedByUserId String? @db.Uuid
+  declinedByUserId String? @db.Uuid
+  withdrawnByUserId String? @db.Uuid
+  revision Int @default(1)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  organization Organization @relation(fields:[organizationId], references:[id], onDelete: Restrict, onUpdate: Restrict)
+  application Application @relation(fields:[applicationId, organizationId], references:[id, organizationId], onDelete: Restrict, onUpdate: Restrict)
+  currentVersion OfferVersion? @relation("OfferCurrentVersion", fields:[currentVersionId], references:[id], onDelete: Restrict, onUpdate: Restrict)
+  versions OfferVersion[] @relation("OfferVersions")
+  createdBy User @relation("OfferCreatedBy", fields:[createdByUserId], references:[id], onDelete: Restrict, onUpdate: Restrict)
+  acceptedBy User? @relation("OfferAcceptedBy", fields:[acceptedByUserId], references:[id], onDelete: Restrict, onUpdate: Restrict)
+  declinedBy User? @relation("OfferDeclinedBy", fields:[declinedByUserId], references:[id], onDelete: Restrict, onUpdate: Restrict)
+  withdrawnBy User? @relation("OfferWithdrawnBy", fields:[withdrawnByUserId], references:[id], onDelete: Restrict, onUpdate: Restrict)
+  @@unique([id, organizationId])
+  @@unique([applicationId, organizationId])
+  @@index([organizationId, applicationId])
+}
+
+model OfferVersion {
+  id String @id @db.Uuid
+  organizationId String @db.Uuid
+  offerId String @db.Uuid
+  versionNumber Int
+  jobTitle String @db.VarChar(160)
+  currency String @db.Char(3)
+  baseCompensationMinor BigInt @db.BigInt
+  bonusCompensationMinor BigInt? @db.BigInt
+  additionalCompensationText String? @db.Text
+  startDate DateTime? @db.Date
+  expirationDate DateTime? @db.Date
+  location String? @db.VarChar(160)
+  workplaceType WorkplaceType?
+  additionalTerms String? @db.Text
+  revision Int @default(1)
+  issuedAt DateTime? @db.Timestamptz(6)
+  createdByUserId String @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  organization Organization @relation(fields:[organizationId], references:[id], onDelete: Restrict, onUpdate: Restrict)
+  offer Offer @relation("OfferVersions", fields:[offerId, organizationId], references:[id, organizationId], onDelete: Restrict, onUpdate: Restrict)
+  currentFor Offer? @relation("OfferCurrentVersion")
+  createdBy User @relation("OfferVersionCreatedBy", fields:[createdByUserId], references:[id], onDelete: Restrict, onUpdate: Restrict)
+  communications Communication[]
+  @@unique([offerId, versionNumber])
+  @@unique([id, organizationId])
+  @@index([offerId, versionNumber])
+}
+
+model ApplicationOutcomeEvent {
+ id String @id @db.Uuid
+ organizationId String @db.Uuid
+ applicationId String @db.Uuid
+ type ApplicationOutcomeEventType
+ reasonCode String? @db.VarChar(64)
+ reasonDetails String? @db.VarChar(1000)
+ actorUserId String @db.Uuid
+ occurredAt DateTime @default(now()) @db.Timestamptz(6)
+ createdAt DateTime @default(now()) @db.Timestamptz(6)
+ organization Organization @relation(fields:[organizationId], references:[id], onDelete: Restrict, onUpdate: Restrict)
+ application Application @relation(fields:[applicationId, organizationId], references:[id, organizationId], onDelete: Restrict, onUpdate: Restrict)
+ actor User @relation(fields:[actorUserId], references:[id], onDelete: Restrict, onUpdate: Restrict)
+ @@index([applicationId, occurredAt, id])
+}
+
+model TalentPool {
+ id String @id @db.Uuid
+ organizationId String @db.Uuid
+ name String @db.VarChar(160)
+ description String? @db.VarChar(1000)
+ createdByUserId String @db.Uuid
+ revision Int @default(1)
+ createdAt DateTime @default(now()) @db.Timestamptz(6)
+ updatedAt DateTime @updatedAt @db.Timestamptz(6)
+ organization Organization @relation(fields:[organizationId], references:[id], onDelete: Restrict, onUpdate: Restrict)
+ createdBy User @relation("TalentPoolCreatedBy", fields:[createdByUserId], references:[id], onDelete: Restrict, onUpdate: Restrict)
+ members TalentPoolMember[]
+ @@unique([organizationId, name])
+ @@unique([id, organizationId])
+ @@index([organizationId, name, id])
+}
+
+model TalentPoolMember {
+ id String @id @db.Uuid
+ organizationId String @db.Uuid
+ talentPoolId String @db.Uuid
+ candidateId String @db.Uuid
+ sourceApplicationId String? @db.Uuid
+ addedByUserId String @db.Uuid
+ note String? @db.VarChar(1000)
+ createdAt DateTime @default(now()) @db.Timestamptz(6)
+ organization Organization @relation(fields:[organizationId], references:[id], onDelete: Restrict, onUpdate: Restrict)
+ talentPool TalentPool @relation(fields:[talentPoolId, organizationId], references:[id, organizationId], onDelete: Restrict, onUpdate: Restrict)
+ candidate Candidate @relation(fields:[candidateId, organizationId], references:[id, organizationId], onDelete: Restrict, onUpdate: Restrict)
+ sourceApplication Application? @relation("TalentPoolMemberSourceApplication", fields:[sourceApplicationId, organizationId], references:[id, organizationId], onDelete: Restrict, onUpdate: Restrict)
+ addedBy User @relation("TalentPoolMemberAddedBy", fields:[addedByUserId], references:[id], onDelete: Restrict, onUpdate: Restrict)
+ @@unique([talentPoolId, candidateId])
+ @@index([talentPoolId, createdAt, id])
+ @@index([organizationId, candidateId])
 }
 
 model ApplicationAnswer {
@@ -707,6 +857,7 @@ model Communication {
   failureCategory String? @db.VarChar(64)
   idempotencyKey String @db.Uuid
   payloadHash String @db.VarChar(64)
+  offerVersionId String? @db.Uuid
   sentAt DateTime? @db.Timestamptz(6)
   failedAt DateTime? @db.Timestamptz(6)
   createdAt DateTime @default(now()) @db.Timestamptz(6)
@@ -714,6 +865,7 @@ model Communication {
   organization Organization @relation(fields:[organizationId], references:[id], onDelete: Restrict, onUpdate: Restrict)
   application Application @relation(fields:[applicationId, organizationId], references:[id, organizationId], onDelete: Restrict, onUpdate: Restrict)
   createdBy User @relation("CommunicationCreatedBy", fields:[createdByUserId], references:[id], onDelete: Restrict, onUpdate: Restrict)
+  offerVersion OfferVersion? @relation(fields:[offerVersionId, organizationId], references:[id, organizationId], onDelete: Restrict, onUpdate: Restrict)
   @@unique([organizationId, applicationId, createdByUserId, idempotencyKey])
   @@index([organizationId, applicationId, createdAt, id])
 }

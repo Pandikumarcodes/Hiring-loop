@@ -2626,3 +2626,52 @@ scorecard. Draft template updates and publishing use optimistic revision
 guards. Scorecard save and submit workflows use conditional revision updates
 and transactions so independent interviewer feedback remains isolated and
 submitted feedback remains immutable.
+
+## Phase 17 Offers, Outcomes, and Talent Pools
+
+Migration `20260913120000_offers_outcomes_talent_pools` implements five new
+models: `Offer`, `OfferVersion`, `ApplicationOutcomeEvent`, `TalentPool`, and
+`TalentPoolMember`. It alters `Application` with `outcome`,
+`outcomeUpdatedAt`, and `outcomeRevision`, and alters `Communication` with the
+optional tenant-aligned `offerVersionId`. The new enums are `OfferStatus`
+(`DRAFT`, `SENT`, `ACCEPTED`, `DECLINED`, `WITHDRAWN`), `ApplicationOutcome`
+(`ACTIVE`, `HIRED`, `REJECTED`), and `ApplicationOutcomeEventType`
+(`HIRED`, `REJECTED`, `REOPENED`).
+
+`Offer` is unique per Application and stores the current version reference,
+status timestamps, actor references, and a positive optimistic revision.
+`OfferVersion` preserves terms by positive `(offerId, versionNumber)` and
+stores compensation as non-negative minor units with a three-letter uppercase
+currency. Database checks enforce positive revisions, compensation bounds,
+currency shape, and date ordering. A PostgreSQL trigger prevents mutation or
+deletion of an issued version; unissued revisions remain editable through the
+application workflow.
+
+Offer, OfferVersion, and Communication composite foreign keys align the
+organization with the Application/Offer chain. Database triggers also require
+the Offer current version to belong to that Offer and require a Communication
+OfferVersion to belong to the same Application. Restrictive foreign keys
+preserve issued offer and communication history.
+
+`Application` stores the current outcome and positive application revision.
+`ApplicationOutcomeEvent` is append-only through a database immutability
+trigger, requires a rejection reason for rejected events, and uses a
+tenant-aligned Application foreign key. Outcome changes update the current row
+and append the event in one transaction with an expected-revision guard.
+
+`TalentPool` is tenant-owned and unique by `(organizationId, name)`.
+`TalentPoolMember` is unique by `(talentPoolId, candidateId)`, has paginated
+pool-member indexes, and uses composite foreign keys for Pool, Candidate, and
+optional source Application tenant alignment. A trigger requires a source
+Application to belong to the same Candidate and organization. Restrictive
+deletes preserve membership provenance.
+
+Key indexes are the Offer organization/Application lookup, OfferVersion
+offer/version lookup, outcome event application/time lookup, TalentPool
+organization/name lookup, and TalentPoolMember pool/time and organization/
+candidate lookups. The implementation uses short database transactions for
+offer creation/versioning/send preparation, outcome plus optional membership,
+and duplicate-safe membership operations; provider dispatch remains outside
+the send transaction. The Phase 17 migration was proven from a clean dedicated
+`hiringloop_test` database and remains intentionally unapplied to
+`hiringloop_dev`.

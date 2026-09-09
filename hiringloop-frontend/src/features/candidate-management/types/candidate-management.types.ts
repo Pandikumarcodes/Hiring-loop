@@ -118,6 +118,16 @@ export interface ApplicationDetailDto {
   }
   readonly job: CandidateJobDto
   readonly currentStage: CandidateStageDto | null
+  readonly outcome?: 'ACTIVE' | 'HIRED' | 'REJECTED'
+  readonly outcomeRevision?: number
+  readonly outcomeUpdatedAt?: string
+  readonly outcomeHistory?: readonly {
+    readonly id: string
+    readonly type: 'HIRED' | 'REJECTED' | 'REOPENED'
+    readonly reasonCode: string | null
+    readonly reasonDetails: string | null
+    readonly occurredAt: string
+  }[]
   readonly answers: readonly ApplicationAnswerDto[]
   readonly documents: readonly ApplicationDocumentDto[]
   readonly stageHistory: readonly ApplicationStageHistoryDto[]

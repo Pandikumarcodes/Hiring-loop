@@ -279,3 +279,28 @@ The following require later product/security/implementation decisions:
   organization-admin creator behavior;
 - exact CORS, CSP, rate-limit, and monitoring thresholds;
 - provider webhook verification and reconciliation policy.
+
+## Phase 17 implemented security decisions
+
+Offer and compensation DTOs are protected by `offer:view` and related offer
+permissions. Only ADMIN and RECRUITER receive Offer/compensation access;
+HIRING_MANAGER and INTERVIEWER are denied Offer, Hire/Reject/Reopen, and Talent
+Pool management capabilities. Generic Application, Candidate, Communication,
+Notification, and Candidate Detail DTOs do not include compensation terms.
+
+All Phase 17 repositories require the trusted organization context. Composite
+tenant-aligned foreign keys and application-level organization predicates
+protect Offer, OfferVersion, outcome events, TalentPool, TalentPoolMember, and
+Offer Communication linkage. Cross-tenant lookups use non-disclosing not-found
+behavior where the resource is not visible.
+
+The Offer recipient is resolved server-side from the tenant-scoped Candidate;
+the browser cannot select an email destination. Offer terms are not serialized
+into generic notifications or diagnostic logs. Provider errors are converted
+to safe structured responses and failure categories; raw provider errors,
+credentials, and full Offer terms are not logged.
+
+Offer issuance uses idempotency keys, immutable versions, and persisted
+Communication intent before provider dispatch. Confirmed provider failure
+preserves the SENT Offer and creates the existing generic failure notification;
+ambiguous delivery remains PENDING without automatic redispatch.

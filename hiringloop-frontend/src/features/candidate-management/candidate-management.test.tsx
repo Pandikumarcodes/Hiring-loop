@@ -31,6 +31,16 @@ vi.mock('../scorecards/components/FeedbackSections', () => ({
   ApplicationFeedback: () => null,
   InternalNotes: () => null,
 }))
+vi.mock('../talent-pools', () => ({
+  CandidateTalentPools: () => null,
+}))
+vi.mock('../offers', () => ({
+  OfferSection: () => null,
+  ApplicationOutcomeSection: () => null,
+}))
+vi.mock('../communications', () => ({
+  CommunicationSection: () => null,
+}))
 
 import { ApplicationDetailPage } from './pages/ApplicationDetailPage'
 import { CandidateDetailPage } from './pages/CandidateDetailPage'
@@ -70,6 +80,10 @@ const application = {
   },
   job: { id: 'job-1', title: 'Senior Engineer' },
   currentStage: { id: 'stage-1', name: 'Phone screen' },
+  outcome: 'ACTIVE' as const,
+  outcomeRevision: 1,
+  outcomeUpdatedAt: null,
+  outcomeHistory: [],
   answers: [
     {
       question: {

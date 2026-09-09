@@ -63,6 +63,16 @@ export const toApplicationDetailDto = (application) => ({
   },
   job: { id: application.job.id, title: application.job.title },
   currentStage: stage(application.currentStage),
+  outcome: application.outcome,
+  outcomeRevision: application.outcomeRevision,
+  outcomeUpdatedAt: application.outcomeUpdatedAt,
+  outcomeHistory: (application.outcomeEvents ?? []).map((event) => ({
+    id: event.id,
+    type: event.type,
+    reasonCode: event.reasonCode,
+    reasonDetails: event.reasonDetails,
+    occurredAt: event.occurredAt,
+  })),
   answers: application.answers
     .sort((a, b) => a.question.sortOrder - b.question.sortOrder)
     .map((answer) => ({

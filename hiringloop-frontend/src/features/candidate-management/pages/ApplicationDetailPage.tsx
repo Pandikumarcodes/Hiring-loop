@@ -12,6 +12,7 @@ import { useDocumentAccess } from '../hooks/mutations'
 import { useApplication } from '../hooks/queries'
 import { ApplicationInterviews } from '../../interviews'
 import { CommunicationSection } from '../../communications'
+import { ApplicationOutcomeSection, OfferSection } from '../../offers'
 import {
   ApplicationFeedback,
   InternalNotes,
@@ -97,6 +98,7 @@ export function ApplicationDetailPage() {
       canCommunicate={
         organization.data?.permissions?.includes('communication:view') ?? false
       }
+      permissions={organization.data?.permissions ?? []}
       isAdmin={
         organization.data?.permissions?.includes('member:role-change') ?? false
       }
@@ -112,6 +114,7 @@ function ApplicationContent({
   canViewFeedback,
   canManageNotes,
   canCommunicate,
+  permissions,
   isAdmin,
   documentAccess,
 }: {
@@ -121,6 +124,7 @@ function ApplicationContent({
   canViewFeedback: boolean
   canManageNotes: boolean
   canCommunicate: boolean
+  permissions: readonly string[]
   isAdmin: boolean
   documentAccess: ReturnType<typeof useDocumentAccess>
 }) {
@@ -174,6 +178,16 @@ function ApplicationContent({
               enabled
             />
           ) : null}
+          <OfferSection
+            organizationId={organizationId}
+            applicationId={application.id}
+            permissions={permissions}
+          />
+          <ApplicationOutcomeSection
+            organizationId={organizationId}
+            application={application}
+            permissions={permissions}
+          />
           <Section title="Candidate">
             <dl className="grid gap-5 sm:grid-cols-2">
               <Meta label="Name" value={application.candidate.name} />

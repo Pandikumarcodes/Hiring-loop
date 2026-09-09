@@ -17,6 +17,7 @@ import { validateRequest } from '../../middleware/validate-request.js';
 import { generateEntityId } from '../../utils/ids.js';
 import { ApplicationError } from '../../errors/application-error.js';
 import { communicationSendRateLimiter } from '../../middleware/rate-limit.js';
+import { createCandidateCommunicationService } from './candidate-communication-service.js';
 
 const id = z.string().uuid();
 const params = z.object({ organizationId: id, applicationId: id });
@@ -82,6 +83,12 @@ export function communicationRouter() {
     }),
   });
   const r = express.Router({ mergeParams: true });
+  const delivery = prisma
+    ? createCandidateCommunicationService({
+        prisma,
+        emailDelivery: authEmailDelivery,
+      })
+    : null;
   const ctx = (p, m = false) => [
     authenticateSession,
     ...(m ? [requireCsrf] : []),
@@ -160,62 +167,22 @@ export function communicationRouter() {
             .status(200)
             .json({ data: { communication: dto(concurrent) } });
         }
-        try {
-          const result = await authEmailDelivery.sendCandidateEmail({
-            to: c.recipientEmail,
-            subject,
-            text: body,
-          });
-          const updated = await prisma.communication.update({
-            where: { id: c.id },
-            data: {
-              status: 'SENT',
-              sentAt: new Date(),
-              providerMessageId: result?.providerMessageId ?? null,
-            },
-            include: { createdBy: { select: { id: true, email: true } } },
-          });
+        const result = await delivery.dispatchPersisted({
+          communicationId: c.id,
+          organizationId,
+          applicationId,
+          createdByUserId,
+        });
+        if (result.kind === 'SENT') {
           return res
             .status(201)
-            .json({ data: { communication: dto(updated) } });
-        } catch (error) {
-          if (error?.category === 'ambiguous')
-            return res.status(202).json({
-              data: { communication: dto(c), deliveryState: 'UNCONFIRMED' },
-            });
-          await prisma.communication.update({
-            where: { id: c.id },
-            data: {
-              status: 'FAILED',
-              failedAt: new Date(),
-              failureCategory: error?.category ?? 'provider-error',
-            },
-          });
-          await prisma.notification
-            .create({
-              data: {
-                id: generateEntityId(),
-                organizationId,
-                recipientUserId: createdByUserId,
-                type: 'CANDIDATE_COMMUNICATION_FAILED',
-                title: 'Candidate email failed',
-                message: 'A candidate email could not be delivered.',
-                applicationId,
-              },
-            })
-            .catch((notificationError) => {
-              console.error(
-                'Candidate communication failure notification creation failed',
-                {
-                  organizationId,
-                  recipientUserId: createdByUserId,
-                  applicationId,
-                  cause: notificationError?.message,
-                },
-              );
-            });
-          throw failure();
+            .json({ data: { communication: dto(result.communication) } });
         }
+        if (result.kind === 'UNCONFIRMED')
+          return res.status(202).json({
+            data: { communication: dto(c), deliveryState: 'UNCONFIRMED' },
+          });
+        throw failure();
       } catch (e) {
         next(e);
       }

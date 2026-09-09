@@ -7,6 +7,7 @@ import { useOrganization, useOrganizations } from '../hooks/queries'
 import { isOrganizationId } from '../utils/organization-utils'
 import { JobsNavigationLink } from '../../jobs'
 import { CandidatesNavigationLink } from '../../candidate-management'
+import { TalentPoolsNavigationLink } from '../../talent-pools'
 
 export function OrganizationWorkspacePage() {
   const { organizationId } = useParams()
@@ -59,6 +60,9 @@ export function OrganizationWorkspacePage() {
         </Link>
         <JobsNavigationLink permissions={organization.data.permissions} />
         <CandidatesNavigationLink permissions={organization.data.permissions} />
+        <TalentPoolsNavigationLink
+          permissions={organization.data.permissions}
+        />
       </div>
     </section>
   )

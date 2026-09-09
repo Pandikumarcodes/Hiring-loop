@@ -97,6 +97,9 @@ export function createCandidateManagementRepository(prisma) {
               toStage: { select: { id: true, name: true } },
             },
           },
+          outcomeEvents: {
+            orderBy: [{ occurredAt: 'asc' }, { id: 'asc' }],
+          },
         },
       });
     },
