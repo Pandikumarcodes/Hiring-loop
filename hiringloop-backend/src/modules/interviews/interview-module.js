@@ -7,6 +7,7 @@ import { authenticateSession, requireCsrf } from '../auth/auth-module.js';
 import { createInterviewRepository } from './repositories/interview-repository.js';
 import { createInterviewRouter } from './routes/interview-routes.js';
 import { createInterviewUseCases } from './use-cases/interview-use-cases.js';
+import { createNotificationService } from '../notifications/notification-service.js';
 
 const databaseUrl =
   config.environment === 'test' ? config.testDatabaseUrl : config.databaseUrl;
@@ -40,5 +41,8 @@ export const interviewRouter = createInterviewRouter({
       organizationRepository,
     }),
   }),
-  useCases: createInterviewUseCases({ repository }),
+  useCases: createInterviewUseCases({
+    repository,
+    notificationService: prisma ? createNotificationService(prisma) : null,
+  }),
 });

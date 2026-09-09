@@ -14,13 +14,13 @@ import {
 } from '../domain/scorecard-dto.js';
 const managers = new Set(['ADMIN', 'RECRUITER']);
 const readers = new Set(['ADMIN', 'RECRUITER', 'HIRING_MANAGER']);
-const fail = (r) => {
+const fail = (r, { allowSubmitted = false } = {}) => {
   if (r.outcome === 'conflict')
     throw conflictError('Scorecard revision is stale');
   if (r.outcome === 'not_found') throw notFoundError();
   if (r.outcome === 'no_template')
     throw notFoundError('No published scorecard template is available');
-  if (r.outcome === 'submitted')
+  if (r.outcome === 'submitted' && !allowSubmitted)
     throw conflictError('Submitted scorecards are immutable');
   if (r.outcome === 'invalid_response')
     throw validationError('Scorecard response does not match this template');
@@ -32,6 +32,7 @@ const fail = (r) => {
 };
 export function createScorecardUseCases({
   repository,
+  notificationService = null,
   clock = () => new Date(),
 }) {
   const internal = (role) => {
@@ -131,7 +132,29 @@ export function createScorecardUseCases({
     async submitMy(input) {
       const r = fail(
         await repository.submitMy({ ...input, id: generateEntityId, clock }),
+        { allowSubmitted: true },
       );
+      if (
+        notificationService &&
+        r.interview.createdByUserId !== input.actorUserId
+      ) {
+        await notificationService
+          .create({
+            organizationId: input.organizationId,
+            recipientUserId: r.interview.createdByUserId,
+            type: 'SCORECARD_SUBMITTED',
+            title: 'Scorecard submitted',
+            message: 'An interview scorecard was submitted.',
+            interviewId: input.interviewId,
+          })
+          .catch((error) => {
+            console.error('Scorecard notification creation failed', {
+              cause: error?.message,
+              interviewId: input.interviewId,
+            });
+            return null;
+          });
+      }
       return toMyScorecardDto(r);
     },
     async summary(input) {

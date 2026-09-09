@@ -53,8 +53,34 @@ function conflictError(result) {
 
 export function createInterviewUseCases({
   repository,
+  notificationService = null,
   clock = () => new Date(),
 }) {
+  async function notifyParticipants(interview, actorUserId, type) {
+    if (!notificationService) return;
+    const results = await Promise.allSettled(
+      interview.participants
+        .filter(({ userId }) => userId !== actorUserId)
+        .map(({ userId }) =>
+          notificationService.create({
+            organizationId: interview.organizationId,
+            recipientUserId: userId,
+            type,
+            title: `Interview ${type === 'INTERVIEW_CANCELLED' ? 'cancelled' : type === 'INTERVIEW_RESCHEDULED' ? 'rescheduled' : 'scheduled'}`,
+            message: 'An interview you are assigned to has been updated.',
+            interviewId: interview.id,
+          }),
+        ),
+    );
+    results
+      .filter((result) => result.status === 'rejected')
+      .forEach((result) =>
+        console.error('Interview notification creation failed', {
+          cause: result.reason?.message,
+          type,
+        }),
+      );
+  }
   async function validateParticipants({ organizationId, participantUserIds }) {
     const uniqueIds = [...new Set(participantUserIds)];
     const members = await repository.findOrganizationMembers({
@@ -127,6 +153,11 @@ export function createInterviewUseCases({
         participants,
       });
       conflictError(result);
+      await notifyParticipants(
+        result.interview,
+        actorUserId,
+        'INTERVIEW_SCHEDULED',
+      );
       return toInterviewDto(result.interview);
     },
 
@@ -209,6 +240,7 @@ export function createInterviewUseCases({
       scheduledStartAt,
       durationMinutes,
       timeZone,
+      actorUserId,
     }) {
       assertManagementRole(actorRole);
       assertFuture(scheduledStartAt, clock);
@@ -224,6 +256,11 @@ export function createInterviewUseCases({
       if (result.outcome === 'cancelled')
         throw interviewCannotRescheduleError();
       conflictError(result);
+      await notifyParticipants(
+        result.interview,
+        actorUserId,
+        'INTERVIEW_RESCHEDULED',
+      );
       return toInterviewDto(result.interview);
     },
 
@@ -246,6 +283,11 @@ export function createInterviewUseCases({
       if (result.outcome === 'already_cancelled') {
         throw interviewAlreadyCancelledError();
       }
+      await notifyParticipants(
+        result.interview,
+        actorUserId,
+        'INTERVIEW_CANCELLED',
+      );
       return toInterviewDto(result.interview);
     },
   };

@@ -251,8 +251,11 @@ tests and must target `hiringloop_test`; test tooling must never fall back to
 `DATABASE_URL` or perform destructive operations against the development
 database.
 
-Apply existing migrations to the test database with `prisma migrate deploy`
-using `TEST_DATABASE_URL`, then run `npm run test:db`. The test database must be
+Apply existing migrations to the test database with `npm run prisma:migrate:test`;
+use `npm run prisma:migrate:test -- status` to inspect its migration state. This
+test-only helper verifies that `TEST_DATABASE_URL` names exactly `hiringloop_test`
+before making it Prisma's effective `DATABASE_URL`, and refuses every other
+target. Then run `npm run test:db`. The test database must be
 migrated before integration tests run. Ordinary `npm test` and `npm run verify`
 remain database-independent; `npm run verify:db` runs validation and the
 isolated database integration suite. Migration files are committed to Git as

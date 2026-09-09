@@ -20,6 +20,8 @@ export function createOrganizationRouter({
   candidateManagementRouter,
   interviewRouter,
   scorecardRouter,
+  communicationRouter,
+  notificationRouter,
 }) {
   const router = express.Router();
   const controller = createOrganizationController({
@@ -46,6 +48,10 @@ export function createOrganizationRouter({
   if (scorecardRouter) {
     router.use('/:organizationId', scorecardRouter);
   }
+  if (communicationRouter) {
+    router.use('/:organizationId', communicationRouter);
+  }
+  if (notificationRouter) router.use('/:organizationId', notificationRouter);
 
   router.get('/', authenticateSession, controller.list);
   router.post(

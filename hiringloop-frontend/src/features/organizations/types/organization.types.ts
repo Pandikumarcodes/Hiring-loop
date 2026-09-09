@@ -42,6 +42,13 @@ export type OrganizationPermission =
   | 'scorecard:view-submitted'
   | 'scorecard:complete'
   | 'application-note:manage'
+  | 'communication:view'
+  | 'communication:send'
+  | 'communication-template:view'
+  | 'communication-template:manage'
+  | 'notification:view-own'
+  | 'notification:read-own'
+  | 'notification-preference:manage-own'
 
 export interface CreateOrganizationInput {
   readonly name: string

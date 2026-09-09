@@ -22,6 +22,7 @@ export function createScorecardRepository(prisma) {
         where: { id: interviewId, organizationId },
         select: {
           id: true,
+          createdByUserId: true,
           applicationId: true,
           application: { select: { jobId: true } },
           participants: { select: { id: true, userId: true } },
@@ -37,6 +38,7 @@ export function createScorecardRepository(prisma) {
         },
         select: {
           id: true,
+          createdByUserId: true,
           applicationId: true,
           application: { select: { jobId: true } },
           participants: {

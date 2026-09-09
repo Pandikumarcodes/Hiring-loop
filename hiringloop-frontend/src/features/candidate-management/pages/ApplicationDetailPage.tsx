@@ -11,6 +11,7 @@ import { useOrganization } from '../../organizations/hooks/queries'
 import { useDocumentAccess } from '../hooks/mutations'
 import { useApplication } from '../hooks/queries'
 import { ApplicationInterviews } from '../../interviews'
+import { CommunicationSection } from '../../communications'
 import {
   ApplicationFeedback,
   InternalNotes,
@@ -93,6 +94,9 @@ export function ApplicationDetailPage() {
         organization.data?.permissions?.includes('application-note:manage') ??
         false
       }
+      canCommunicate={
+        organization.data?.permissions?.includes('communication:view') ?? false
+      }
       isAdmin={
         organization.data?.permissions?.includes('member:role-change') ?? false
       }
@@ -107,6 +111,7 @@ function ApplicationContent({
   canSchedule,
   canViewFeedback,
   canManageNotes,
+  canCommunicate,
   isAdmin,
   documentAccess,
 }: {
@@ -115,6 +120,7 @@ function ApplicationContent({
   canSchedule: boolean
   canViewFeedback: boolean
   canManageNotes: boolean
+  canCommunicate: boolean
   isAdmin: boolean
   documentAccess: ReturnType<typeof useDocumentAccess>
 }) {
@@ -160,6 +166,14 @@ function ApplicationContent({
             enabled={canManageNotes}
             isAdmin={isAdmin}
           />
+          {canCommunicate ? (
+            <CommunicationSection
+              organizationId={organizationId}
+              applicationId={application.id}
+              candidateEmail={application.candidate.email}
+              enabled
+            />
+          ) : null}
           <Section title="Candidate">
             <dl className="grid gap-5 sm:grid-cols-2">
               <Meta label="Name" value={application.candidate.name} />

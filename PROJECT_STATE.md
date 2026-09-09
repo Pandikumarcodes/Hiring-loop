@@ -6,7 +6,19 @@ Software Engineering
 
 ## Current phase
 
-Phase 15 — Scorecards & Collaboration: **COMPLETE**
+Phase 16 - Candidate Communication & Notifications: **COMPLETE**
+
+## Phase 16 final status
+
+- Database, backend, frontend, automated verification, and final audit are complete.
+- Database models added: 4; actual APIs: 12; dedicated frontend routes: 1.
+- Outbound candidate email is tenant-scoped, recipient-locked, idempotent, rate-limited, and lifecycle-tracked.
+- Organization templates, own-user notifications, notification triggers, and preferences are complete.
+- Final handoff: `docs/architecture/PHASE_16_HANDOFF.md`.
+
+## Phase 17 status
+
+Phase 17 - Offers, Hire/Reject & Talent Pool: **NOT STARTED**
 
 ## Phase 15 final status
 

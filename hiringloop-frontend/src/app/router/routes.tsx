@@ -39,6 +39,7 @@ import {
   CandidatesPage,
 } from '../../features/candidate-management'
 import { InterviewDetailPage, InterviewsPage } from '../../features/interviews'
+import { NotificationsPage } from '../../features/notifications'
 import {
   MyScorecardPage,
   ScorecardTemplatePage,
@@ -146,6 +147,10 @@ export function AppRoutes() {
           <Route
             path="organizations/:organizationId/interviews/:interviewId/scorecard"
             element={<MyScorecardPage />}
+          />
+          <Route
+            path="organizations/:organizationId/notifications"
+            element={<NotificationsPage />}
           />
           <Route path="organizations" element={<OrganizationLandingPage />} />
           <Route path="*" element={<NotFoundPage />} />

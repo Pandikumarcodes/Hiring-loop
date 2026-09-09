@@ -15,6 +15,7 @@
     "seed:qa": "node --env-file=.env scripts/seed-phase14-qa.js",
     "prisma:validate": "prisma validate --schema prisma/schema.prisma",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
+    "prisma:migrate:test": "node --env-file=.env scripts/migrate-test-database.js",
     "verify": "npm run lint && npm run format:check && npm run test",
     "verify:db": "npm run prisma:validate && npm run test:db"
   },

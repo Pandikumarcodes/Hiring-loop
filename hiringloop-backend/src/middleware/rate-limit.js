@@ -29,6 +29,10 @@ export const PUBLIC_APPLICATION_RATE_LIMIT_POLICIES = Object.freeze({
   upload: Object.freeze({ limit: 12, windowMs: HOUR_MS }),
   submission: Object.freeze({ limit: 8, windowMs: HOUR_MS }),
 });
+export const COMMUNICATION_SEND_RATE_LIMIT_POLICY = Object.freeze({
+  limit: 30,
+  windowMs: HOUR_MS,
+});
 
 function emailFingerprint(request) {
   const email = request.body?.email;
@@ -63,6 +67,13 @@ function ipAndEmailKey(request) {
 function userAndIpKey(request) {
   const userId = request.auth?.userId;
   return userId ? `user:${userId}:${ipKey(request)}` : ipKey(request);
+}
+function communicationKey(request) {
+  const userId = request.auth?.userId;
+  const organizationId = request.tenantContext?.organizationId;
+  return userId && organizationId
+    ? `communication:${userId}:${organizationId}:${ipKey(request)}`
+    : userAndIpKey(request);
 }
 
 function createLimiter(name, policy, keyGenerator, overrides = {}) {
@@ -123,6 +134,19 @@ export function createPublicApplicationRateLimiters({
 
 export const publicApplicationRateLimiters =
   createPublicApplicationRateLimiters();
+
+export function createCommunicationSendRateLimiter({
+  policyOverrides = {},
+} = {}) {
+  return createLimiter(
+    'communication-send',
+    { ...COMMUNICATION_SEND_RATE_LIMIT_POLICY, ...policyOverrides },
+    communicationKey,
+    policyOverrides,
+  );
+}
+export const communicationSendRateLimiter =
+  createCommunicationSendRateLimiter();
 
 /**
  * Build isolated named infrastructure limiters. The default store is the

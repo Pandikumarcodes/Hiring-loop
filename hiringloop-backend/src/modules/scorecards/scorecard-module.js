@@ -7,6 +7,7 @@ import { createResolveTenantContext } from '../organizations/use-cases/resolve-t
 import { createScorecardRepository } from './repositories/scorecard-repository.js';
 import { createScorecardRouter } from './routes/scorecard-routes.js';
 import { createScorecardUseCases } from './use-cases/scorecard-use-cases.js';
+import { createNotificationService } from '../notifications/notification-service.js';
 const url =
   config.environment === 'test' ? config.testDatabaseUrl : config.databaseUrl;
 const unavailable = async () => {
@@ -27,5 +28,8 @@ export const scorecardRouter = createScorecardRouter({
       organizationRepository,
     }),
   }),
-  useCases: createScorecardUseCases({ repository }),
+  useCases: createScorecardUseCases({
+    repository,
+    notificationService: prisma ? createNotificationService(prisma) : null,
+  }),
 });

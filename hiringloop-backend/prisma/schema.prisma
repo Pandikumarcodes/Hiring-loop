@@ -26,6 +26,10 @@ model User {
   cancelledInterviews     Interview[]              @relation("InterviewCancelledBy")
   interviewParticipants   InterviewParticipant[]
   authoredNotes           Note[]                   @relation("NoteAuthor")
+  createdCommunications   Communication[]          @relation("CommunicationCreatedBy")
+  createdCommunicationTemplates CommunicationTemplate[] @relation("CommunicationTemplateCreatedBy")
+  notifications           Notification[]           @relation("NotificationRecipient")
+  notificationPreferences NotificationPreference[]
 }
 
 model PasswordCredential {
@@ -115,6 +119,10 @@ model Organization {
   scorecards Scorecard[]
   scorecardResponses ScorecardResponse[]
   notes Note[]
+  communications Communication[]
+  communicationTemplates CommunicationTemplate[]
+  notifications Notification[]
+  notificationPreferences NotificationPreference[]
 }
 
 model OrganizationMembership {
@@ -128,6 +136,7 @@ model OrganizationMembership {
   organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   user            User         @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   sentInvitations Invitation[] @relation("InvitationInviterMembership")
+  notificationPreferences NotificationPreference[]
 
   @@unique([organizationId, userId])
   @@index([userId])
@@ -390,6 +399,8 @@ model Application {
   interviews   Interview[]
   consumedUpload ApplicationUpload? @relation("ConsumedApplicationUpload")
   notes Note[]
+  communications Communication[]
+  notifications Notification[]
 
   @@unique([organizationId, jobId, candidateId])
   @@unique([organizationId, jobId, idempotencyKey])
@@ -514,7 +525,9 @@ model Interview {
   createdBy    User         @relation("InterviewCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   cancelledBy  User?        @relation("InterviewCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   scorecards Scorecard[]
+  notifications Notification[]
 
+  @@unique([id, organizationId])
   @@index([organizationId, scheduledStartAt])
   @@index([applicationId, scheduledStartAt])
 }
@@ -657,4 +670,98 @@ model Note {
   application Application @relation(fields: [applicationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   author User @relation("NoteAuthor", fields: [authorUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   @@index([organizationId, applicationId, createdAt])
+}
+
+enum CommunicationChannel {
+  EMAIL
+}
+enum CommunicationDirection {
+  OUTBOUND
+}
+enum CommunicationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+enum NotificationType {
+  CANDIDATE_COMMUNICATION_FAILED
+  INTERVIEW_SCHEDULED
+  INTERVIEW_RESCHEDULED
+  INTERVIEW_CANCELLED
+  SCORECARD_SUBMITTED
+}
+
+model Communication {
+  id String @id @db.Uuid
+  organizationId String @db.Uuid
+  applicationId String @db.Uuid
+  createdByUserId String @db.Uuid
+  channel CommunicationChannel @default(EMAIL)
+  direction CommunicationDirection @default(OUTBOUND)
+  recipientEmail String @db.VarChar(320)
+  subject String @db.VarChar(998)
+  body String @db.Text
+  status CommunicationStatus @default(PENDING)
+  provider String @db.VarChar(32)
+  providerMessageId String? @db.VarChar(255)
+  failureCategory String? @db.VarChar(64)
+  idempotencyKey String @db.Uuid
+  payloadHash String @db.VarChar(64)
+  sentAt DateTime? @db.Timestamptz(6)
+  failedAt DateTime? @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  organization Organization @relation(fields:[organizationId], references:[id], onDelete: Restrict, onUpdate: Restrict)
+  application Application @relation(fields:[applicationId, organizationId], references:[id, organizationId], onDelete: Restrict, onUpdate: Restrict)
+  createdBy User @relation("CommunicationCreatedBy", fields:[createdByUserId], references:[id], onDelete: Restrict, onUpdate: Restrict)
+  @@unique([organizationId, applicationId, createdByUserId, idempotencyKey])
+  @@index([organizationId, applicationId, createdAt, id])
+}
+
+model CommunicationTemplate {
+  id String @id @db.Uuid
+  organizationId String @db.Uuid
+  name String @db.VarChar(160)
+  subject String @db.VarChar(998)
+  body String @db.Text
+  createdByUserId String @db.Uuid
+  revision Int @default(1)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  organization Organization @relation(fields:[organizationId], references:[id], onDelete: Restrict, onUpdate: Restrict)
+  createdBy User @relation("CommunicationTemplateCreatedBy", fields:[createdByUserId], references:[id], onDelete: Restrict, onUpdate: Restrict)
+  @@unique([organizationId, name])
+  @@index([organizationId, name])
+}
+
+model Notification {
+  id String @id @db.Uuid
+  organizationId String @db.Uuid
+  recipientUserId String @db.Uuid
+  type NotificationType
+  title String @db.VarChar(160)
+  message String @db.VarChar(1000)
+  applicationId String? @db.Uuid
+  interviewId String? @db.Uuid
+  readAt DateTime? @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  organization Organization @relation(fields:[organizationId], references:[id], onDelete: Restrict, onUpdate: Restrict)
+  recipient User @relation("NotificationRecipient", fields:[recipientUserId], references:[id], onDelete: Restrict, onUpdate: Restrict)
+  application Application? @relation(fields:[applicationId, organizationId], references:[id, organizationId], onDelete: Restrict, onUpdate: Restrict)
+  interview Interview? @relation(fields:[interviewId, organizationId], references:[id, organizationId], onDelete: Restrict, onUpdate: Restrict)
+  @@index([organizationId, recipientUserId, createdAt, id])
+}
+
+model NotificationPreference {
+  id String @id @db.Uuid
+  organizationId String @db.Uuid
+  userId String @db.Uuid
+  notificationType NotificationType
+  enabled Boolean @default(true)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  organization Organization @relation(fields:[organizationId], references:[id], onDelete: Restrict, onUpdate: Restrict)
+  user User @relation(fields:[userId], references:[id], onDelete: Restrict, onUpdate: Restrict)
+  membership OrganizationMembership @relation(fields:[organizationId, userId], references:[organizationId, userId], onDelete: Cascade, onUpdate: Restrict)
+  @@unique([organizationId, userId, notificationType])
 }

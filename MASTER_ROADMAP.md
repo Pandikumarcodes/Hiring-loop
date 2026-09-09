@@ -5,7 +5,7 @@
 > — Candidate Application Flow is **COMPLETE**; Phase 13 — Candidate
 > Management is **COMPLETE**. Phase 14 — Interview Scheduling & Calendar is
 > **COMPLETE**; Phase 15 — Scorecards & Collaboration is **COMPLETE**. Phase 16 —
-> Candidate Communication & Notifications is **NOT STARTED** and is next.
+> Candidate Communication & Notifications is **COMPLETE**. Phase 17 is next.
 > Historical task detail below is retained for roadmap traceability where it
 > does not conflict with current status.
 
@@ -451,7 +451,7 @@ complete; engineering audit and manual QA remain pending.
 - **Dependencies:** Phases 07 and 14.
 - **Definition of Done:** complete. Authorized interviewers can submit and review feedback with documented visibility and lifecycle rules. See `docs/architecture/PHASE_15_HANDOFF.md`.
 
-## Phase 16 — Candidate Communication & Notifications — NOT STARTED
+## Phase 16 — Candidate Communication & Notifications — COMPLETE
 
 - **Objective:** manage communication intent and user notifications. (FR-17, FR-23)
 - **Features/sub-features:** templates; compose/send request; delivery status; notification inbox; preferences; event triggers.
@@ -468,6 +468,8 @@ complete; engineering audit and manual QA remain pending.
 - **Definition of Done:** communication requests and notifications are durable, authorized, observable, and safe to retry.
 
 ## Phase 17 — Offers, Hire/Reject & Talent Pool — NOT STARTED
+
+Phase 16 final status: **COMPLETE**. Final handoff: `docs/architecture/PHASE_16_HANDOFF.md`.
 
 - **Objective:** manage offer workflows, explicit hire/reject decisions, and candidate pools. (FR-19, FR-20)
 - **Features/sub-features:** offer drafting/versioning/issue/accept/decline/withdraw; explicit hire/reject; pools and memberships.

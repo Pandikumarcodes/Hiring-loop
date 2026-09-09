@@ -65,6 +65,14 @@ export function createSendGridEmailDelivery({
   client.setApiKey(apiKey);
 
   return {
+    async sendCandidateEmail({ to, subject, text }) {
+      try {
+        const [response] = await client.send({ to, from, subject, text });
+        return { providerMessageId: response?.headers?.['x-message-id'] };
+      } catch (error) {
+        throw providerFailure(error);
+      }
+    },
     async sendEmailVerification({ email, verificationToken }) {
       const url = verificationUrl(frontendOrigin, verificationToken);
       try {
@@ -171,6 +179,10 @@ export function createConsoleEmailDelivery({
   }
 
   return {
+    async sendCandidateEmail({ to, subject, text }) {
+      logger.log(`[DEV EMAIL] To: ${to}\nSubject: ${subject}\n${text}`);
+      return {};
+    },
     async sendEmailVerification({ email, verificationToken }) {
       logger.log(
         developmentEmailLog({
@@ -241,6 +253,10 @@ export function createInMemoryEmailDelivery() {
   const messages = [];
 
   return {
+    async sendCandidateEmail(message) {
+      messages.push({ ...message });
+      return {};
+    },
     messages,
     async sendEmailVerification(message) {
       messages.push({ ...message });
@@ -256,6 +272,9 @@ export function createInMemoryEmailDelivery() {
 
 export function createNonDeliveringEmailDelivery() {
   return {
+    async sendCandidateEmail() {
+      throw new EmailDeliveryError();
+    },
     async sendEmailVerification() {
       throw new EmailDeliveryError();
     },

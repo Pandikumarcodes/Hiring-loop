@@ -5,6 +5,7 @@ import { useLogout } from '../features/auth/hooks/mutations'
 import { useCurrentUser } from '../features/auth/hooks/queries'
 import { genericMutationError } from '../features/auth/utils/ui-utils'
 import { OrganizationSwitcher } from '../features/organizations'
+import { NotificationBell } from '../features/notifications'
 import { BrandMark } from '../features/auth/components/BrandMark'
 import {
   Avatar,
@@ -48,44 +49,47 @@ export function AppLayout() {
           >
             <OrganizationSwitcher />
           </nav>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-control p-1 text-text-primary hover:bg-primary-soft focus-visible:outline-3 focus-visible:outline-primary-dark focus-visible:outline-offset-2"
-                aria-label={`Open account menu for ${email}`}
-              >
-                <Avatar>
-                  <AvatarFallback>{initial}</AvatarFallback>
-                </Avatar>
-                <ChevronDown
-                  className="h-4 w-4 text-text-secondary"
-                  aria-hidden="true"
-                />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" aria-label="Account menu">
-              <div className="flex min-w-0 items-center gap-3 px-3 py-3">
-                <Avatar>
-                  <AvatarFallback>{initial}</AvatarFallback>
-                </Avatar>
-                <div className="min-w-0">
-                  <strong className="block truncate text-sm" title={email}>
-                    {email}
-                  </strong>
-                  <span className="text-xs text-text-secondary">
-                    Signed in account
-                  </span>
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-control p-1 text-text-primary hover:bg-primary-soft focus-visible:outline-3 focus-visible:outline-primary-dark focus-visible:outline-offset-2"
+                  aria-label={`Open account menu for ${email}`}
+                >
+                  <Avatar>
+                    <AvatarFallback>{initial}</AvatarFallback>
+                  </Avatar>
+                  <ChevronDown
+                    className="h-4 w-4 text-text-secondary"
+                    aria-hidden="true"
+                  />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" aria-label="Account menu">
+                <div className="flex min-w-0 items-center gap-3 px-3 py-3">
+                  <Avatar>
+                    <AvatarFallback>{initial}</AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <strong className="block truncate text-sm" title={email}>
+                      {email}
+                    </strong>
+                    <span className="text-xs text-text-secondary">
+                      Signed in account
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <DropdownMenuSeparator className="my-1 bg-border" />
-              <DropdownMenuItem
-                disabled={logout.isPending}
-                onSelect={() => void handleLogout()}
-              >
-                {logout.isPending ? 'Signing out…' : 'Sign out'}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <DropdownMenuSeparator className="my-1 bg-border" />
+                <DropdownMenuItem
+                  disabled={logout.isPending}
+                  onSelect={() => void handleLogout()}
+                >
+                  {logout.isPending ? 'Signing out…' : 'Sign out'}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </header>
       {logout.isError ? (

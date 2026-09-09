@@ -31,6 +31,8 @@ import { jobRouter } from '../jobs/job-module.js';
 import { candidateManagementRouter } from '../candidates/candidate-management-module.js';
 import { interviewRouter } from '../interviews/interview-module.js';
 import { scorecardRouter } from '../scorecards/scorecard-module.js';
+import { communicationRouter } from '../communications/communications-module.js';
+import { notificationRouter } from '../notifications/notifications-module.js';
 
 const databaseUrl =
   config.environment === 'test' ? config.testDatabaseUrl : config.databaseUrl;
@@ -161,4 +163,6 @@ export const organizationRouter = createOrganizationRouter({
   candidateManagementRouter,
   interviewRouter,
   scorecardRouter,
+  communicationRouter: communicationRouter(),
+  notificationRouter: notificationRouter(),
 });
