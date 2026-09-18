@@ -7,6 +7,7 @@ import { createResolveTenantContext } from '../organizations/use-cases/resolve-t
 import { createApplicationFormRepository } from './repositories/application-form-repository.js';
 import { createApplicationFormRouter } from './routes/application-form-routes.js';
 import { createApplicationFormUseCases } from './use-cases/application-form-use-cases.js';
+import { createAuditRepository } from '../audit/repositories/audit-repository.js';
 const url =
   config.environment === 'test' ? config.testDatabaseUrl : config.databaseUrl;
 const unavailable = async () => {
@@ -29,5 +30,6 @@ export const applicationFormRouter = createApplicationFormRouter({
   }),
   applicationFormUseCases: createApplicationFormUseCases({
     applicationFormRepository: repository,
+    auditRepository: prisma ? createAuditRepository(prisma) : null,
   }),
 });

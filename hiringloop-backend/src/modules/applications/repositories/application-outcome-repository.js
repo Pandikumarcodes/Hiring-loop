@@ -1,5 +1,5 @@
 import { generateEntityId } from '../../../utils/ids.js';
-export function createApplicationOutcomeRepository(prisma) {
+export function createApplicationOutcomeRepository(prisma, auditRepository) {
   const find = ({ organizationId, applicationId }) =>
     prisma.application.findFirst({
       where: { id: applicationId, organizationId },
@@ -25,6 +25,7 @@ export function createApplicationOutcomeRepository(prisma) {
       reasonCode = null,
       reasonDetails = null,
       talentPoolId,
+      requestId,
     }) {
       return prisma.$transaction(async (db) => {
         const application = await db.application.findFirst({
@@ -62,6 +63,23 @@ export function createApplicationOutcomeRepository(prisma) {
             actorUserId,
           },
         });
+        await auditRepository?.create(
+          {
+            organizationId,
+            actorUserId,
+            requestId,
+            action: {
+              HIRED: 'APPLICATION_HIRED',
+              REJECTED: 'APPLICATION_REJECTED',
+              ACTIVE: 'APPLICATION_REOPENED',
+            }[to],
+            resourceType: 'APPLICATION',
+            resourceId: applicationId,
+            before: { outcome: application.outcome },
+            after: { outcome: to, reasonCode: reasonCode ?? null },
+          },
+          db,
+        );
         if (talentPoolId)
           await db.talentPoolMember.upsert({
             where: {

@@ -25,6 +25,8 @@ export function createOrganizationRouter({
   offerRouter,
   talentPoolRouter,
   applicationOutcomeRouter,
+  auditRouter,
+  analyticsRouter,
 }) {
   const router = express.Router();
   const controller = createOrganizationController({
@@ -59,6 +61,8 @@ export function createOrganizationRouter({
   if (talentPoolRouter) router.use('/:organizationId', talentPoolRouter);
   if (applicationOutcomeRouter)
     router.use('/:organizationId', applicationOutcomeRouter);
+  if (auditRouter) router.use('/:organizationId', auditRouter);
+  if (analyticsRouter) router.use('/:organizationId', analyticsRouter);
 
   router.get('/', authenticateSession, controller.list);
   router.post(

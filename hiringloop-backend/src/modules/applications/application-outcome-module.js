@@ -5,6 +5,7 @@ import { createTenantContextMiddleware } from '../../middleware/tenant-context.j
 import { createOrganizationRepository } from '../organizations/repositories/organization-repository.js';
 import { createResolveTenantContext } from '../organizations/use-cases/resolve-tenant-context.js';
 import { createApplicationOutcomeRepository } from './repositories/application-outcome-repository.js';
+import { createAuditRepository } from '../audit/repositories/audit-repository.js';
 import { createApplicationOutcomeUseCases } from './use-cases/application-outcome-use-cases.js';
 import { createApplicationOutcomeRouter } from './routes/application-outcome-routes.js';
 const url =
@@ -18,7 +19,10 @@ const organizationRepository = prisma
   : { findMembershipForUserAndOrganization: unavailable };
 const outcomeUseCases = prisma
   ? createApplicationOutcomeUseCases({
-      outcomeRepository: createApplicationOutcomeRepository(prisma),
+      outcomeRepository: createApplicationOutcomeRepository(
+        prisma,
+        createAuditRepository(prisma),
+      ),
     })
   : { hire: unavailable, reject: unavailable, reopen: unavailable };
 export const applicationOutcomeRouter = createApplicationOutcomeRouter({

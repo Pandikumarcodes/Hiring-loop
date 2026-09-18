@@ -6,7 +6,8 @@ const SEND_INCLUDE = {
   currentVersion: true,
   application: { include: { candidate: true } },
 };
-export function createOfferRepository(prisma) {
+export function createOfferRepository(prisma, auditRepository) {
+  const audit = (input, db) => auditRepository?.create(input, db);
   const findById = ({ organizationId, offerId }) =>
     prisma.offer.findFirst({
       where: { id: offerId, organizationId },
@@ -27,6 +28,7 @@ export function createOfferRepository(prisma) {
       offerId,
       versionId,
       terms,
+      requestId,
     }) {
       return prisma.$transaction(async (db) => {
         const application = await db.application.findFirst({
@@ -51,6 +53,18 @@ export function createOfferRepository(prisma) {
             ...terms,
           },
         });
+        await audit(
+          {
+            organizationId,
+            actorUserId,
+            requestId,
+            action: 'OFFER_CREATED',
+            resourceType: 'OFFER',
+            resourceId: offerId,
+            after: { status: 'DRAFT', versionNumber: 1 },
+          },
+          db,
+        );
         return {
           outcome: 'created',
           offer: await db.offer.update({
@@ -89,6 +103,7 @@ export function createOfferRepository(prisma) {
       expectedRevision,
       versionId,
       terms,
+      requestId,
     }) {
       return prisma.$transaction(async (db) => {
         const offer = await db.offer.findFirst({
@@ -117,6 +132,21 @@ export function createOfferRepository(prisma) {
           where: { id: offerId },
           data: { currentVersionId: version.id, revision: { increment: 1 } },
         });
+        await audit(
+          {
+            organizationId,
+            actorUserId,
+            requestId,
+            action: 'OFFER_REVISED',
+            resourceType: 'OFFER',
+            resourceId: offerId,
+            after: {
+              status: offer.status,
+              versionNumber: version.versionNumber,
+            },
+          },
+          db,
+        );
         return {
           outcome: 'created',
           offer: await db.offer.findFirst({
@@ -136,6 +166,7 @@ export function createOfferRepository(prisma) {
       communicationId,
       provider,
       now,
+      requestId,
     }) {
       return prisma.$transaction(async (db) => {
         const offer = await db.offer.findFirst({
@@ -185,6 +216,22 @@ export function createOfferRepository(prisma) {
           where: { id: offer.id },
           data: { status: 'SENT', sentAt: now, revision: { increment: 1 } },
         });
+        await audit(
+          {
+            organizationId,
+            actorUserId,
+            requestId,
+            action: 'OFFER_SENT',
+            resourceType: 'OFFER',
+            resourceId: offer.id,
+            before: { status: offer.status },
+            after: {
+              status: 'SENT',
+              versionNumber: offer.currentVersion.versionNumber,
+            },
+          },
+          db,
+        );
         return { outcome: 'prepared', offer, communication };
       });
     },
@@ -217,25 +264,57 @@ export function createOfferRepository(prisma) {
       timestampField,
       now,
       requiresIssuedVersion = false,
+      requestId,
     }) {
-      const result = await prisma.offer.updateMany({
-        where: {
-          id: offerId,
-          organizationId,
-          revision: expectedRevision,
-          status: { in: from },
-          ...(requiresIssuedVersion
-            ? { currentVersion: { is: { issuedAt: { not: null } } } }
-            : {}),
-        },
-        data: {
-          status: to,
-          [timestampField]: now,
-          [`${timestampField.slice(0, -2)}ByUserId`]: actorUserId,
-          revision: { increment: 1 },
-        },
+      return prisma.$transaction(async (db) => {
+        const existing = await db.offer.findFirst({
+          where: { id: offerId, organizationId },
+          select: {
+            status: true,
+            currentVersion: { select: { versionNumber: true } },
+          },
+        });
+        const result = await db.offer.updateMany({
+          where: {
+            id: offerId,
+            organizationId,
+            revision: expectedRevision,
+            status: { in: from },
+            ...(requiresIssuedVersion
+              ? { currentVersion: { is: { issuedAt: { not: null } } } }
+              : {}),
+          },
+          data: {
+            status: to,
+            [timestampField]: now,
+            [`${timestampField.slice(0, -2)}ByUserId`]: actorUserId,
+            revision: { increment: 1 },
+          },
+        });
+        if (!result.count) return null;
+        const action = {
+          ACCEPTED: 'OFFER_ACCEPTED',
+          DECLINED: 'OFFER_DECLINED',
+          WITHDRAWN: 'OFFER_WITHDRAWN',
+        }[to];
+        await audit(
+          {
+            organizationId,
+            actorUserId,
+            requestId,
+            action,
+            resourceType: 'OFFER',
+            resourceId: offerId,
+            before: { status: existing.status },
+            after: {
+              status: to,
+              versionNumber: existing.currentVersion?.versionNumber ?? null,
+            },
+          },
+          db,
+        );
+        return findById({ organizationId, offerId });
       });
-      return result.count ? findById({ organizationId, offerId }) : null;
     },
   };
 }

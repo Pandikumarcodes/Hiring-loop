@@ -25,6 +25,7 @@ function draftQuestion(draft, id) {
 }
 export function createApplicationFormUseCases({
   applicationFormRepository,
+  auditRepository = null,
   clock = () => new Date(),
 }) {
   const get = async (input) => {
@@ -164,6 +165,22 @@ export function createApplicationFormUseCases({
           where: { id: form.id },
           data: { activeVersionId: draft.id },
         });
+        if (auditRepository)
+          await auditRepository.create(
+            {
+              organizationId: input.organizationId,
+              actorUserId: input.actorUserId,
+              action: 'APPLICATION_FORM_PUBLISHED',
+              resourceType: 'APPLICATION_FORM',
+              resourceId: form.id,
+              after: { status: 'PUBLISHED' },
+              metadata: {
+                versionId: draft.id,
+                versionNumber: draft.versionNumber,
+              },
+            },
+            tx,
+          );
       }),
     discard: (input) =>
       mutation(input, async (tx, _form, draft) => {

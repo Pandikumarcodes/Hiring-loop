@@ -19,13 +19,14 @@ export function createTalentPoolUseCases({ repository }) {
         },
       };
     },
-    async create({ organizationId, actorUserId, data }) {
+    async create({ organizationId, actorUserId, requestId, data }) {
       try {
         return toTalentPoolDto(
           await repository.create({
             id: generateEntityId(),
             organizationId,
             actorUserId,
+            requestId,
             data,
           }),
         );
@@ -39,10 +40,18 @@ export function createTalentPoolUseCases({ repository }) {
         throw error;
       }
     },
-    async update({ organizationId, talentPoolId, data }) {
+    async update({
+      organizationId,
+      talentPoolId,
+      actorUserId,
+      requestId,
+      data,
+    }) {
       const changed = await repository.update({
         organizationId,
         talentPoolId,
+        actorUserId,
+        requestId,
         data,
       });
       if (!changed.count) {
@@ -72,7 +81,13 @@ export function createTalentPoolUseCases({ repository }) {
         pagination: { page: query.page, pageSize: query.pageSize },
       };
     },
-    async addMember({ organizationId, talentPoolId, actorUserId, data }) {
+    async addMember({
+      organizationId,
+      talentPoolId,
+      actorUserId,
+      requestId,
+      data,
+    }) {
       if (!(await repository.find({ organizationId, talentPoolId })))
         throw fail(404, 'TALENT_POOL_NOT_FOUND', 'Talent pool not found');
       if (
@@ -105,15 +120,24 @@ export function createTalentPoolUseCases({ repository }) {
           organizationId,
           talentPoolId,
           actorUserId,
+          requestId,
           data,
         }),
       );
     },
-    async removeMember({ organizationId, talentPoolId, candidateId }) {
+    async removeMember({
+      organizationId,
+      talentPoolId,
+      candidateId,
+      actorUserId,
+      requestId,
+    }) {
       const deleted = await repository.removeMember({
         organizationId,
         talentPoolId,
         candidateId,
+        actorUserId,
+        requestId,
       });
       if (!deleted.count)
         throw fail(

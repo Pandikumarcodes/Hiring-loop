@@ -18,6 +18,8 @@ import { generateEntityId } from '../../utils/ids.js';
 import { ApplicationError } from '../../errors/application-error.js';
 import { communicationSendRateLimiter } from '../../middleware/rate-limit.js';
 import { createCandidateCommunicationService } from './candidate-communication-service.js';
+import { createCommunicationRepository } from './repositories/communication-repository.js';
+import { createAuditRepository } from '../audit/repositories/audit-repository.js';
 
 const id = z.string().uuid();
 const params = z.object({ organizationId: id, applicationId: id });
@@ -89,6 +91,9 @@ export function communicationRouter() {
         emailDelivery: authEmailDelivery,
       })
     : null;
+  const communications = prisma
+    ? createCommunicationRepository(prisma, createAuditRepository(prisma))
+    : null;
   const ctx = (p, m = false) => [
     authenticateSession,
     ...(m ? [requireCsrf] : []),
@@ -135,20 +140,17 @@ export function communicationRouter() {
         }
         let c;
         try {
-          c = await prisma.communication.create({
-            data: {
-              id: generateEntityId(),
-              organizationId,
-              applicationId,
-              createdByUserId,
-              recipientEmail: app.candidate.email,
-              subject,
-              body,
-              provider: config.email.provider,
-              payloadHash,
-              idempotencyKey,
-            },
-            include: { createdBy: { select: { id: true, email: true } } },
+          c = await communications.createSendRequest({
+            organizationId,
+            applicationId,
+            createdByUserId,
+            recipientEmail: app.candidate.email,
+            subject,
+            body,
+            provider: config.email.provider,
+            payloadHash,
+            idempotencyKey,
+            requestId: req.requestId,
           });
         } catch (error) {
           if (error?.code !== 'P2002') throw error;

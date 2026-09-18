@@ -48,6 +48,8 @@ import {
   MyScorecardPage,
   ScorecardTemplatePage,
 } from '../../features/scorecards'
+import { AnalyticsPage } from '../../features/analytics'
+import { AuditPage } from '../../features/audit'
 
 function OrganizationOnboardingRoute() {
   const organizations = useOrganizations()
@@ -163,6 +165,14 @@ export function AppRoutes() {
           <Route
             path="organizations/:organizationId/talent-pools/:talentPoolId"
             element={<TalentPoolDetailPage />}
+          />
+          <Route
+            path="organizations/:organizationId/analytics"
+            element={<AnalyticsPage />}
+          />
+          <Route
+            path="organizations/:organizationId/audit"
+            element={<AuditPage />}
           />
           <Route path="organizations" element={<OrganizationLandingPage />} />
           <Route path="*" element={<NotFoundPage />} />

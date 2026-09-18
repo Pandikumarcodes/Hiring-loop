@@ -8,7 +8,7 @@ const scorecardInclude = {
   templateVersion: { include: versionInclude },
   responses: { orderBy: { criterionId: 'asc' } },
 };
-export function createScorecardRepository(prisma) {
+export function createScorecardRepository(prisma, auditRepository = null) {
   const template = (input, db = prisma) =>
     db.scorecardTemplate.findFirst({
       where: { organizationId: input.organizationId, jobId: input.jobId },
@@ -123,6 +123,19 @@ export function createScorecardRepository(prisma) {
         });
         if (lock.count !== 1) return { outcome: 'conflict' };
         await apply(tx, t, d);
+        if (input.auditAction && auditRepository)
+          await auditRepository.create(
+            {
+              organizationId: input.organizationId,
+              actorUserId: input.actorUserId,
+              action: input.auditAction,
+              resourceType: 'SCORECARD_TEMPLATE',
+              resourceId: t.id,
+              after: { status: 'PUBLISHED', versionNumber: d.versionNumber },
+              metadata: { versionId: d.id },
+            },
+            tx,
+          );
         return { outcome: 'updated', template: await template(input, tx) };
       });
     },
@@ -280,6 +293,23 @@ export function createScorecardRepository(prisma) {
           },
         });
         if (lock.count !== 1) return { outcome: 'conflict' };
+        if (auditRepository)
+          await auditRepository.create(
+            {
+              organizationId: input.organizationId,
+              actorUserId: input.actorUserId,
+              action: 'SCORECARD_SUBMITTED',
+              resourceType: 'SCORECARD',
+              resourceId: s.id,
+              after: { status: 'SUBMITTED' },
+              metadata: {
+                interviewId: saved.interview.id,
+                applicationId: saved.interview.applicationId,
+                templateVersionId: s.templateVersionId,
+              },
+            },
+            tx,
+          );
         return {
           outcome: 'submitted',
           scorecard: await tx.scorecard.findUnique({

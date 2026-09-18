@@ -66,6 +66,8 @@ export const PERMISSIONS = Object.freeze({
   TALENT_POOL_VIEW: 'talent-pool:view',
   TALENT_POOL_MANAGE: 'talent-pool:manage',
   TALENT_POOL_MEMBER_MANAGE: 'talent-pool-member:manage',
+  ANALYTICS_VIEW: 'analytics:view',
+  AUDIT_VIEW: 'audit:view',
 });
 
 const ADMIN_PERMISSIONS = Object.freeze(Object.values(PERMISSIONS));
@@ -125,6 +127,8 @@ export const ROLE_PERMISSIONS = Object.freeze({
     PERMISSIONS.TALENT_POOL_VIEW,
     PERMISSIONS.TALENT_POOL_MANAGE,
     PERMISSIONS.TALENT_POOL_MEMBER_MANAGE,
+    PERMISSIONS.ANALYTICS_VIEW,
+    PERMISSIONS.AUDIT_VIEW,
   ]),
   // Hiring Managers retain the same read scope as JOB_READ: they can inspect
   // a job's current application configuration, but cannot configure it.
@@ -140,6 +144,7 @@ export const ROLE_PERMISSIONS = Object.freeze({
     PERMISSIONS.NOTIFICATION_VIEW_OWN,
     PERMISSIONS.NOTIFICATION_READ_OWN,
     PERMISSIONS.NOTIFICATION_PREFERENCE_MANAGE_OWN,
+    PERMISSIONS.ANALYTICS_VIEW,
   ]),
   INTERVIEWER: Object.freeze([
     PERMISSIONS.INTERVIEW_VIEW_ASSIGNED,

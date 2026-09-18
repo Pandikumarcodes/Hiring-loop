@@ -23,6 +23,7 @@ import {
   authSecretHasher,
 } from '../auth/secrets/auth-secret.js';
 import { createMemberRepository } from '../members/repositories/member-repository.js';
+import { createAuditRepository } from '../audit/repositories/audit-repository.js';
 import { createMemberRouter } from '../members/routes/member-routes.js';
 import { createListMembers } from '../members/use-cases/list-members.js';
 import { createUpdateMemberRole } from '../members/use-cases/update-member-role.js';
@@ -36,11 +37,16 @@ import { notificationRouter } from '../notifications/notifications-module.js';
 import { offerRouter } from '../offers/offers-module.js';
 import { talentPoolRouter } from '../talent-pools/talent-pool-module.js';
 import { applicationOutcomeRouter } from '../applications/application-outcome-module.js';
+import { auditRouter } from '../audit/audit-module.js';
+import { analyticsRouter } from '../analytics/analytics-module.js';
 
 const databaseUrl =
   config.environment === 'test' ? config.testDatabaseUrl : config.databaseUrl;
+const auditRepository = databaseUrl
+  ? createAuditRepository(getPrismaClient())
+  : null;
 const repository = databaseUrl
-  ? createOrganizationRepository(getPrismaClient())
+  ? createOrganizationRepository(getPrismaClient(), auditRepository)
   : {
       async createOrganizationWithAdminMembership() {
         throw new Error('Organization database is not configured');
@@ -59,7 +65,7 @@ const repository = databaseUrl
       },
     };
 const invitationRepository = databaseUrl
-  ? createInvitationRepository(getPrismaClient())
+  ? createInvitationRepository(getPrismaClient(), auditRepository)
   : {
       async findMemberByEmail() {
         throw new Error('Invitation database is not configured');
@@ -81,7 +87,10 @@ const invitationRepository = databaseUrl
       },
     };
 const memberRepository = databaseUrl
-  ? createMemberRepository(getPrismaClient())
+  ? createMemberRepository(
+      getPrismaClient(),
+      createAuditRepository(getPrismaClient()),
+    )
   : {
       async listMembers() {
         throw new Error('Member database is not configured');
@@ -171,4 +180,6 @@ export const organizationRouter = createOrganizationRouter({
   offerRouter,
   talentPoolRouter,
   applicationOutcomeRouter,
+  auditRouter,
+  analyticsRouter,
 });

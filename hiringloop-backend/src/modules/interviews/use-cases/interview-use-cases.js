@@ -212,6 +212,7 @@ export function createInterviewUseCases({
       organizationId,
       interviewId,
       actorRole,
+      actorUserId,
       participantUserIds,
       ...data
     }) {
@@ -226,6 +227,7 @@ export function createInterviewUseCases({
         interviewId,
         data,
         participants,
+        actorUserId,
       });
       if (result.outcome === 'not_found') throw interviewNotFoundError();
       if (result.outcome === 'cancelled') throw interviewCannotUpdateError();
@@ -251,6 +253,7 @@ export function createInterviewUseCases({
         scheduledStartAt,
         scheduledEndAt,
         timeZone,
+        actorUserId,
       });
       if (result.outcome === 'not_found') throw interviewNotFoundError();
       if (result.outcome === 'cancelled')

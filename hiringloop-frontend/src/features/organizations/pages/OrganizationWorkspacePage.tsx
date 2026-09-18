@@ -8,6 +8,8 @@ import { isOrganizationId } from '../utils/organization-utils'
 import { JobsNavigationLink } from '../../jobs'
 import { CandidatesNavigationLink } from '../../candidate-management'
 import { TalentPoolsNavigationLink } from '../../talent-pools'
+import { AnalyticsNavigationLink } from '../../analytics'
+import { AuditNavigationLink } from '../../audit'
 
 export function OrganizationWorkspacePage() {
   const { organizationId } = useParams()
@@ -63,6 +65,8 @@ export function OrganizationWorkspacePage() {
         <TalentPoolsNavigationLink
           permissions={organization.data.permissions}
         />
+        <AnalyticsNavigationLink permissions={organization.data.permissions} />
+        <AuditNavigationLink permissions={organization.data.permissions} />
       </div>
     </section>
   )

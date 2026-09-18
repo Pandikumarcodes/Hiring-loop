@@ -63,6 +63,8 @@ export type OrganizationPermission =
   | 'notification:view-own'
   | 'notification:read-own'
   | 'notification-preference:manage-own'
+  | 'analytics:view'
+  | 'audit:view'
 
 export interface CreateOrganizationInput {
   readonly name: string

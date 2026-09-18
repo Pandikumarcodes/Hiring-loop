@@ -6,7 +6,8 @@
 > Management is **COMPLETE**. Phase 14 — Interview Scheduling & Calendar is
 > **COMPLETE**; Phase 15 — Scorecards & Collaboration is **COMPLETE**. Phase 16 —
 > Candidate Communication & Notifications is **COMPLETE**. Phase 17 — Offers,
-> Hire/Reject & Talent Pool is **COMPLETE**. Phase 18 is next.
+> Hire/Reject & Talent Pool is **COMPLETE**. Phase 18 is **COMPLETE** and
+> Phase 19 is next and remains **NOT STARTED**.
 > Historical task detail below is retained for roadmap traceability where it
 > does not conflict with current status.
 
@@ -495,7 +496,7 @@ Phase 17 final status: **COMPLETE**. Final handoff: `docs/architecture/PHASE_17_
 - **Dependencies:** Phases 11, 13, 15, 16.
 - **Definition of Done:** offers and pool workflows are explicit, scoped, auditable, and do not infer employment without an approved rule.
 
-## Phase 18 — Analytics & Audit — NOT STARTED
+## Phase 18 — Analytics & Audit — COMPLETE
 
 - **Objective:** provide hiring analytics and protected audit logging. (FR-21, FR-24)
 - **Features/sub-features:** funnel metrics; time-to-stage; dashboards/reports; audit event capture/query/export policy.
@@ -509,7 +510,10 @@ Phase 17 final status: **COMPLETE**. Final handoff: `docs/architecture/PHASE_17_
 - **Testing expectations:** metric correctness, authorization, redaction, audit completeness and retention tests.
 - **Documentation outputs:** metric glossary, audit policy, report/data lineage docs.
 - **Dependencies:** Phases 08–17; ARCH-05.
-- **Definition of Done:** metrics have definitions and scope, and critical changes produce protected audit records without becoming product activity timelines.
+- **Definition of Done:** COMPLETE. Metrics have definitions and scope, and
+  critical changes produce protected audit records without becoming product
+  activity timelines. Final handoff:
+  `docs/architecture/PHASE_18_HANDOFF.md`.
 
 ## Phase 19 — Redis, BullMQ & Background Jobs — NOT STARTED
 

@@ -90,16 +90,19 @@ export function createScorecardUseCases({
     },
     async publishTemplate(input) {
       if (!managers.has(input.actorRole)) throw forbiddenError();
-      const r = await repository.mutateTemplate(input, async (tx, t, d) => {
-        await tx.scorecardTemplateVersion.update({
-          where: { id: d.id },
-          data: { status: 'PUBLISHED', publishedAt: clock() },
-        });
-        await tx.scorecardTemplate.update({
-          where: { id: t.id },
-          data: { activeVersionId: d.id },
-        });
-      });
+      const r = await repository.mutateTemplate(
+        { ...input, auditAction: 'SCORECARD_TEMPLATE_PUBLISHED' },
+        async (tx, t, d) => {
+          await tx.scorecardTemplateVersion.update({
+            where: { id: d.id },
+            data: { status: 'PUBLISHED', publishedAt: clock() },
+          });
+          await tx.scorecardTemplate.update({
+            where: { id: t.id },
+            data: { activeVersionId: d.id },
+          });
+        },
+      );
       return toTemplateDto(fail(r).template);
     },
     async my(input) {
@@ -130,10 +133,14 @@ export function createScorecardUseCases({
       return toMyScorecardDto(r);
     },
     async submitMy(input) {
-      const r = fail(
-        await repository.submitMy({ ...input, id: generateEntityId, clock }),
-        { allowSubmitted: true },
-      );
+      const result = await repository.submitMy({
+        ...input,
+        id: generateEntityId,
+        clock,
+      });
+      if (result.outcome === 'submitted' && !result.scorecard)
+        throw conflictError('Submitted scorecards are immutable');
+      const r = fail(result, { allowSubmitted: true });
       if (
         notificationService &&
         r.interview.createdByUserId !== input.actorUserId

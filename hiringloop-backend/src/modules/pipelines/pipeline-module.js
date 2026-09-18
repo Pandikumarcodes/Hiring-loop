@@ -7,6 +7,7 @@ import { createResolveTenantContext } from '../organizations/use-cases/resolve-t
 import { createPipelineRepository } from './repositories/pipeline-repository.js';
 import { createPipelineRouter } from './routes/pipeline-routes.js';
 import { createPipelineUseCases } from './use-cases/pipeline-use-cases.js';
+import { createAuditRepository } from '../audit/repositories/audit-repository.js';
 
 const databaseUrl =
   config.environment === 'test' ? config.testDatabaseUrl : config.databaseUrl;
@@ -29,5 +30,8 @@ export const pipelineRouter = createPipelineRouter({
       organizationRepository,
     }),
   }),
-  pipelineUseCases: createPipelineUseCases({ pipelineRepository }),
+  pipelineUseCases: createPipelineUseCases({
+    pipelineRepository,
+    auditRepository: prisma ? createAuditRepository(prisma) : null,
+  }),
 });

@@ -2,6 +2,8 @@ export function createJobController(jobUseCases) {
   const input = (request) => ({
     organizationId: request.tenantContext.organizationId,
     jobId: request.validated.params?.jobId,
+    actorUserId: request.auth.userId,
+    requestId: request.requestId,
   });
   const mutation = (request) => ({
     ...input(request),
@@ -12,6 +14,8 @@ export function createJobController(jobUseCases) {
       try {
         const job = await jobUseCases.create({
           organizationId: request.tenantContext.organizationId,
+          actorUserId: request.auth.userId,
+          requestId: request.requestId,
           data: request.validated.body,
         });
         response.status(201).json({ data: { job } });

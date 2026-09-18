@@ -4,12 +4,19 @@ import {
 } from '../../../errors/application-error.js';
 
 export function createRemoveMember({ memberRepository }) {
-  return async function removeMember({ organizationId, membershipId }) {
+  return async function removeMember({
+    organizationId,
+    membershipId,
+    actorUserId,
+    requestId,
+  }) {
     let result;
     try {
       result = await memberRepository.removeMembership({
         organizationId,
         membershipId,
+        actorUserId,
+        requestId,
       });
     } catch (error) {
       if (error?.code === 'P2003') {

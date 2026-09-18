@@ -21,7 +21,7 @@ const PUBLIC_ORGANIZATION_SELECT = {
   description: true,
 };
 
-export function createOrganizationRepository(prisma) {
+export function createOrganizationRepository(prisma, auditRepository = null) {
   return {
     async createOrganizationWithAdminMembership({
       userId,
@@ -55,6 +55,23 @@ export function createOrganizationRepository(prisma) {
                 role: 'ADMIN',
               },
             });
+
+            if (auditRepository) {
+              await auditRepository.create(
+                {
+                  organizationId: organization.id,
+                  actorUserId: userId,
+                  action: 'ORGANIZATION_CREATED',
+                  resourceType: 'ORGANIZATION',
+                  resourceId: organization.id,
+                  after: {
+                    name: organization.name,
+                    website: organization.website,
+                  },
+                },
+                transaction,
+              );
+            }
 
             return organization;
           });

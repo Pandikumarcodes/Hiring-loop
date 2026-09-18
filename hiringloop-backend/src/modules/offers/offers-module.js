@@ -10,6 +10,7 @@ import { createOrganizationRepository } from '../organizations/repositories/orga
 import { createResolveTenantContext } from '../organizations/use-cases/resolve-tenant-context.js';
 import { createCandidateCommunicationService } from '../communications/candidate-communication-service.js';
 import { createOfferRepository } from './repositories/offer-repository.js';
+import { createAuditRepository } from '../audit/repositories/audit-repository.js';
 import { createOfferUseCases } from './use-cases/offer-use-cases.js';
 import { createOfferRouter } from './routes/offer-routes.js';
 const url =
@@ -23,7 +24,10 @@ const organizationRepository = prisma
   : { findMembershipForUserAndOrganization: unavailable };
 const offerUseCases = prisma
   ? createOfferUseCases({
-      offerRepository: createOfferRepository(prisma),
+      offerRepository: createOfferRepository(
+        prisma,
+        createAuditRepository(prisma),
+      ),
       communicationService: createCandidateCommunicationService({
         prisma,
         emailDelivery: authEmailDelivery,

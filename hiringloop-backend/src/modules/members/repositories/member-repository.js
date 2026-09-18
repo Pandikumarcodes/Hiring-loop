@@ -8,7 +8,7 @@ const MEMBER_SELECT = {
   },
 };
 
-export function createMemberRepository(prisma) {
+export function createMemberRepository(prisma, auditRepository) {
   return {
     async listMembers({ organizationId }) {
       return prisma.organizationMembership.findMany({
@@ -18,7 +18,13 @@ export function createMemberRepository(prisma) {
       });
     },
 
-    async updateMembershipRole({ organizationId, membershipId, role }) {
+    async updateMembershipRole({
+      organizationId,
+      membershipId,
+      role,
+      actorUserId,
+      requestId,
+    }) {
       return prisma.$transaction(async (transaction) => {
         await lockOrganization(transaction, organizationId);
         const membership = await findMembership(
@@ -46,11 +52,29 @@ export function createMemberRepository(prisma) {
           organizationId,
           membershipId,
         );
+        await auditRepository?.create(
+          {
+            organizationId,
+            actorUserId,
+            requestId,
+            action: 'MEMBERSHIP_ROLE_CHANGED',
+            resourceType: 'MEMBERSHIP',
+            resourceId: membershipId,
+            before: { role: membership.role },
+            after: { role },
+          },
+          transaction,
+        );
         return { outcome: 'updated', membership: updated };
       });
     },
 
-    async removeMembership({ organizationId, membershipId }) {
+    async removeMembership({
+      organizationId,
+      membershipId,
+      actorUserId,
+      requestId,
+    }) {
       return prisma.$transaction(async (transaction) => {
         await lockOrganization(transaction, organizationId);
         const membership = await findMembership(
@@ -69,6 +93,18 @@ export function createMemberRepository(prisma) {
           where: { id: membership.id, organizationId },
         });
         if (deleted.count !== 1) return { outcome: 'missing' };
+        await auditRepository?.create(
+          {
+            organizationId,
+            actorUserId,
+            requestId,
+            action: 'MEMBERSHIP_REMOVED',
+            resourceType: 'MEMBERSHIP',
+            resourceId: membershipId,
+            before: { role: membership.role },
+          },
+          transaction,
+        );
         return { outcome: 'removed', membership };
       });
     },

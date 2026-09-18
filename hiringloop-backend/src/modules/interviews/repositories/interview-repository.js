@@ -75,7 +75,25 @@ function toConflictOutcome(conflict) {
   return conflict ? { outcome: 'conflict', conflict } : null;
 }
 
-export function createInterviewRepository(prisma) {
+export function createInterviewRepository(prisma, auditRepository = null) {
+  const audit = (tx, input, action, interview, before = null) =>
+    auditRepository?.create(
+      {
+        organizationId: input.organizationId,
+        actorUserId: input.actorUserId ?? input.createdByUserId,
+        action,
+        resourceType: 'INTERVIEW',
+        resourceId: interview.id,
+        before,
+        after: {
+          status: interview.status,
+          scheduledStartAt: interview.scheduledStartAt.toISOString(),
+          scheduledEndAt: interview.scheduledEndAt.toISOString(),
+          participantCount: interview.participants.length,
+        },
+      },
+      tx,
+    );
   async function findDetailedById(client, where) {
     return client.interview.findFirst({ where, select: INTERVIEW_SELECT });
   }
@@ -160,33 +178,61 @@ export function createInterviewRepository(prisma) {
           },
           select: INTERVIEW_SELECT,
         });
+        await audit(
+          transaction,
+          { organizationId, createdByUserId },
+          'INTERVIEW_SCHEDULED',
+          interview,
+        );
         return { outcome: 'created', interview };
       });
     },
 
-    async updateMetadata({ organizationId, interviewId, data, participants }) {
+    async updateMetadata({
+      organizationId,
+      interviewId,
+      data,
+      participants,
+      actorUserId,
+    }) {
       if (participants === undefined) {
-        const updated = await prisma.interview.updateMany({
-          where: {
-            ...interviewWhere({ organizationId, interviewId }),
-            status: 'SCHEDULED',
-          },
-          data,
-        });
-        if (updated.count === 1) {
-          return {
-            outcome: 'updated',
-            interview: await findDetailedById(
-              prisma,
+        return prisma.$transaction(async (transaction) => {
+          const before = await findDetailedById(
+            transaction,
+            interviewWhere({ organizationId, interviewId }),
+          );
+          const updated = await transaction.interview.updateMany({
+            where: {
+              ...interviewWhere({ organizationId, interviewId }),
+              status: 'SCHEDULED',
+            },
+            data,
+          });
+          if (updated.count === 1) {
+            const interview = await findDetailedById(
+              transaction,
               interviewWhere({ organizationId, interviewId }),
-            ),
-          };
-        }
-        const current = await prisma.interview.findFirst({
-          where: interviewWhere({ organizationId, interviewId }),
-          select: { status: true },
+            );
+            await audit(
+              transaction,
+              { organizationId, actorUserId },
+              'INTERVIEW_UPDATED',
+              interview,
+              {
+                status: before.status,
+                scheduledStartAt: before.scheduledStartAt.toISOString(),
+                scheduledEndAt: before.scheduledEndAt.toISOString(),
+                participantCount: before.participants.length,
+              },
+            );
+            return { outcome: 'updated', interview };
+          }
+          const current = await transaction.interview.findFirst({
+            where: interviewWhere({ organizationId, interviewId }),
+            select: { status: true },
+          });
+          return { outcome: current ? 'cancelled' : 'not_found' };
         });
-        return { outcome: current ? 'cancelled' : 'not_found' };
       }
 
       return prisma.$transaction(async (transaction) => {
@@ -196,6 +242,7 @@ export function createInterviewRepository(prisma) {
             status: true,
             scheduledStartAt: true,
             scheduledEndAt: true,
+            participants: { select: { id: true } },
           },
         });
         if (!current) return { outcome: 'not_found' };
@@ -221,12 +268,25 @@ export function createInterviewRepository(prisma) {
           where: { id: interviewId },
           data,
         });
+        const interview = await findDetailedById(
+          transaction,
+          interviewWhere({ organizationId, interviewId }),
+        );
+        await audit(
+          transaction,
+          { organizationId, actorUserId },
+          'INTERVIEW_UPDATED',
+          interview,
+          {
+            status: current.status,
+            scheduledStartAt: current.scheduledStartAt.toISOString(),
+            scheduledEndAt: current.scheduledEndAt.toISOString(),
+            participantCount: current.participants?.length ?? 0,
+          },
+        );
         return {
           outcome: 'updated',
-          interview: await findDetailedById(
-            transaction,
-            interviewWhere({ organizationId, interviewId }),
-          ),
+          interview,
         };
       });
     },
@@ -237,12 +297,15 @@ export function createInterviewRepository(prisma) {
       scheduledStartAt,
       scheduledEndAt,
       timeZone,
+      actorUserId,
     }) {
       return prisma.$transaction(async (transaction) => {
         const current = await transaction.interview.findFirst({
           where: interviewWhere({ organizationId, interviewId }),
           select: {
             status: true,
+            scheduledStartAt: true,
+            scheduledEndAt: true,
             participants: { select: { userId: true } },
           },
         });
@@ -263,12 +326,25 @@ export function createInterviewRepository(prisma) {
           where: { id: interviewId },
           data: { scheduledStartAt, scheduledEndAt, timeZone },
         });
+        const interview = await findDetailedById(
+          transaction,
+          interviewWhere({ organizationId, interviewId }),
+        );
+        await audit(
+          transaction,
+          { organizationId, actorUserId },
+          'INTERVIEW_RESCHEDULED',
+          interview,
+          {
+            status: current.status,
+            scheduledStartAt: current.scheduledStartAt.toISOString(),
+            scheduledEndAt: current.scheduledEndAt.toISOString(),
+            participantCount: current.participants.length,
+          },
+        );
         return {
           outcome: 'updated',
-          interview: await findDetailedById(
-            transaction,
-            interviewWhere({ organizationId, interviewId }),
-          ),
+          interview,
         };
       });
     },
@@ -280,32 +356,48 @@ export function createInterviewRepository(prisma) {
       cancelledByUserId,
       cancellationReason,
     }) {
-      const updated = await prisma.interview.updateMany({
-        where: {
-          ...interviewWhere({ organizationId, interviewId }),
-          status: 'SCHEDULED',
-        },
-        data: {
-          status: 'CANCELLED',
-          cancelledAt,
-          cancelledByUserId,
-          cancellationReason,
-        },
-      });
-      if (updated.count === 1) {
-        return {
-          outcome: 'cancelled',
-          interview: await findDetailedById(
-            prisma,
+      return prisma.$transaction(async (transaction) => {
+        const before = await findDetailedById(
+          transaction,
+          interviewWhere({ organizationId, interviewId }),
+        );
+        const updated = await transaction.interview.updateMany({
+          where: {
+            ...interviewWhere({ organizationId, interviewId }),
+            status: 'SCHEDULED',
+          },
+          data: {
+            status: 'CANCELLED',
+            cancelledAt,
+            cancelledByUserId,
+            cancellationReason,
+          },
+        });
+        if (updated.count === 1) {
+          const interview = await findDetailedById(
+            transaction,
             interviewWhere({ organizationId, interviewId }),
-          ),
-        };
-      }
-      const current = await prisma.interview.findFirst({
-        where: interviewWhere({ organizationId, interviewId }),
-        select: { status: true },
+          );
+          await audit(
+            transaction,
+            { organizationId, actorUserId: cancelledByUserId },
+            'INTERVIEW_CANCELLED',
+            interview,
+            {
+              status: before.status,
+              scheduledStartAt: before.scheduledStartAt.toISOString(),
+              scheduledEndAt: before.scheduledEndAt.toISOString(),
+              participantCount: before.participants.length,
+            },
+          );
+          return { outcome: 'cancelled', interview };
+        }
+        const current = await transaction.interview.findFirst({
+          where: interviewWhere({ organizationId, interviewId }),
+          select: { status: true },
+        });
+        return { outcome: current ? 'already_cancelled' : 'not_found' };
       });
-      return { outcome: current ? 'already_cancelled' : 'not_found' };
     },
   };
 }

@@ -1,6 +1,7 @@
 export function createPipelineController(pipelineUseCases) {
   const input = (request) => ({
     organizationId: request.tenantContext.organizationId,
+    actorUserId: request.auth.userId,
     jobId: request.validated.params.jobId,
   });
   const mutation = (request) => ({

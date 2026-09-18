@@ -3,6 +3,7 @@ export function createApplicationOutcomeController(useCases) {
     organizationId: request.tenantContext.organizationId,
     applicationId: request.validated.params.applicationId,
     actorUserId: request.auth.userId,
+    requestId: request.requestId,
     data: request.validated.body,
   });
   const action = (name) => async (request, response, next) => {

@@ -9,11 +9,15 @@ export function createUpdateMemberRole({ memberRepository }) {
     organizationId,
     membershipId,
     role,
+    actorUserId,
+    requestId,
   }) {
     const result = await memberRepository.updateMembershipRole({
       organizationId,
       membershipId,
       role,
+      actorUserId,
+      requestId,
     });
     if (result.outcome === 'missing') throw notFoundError();
     if (result.outcome === 'final_admin') {

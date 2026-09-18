@@ -10,6 +10,7 @@ export function createInvitationController({
         const invitation = await createInvitation({
           organizationId: request.tenantContext.organizationId,
           inviterMembershipId: request.tenantContext.membershipId,
+          actorUserId: request.auth.userId,
           ...request.validated.body,
         });
         response.status(201).json({ data: { invitation } });
@@ -32,6 +33,7 @@ export function createInvitationController({
         const invitation = await revokeInvitation({
           organizationId: request.tenantContext.organizationId,
           invitationId: request.validated.params.invitationId,
+          actorUserId: request.auth.userId,
         });
         response.status(200).json({ data: { invitation } });
       } catch (error) {

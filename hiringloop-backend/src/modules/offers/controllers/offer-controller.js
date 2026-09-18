@@ -4,6 +4,7 @@ export function createOfferController(offerUseCases) {
     offerId: request.validated.params.offerId,
     applicationId: request.validated.params.applicationId,
     actorUserId: request.auth.userId,
+    requestId: request.requestId,
   });
   const handle =
     (operation, status = 200) =>

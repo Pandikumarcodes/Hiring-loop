@@ -7,6 +7,7 @@ export function createApplicationOutcomeUseCases({ outcomeRepository }) {
     organizationId,
     applicationId,
     actorUserId,
+    requestId,
     data,
     type,
   }) {
@@ -42,6 +43,7 @@ export function createApplicationOutcomeUseCases({ outcomeRepository }) {
       reasonCode: type === 'REJECTED' ? data.reasonCode : null,
       reasonDetails: data.reasonDetails ?? null,
       talentPoolId: type === 'REJECTED' ? data.talentPoolId : undefined,
+      requestId,
     });
     if (result.outcome === 'pool_missing')
       throw fail(404, 'TALENT_POOL_NOT_FOUND', 'Talent pool not found');

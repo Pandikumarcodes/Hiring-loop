@@ -45,7 +45,13 @@ export function createOfferUseCases({
   };
   return {
     get,
-    async create({ organizationId, applicationId, actorUserId, data }) {
+    async create({
+      organizationId,
+      applicationId,
+      actorUserId,
+      requestId,
+      data,
+    }) {
       try {
         const result = await offerRepository.createWithInitialVersion({
           organizationId,
@@ -54,6 +60,7 @@ export function createOfferUseCases({
           offerId: generateEntityId(),
           versionId: generateEntityId(),
           terms: terms(data),
+          requestId,
         });
         if (result.outcome === 'application_missing')
           throw fail(404, 'APPLICATION_NOT_FOUND', 'Application not found');
@@ -91,7 +98,7 @@ export function createOfferUseCases({
         }),
       );
     },
-    async revise({ organizationId, offerId, actorUserId, data }) {
+    async revise({ organizationId, offerId, actorUserId, requestId, data }) {
       const result = await offerRepository.createRevision({
         organizationId,
         offerId,
@@ -99,6 +106,7 @@ export function createOfferUseCases({
         expectedRevision: data.expectedRevision,
         versionId: generateEntityId(),
         terms: terms(data),
+        requestId,
       });
       if (result.outcome === 'missing')
         throw fail(404, 'OFFER_NOT_FOUND', 'Offer not found');
@@ -110,7 +118,7 @@ export function createOfferUseCases({
         );
       return toOfferDto(result.offer);
     },
-    async send({ organizationId, offerId, actorUserId, data }) {
+    async send({ organizationId, offerId, actorUserId, requestId, data }) {
       const existingOffer = await offerRepository.findById({
         organizationId,
         offerId,
@@ -133,6 +141,7 @@ export function createOfferUseCases({
           communicationId: generateEntityId(),
           provider,
           now: clock(),
+          requestId,
         });
       } catch (error) {
         if (error?.code !== 'P2002') throw error;
@@ -201,6 +210,7 @@ export function createOfferUseCases({
       actorUserId,
       expectedRevision,
       operation,
+      requestId,
     }) {
       const rule = {
         accept: { from: ['SENT'], to: 'ACCEPTED', field: 'acceptedAt' },
@@ -221,6 +231,7 @@ export function createOfferUseCases({
         timestampField: rule.field,
         now: clock(),
         requiresIssuedVersion: ['accept', 'decline'].includes(operation),
+        requestId,
       });
       if (!offer) {
         if (!(await offerRepository.findById({ organizationId, offerId })))

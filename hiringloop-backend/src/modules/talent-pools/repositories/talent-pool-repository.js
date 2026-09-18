@@ -1,4 +1,4 @@
-export function createTalentPoolRepository(prisma) {
+export function createTalentPoolRepository(prisma, auditRepository) {
   const one = ({ organizationId, talentPoolId }) =>
     prisma.talentPool.findFirst({
       where: { id: talentPoolId, organizationId },
@@ -30,29 +30,65 @@ export function createTalentPoolRepository(prisma) {
       ]);
       return { pools, totalItems };
     },
-    create: ({ id, organizationId, actorUserId, data }) =>
-      prisma.talentPool.create({
-        data: {
-          id,
-          organizationId,
-          createdByUserId: actorUserId,
-          name: data.name,
-          description: data.description ?? null,
-        },
-        include: { _count: { select: { members: true } } },
+    create: ({ id, organizationId, actorUserId, requestId, data }) =>
+      prisma.$transaction(async (db) => {
+        const pool = await db.talentPool.create({
+          data: {
+            id,
+            organizationId,
+            createdByUserId: actorUserId,
+            name: data.name,
+            description: data.description ?? null,
+          },
+          include: { _count: { select: { members: true } } },
+        });
+        await auditRepository?.create(
+          {
+            organizationId,
+            actorUserId,
+            requestId,
+            action: 'TALENT_POOL_CREATED',
+            resourceType: 'TALENT_POOL',
+            resourceId: pool.id,
+            after: { name: pool.name },
+          },
+          db,
+        );
+        return pool;
       }),
-    update: ({ organizationId, talentPoolId, data }) =>
-      prisma.talentPool.updateMany({
-        where: {
-          id: talentPoolId,
-          organizationId,
-          revision: data.expectedRevision,
-        },
-        data: {
-          name: data.name,
-          description: data.description ?? null,
-          revision: { increment: 1 },
-        },
+    update: ({ organizationId, talentPoolId, actorUserId, requestId, data }) =>
+      prisma.$transaction(async (db) => {
+        const before = await db.talentPool.findFirst({
+          where: { id: talentPoolId, organizationId },
+          select: { name: true },
+        });
+        const changed = await db.talentPool.updateMany({
+          where: {
+            id: talentPoolId,
+            organizationId,
+            revision: data.expectedRevision,
+          },
+          data: {
+            name: data.name,
+            description: data.description ?? null,
+            revision: { increment: 1 },
+          },
+        });
+        if (changed.count)
+          await auditRepository?.create(
+            {
+              organizationId,
+              actorUserId,
+              requestId,
+              action: 'TALENT_POOL_UPDATED',
+              resourceType: 'TALENT_POOL',
+              resourceId: talentPoolId,
+              before: { name: before.name },
+              after: { name: data.name },
+            },
+            db,
+          );
+        return changed;
       }),
     listMembers: ({ organizationId, talentPoolId, page, pageSize, search }) =>
       prisma.talentPoolMember.findMany({
@@ -84,33 +120,97 @@ export function createTalentPoolRepository(prisma) {
       prisma.application.findFirst({
         where: { id: sourceApplicationId, organizationId, candidateId },
       }),
-    addMember: ({ id, organizationId, talentPoolId, actorUserId, data }) =>
-      prisma.talentPoolMember.upsert({
-        where: {
-          talentPoolId_candidateId: {
+    addMember: ({
+      id,
+      organizationId,
+      talentPoolId,
+      actorUserId,
+      requestId,
+      data,
+    }) =>
+      prisma.$transaction(async (db) => {
+        const existing = await db.talentPoolMember.findFirst({
+          where: {
+            organizationId,
             talentPoolId,
             candidateId: data.candidateId,
           },
-        },
-        create: {
-          id,
-          organizationId,
-          talentPoolId,
-          candidateId: data.candidateId,
-          sourceApplicationId: data.sourceApplicationId ?? null,
-          addedByUserId: actorUserId,
-          note: data.note ?? null,
-        },
-        update: {},
-        include: {
-          candidate: {
-            select: { id: true, firstName: true, lastName: true, email: true },
+        });
+        const member = await db.talentPoolMember.upsert({
+          where: {
+            talentPoolId_candidateId: {
+              talentPoolId,
+              candidateId: data.candidateId,
+            },
           },
-        },
+          create: {
+            id,
+            organizationId,
+            talentPoolId,
+            candidateId: data.candidateId,
+            sourceApplicationId: data.sourceApplicationId ?? null,
+            addedByUserId: actorUserId,
+            note: data.note ?? null,
+          },
+          update: {},
+          include: {
+            candidate: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
+          },
+        });
+        if (!existing)
+          await auditRepository?.create(
+            {
+              organizationId,
+              actorUserId,
+              requestId,
+              action: 'TALENT_POOL_MEMBER_ADDED',
+              resourceType: 'TALENT_POOL_MEMBER',
+              resourceId: member.id,
+              metadata: {
+                talentPoolId,
+                candidateId: data.candidateId,
+                hasSourceApplication: Boolean(data.sourceApplicationId),
+              },
+            },
+            db,
+          );
+        return member;
       }),
-    removeMember: ({ organizationId, talentPoolId, candidateId }) =>
-      prisma.talentPoolMember.deleteMany({
-        where: { organizationId, talentPoolId, candidateId },
+    removeMember: ({
+      organizationId,
+      talentPoolId,
+      candidateId,
+      actorUserId,
+      requestId,
+    }) =>
+      prisma.$transaction(async (db) => {
+        const member = await db.talentPoolMember.findFirst({
+          where: { organizationId, talentPoolId, candidateId },
+        });
+        const deleted = await db.talentPoolMember.deleteMany({
+          where: { organizationId, talentPoolId, candidateId },
+        });
+        if (deleted.count)
+          await auditRepository?.create(
+            {
+              organizationId,
+              actorUserId,
+              requestId,
+              action: 'TALENT_POOL_MEMBER_REMOVED',
+              resourceType: 'TALENT_POOL_MEMBER',
+              resourceId: member.id,
+              metadata: { talentPoolId, candidateId },
+            },
+            db,
+          );
+        return deleted;
       }),
   };
 }

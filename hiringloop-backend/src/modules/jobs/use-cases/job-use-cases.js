@@ -51,6 +51,8 @@ export function createJobUseCases({ jobRepository, clock = () => new Date() }) {
     organizationId,
     jobId,
     expectedVersion,
+    actorUserId,
+    requestId,
     from,
     operation,
     data,
@@ -71,6 +73,14 @@ export function createJobUseCases({ jobRepository, clock = () => new Date() }) {
       expectedVersion,
       status: from,
       data,
+      actorUserId,
+      requestId,
+      auditAction: {
+        open: 'JOB_OPENED',
+        close: 'JOB_CLOSED',
+        reopen: 'JOB_REOPENED',
+        archive: 'JOB_ARCHIVED',
+      }[operation],
     });
     if (result.outcome !== 'updated') {
       failMutation(result, expectedVersion);
@@ -83,10 +93,12 @@ export function createJobUseCases({ jobRepository, clock = () => new Date() }) {
   }
 
   return {
-    create: async ({ organizationId, data }) =>
+    create: async ({ organizationId, actorUserId, requestId, data }) =>
       toJobDetailDto(
         await jobRepository.create({
           organizationId,
+          actorUserId,
+          requestId,
           id: generateEntityId(),
           data,
           pipeline: createDefaultPipelineData(),
@@ -106,7 +118,14 @@ export function createJobUseCases({ jobRepository, clock = () => new Date() }) {
       };
     },
     detail: async (input) => toJobDetailDto(await get(input)),
-    update: async ({ organizationId, jobId, expectedVersion, data }) => {
+    update: async ({
+      organizationId,
+      jobId,
+      expectedVersion,
+      actorUserId,
+      requestId,
+      data,
+    }) => {
       const current = await get({ organizationId, jobId });
       if (current.version !== expectedVersion) throw jobVersionConflictError();
       if (current.status === 'ARCHIVED') throw jobArchivedError();
@@ -116,6 +135,9 @@ export function createJobUseCases({ jobRepository, clock = () => new Date() }) {
         expectedVersion,
         status: { not: 'ARCHIVED' },
         data,
+        actorUserId,
+        requestId,
+        auditAction: 'JOB_UPDATED',
       });
       if (result.outcome !== 'updated') {
         failMutation(result, expectedVersion);
@@ -166,6 +188,7 @@ export function createJobUseCases({ jobRepository, clock = () => new Date() }) {
         ...input,
         status: current.status,
         data: { status: 'ARCHIVED', archivedAt: clock() },
+        auditAction: 'JOB_ARCHIVED',
       });
       if (result.outcome !== 'updated') {
         failMutation(result, input.expectedVersion);

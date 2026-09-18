@@ -106,13 +106,15 @@ describe('Application form builder HTTP integration', () => {
     });
     await prisma.pipeline.deleteMany({ where: { jobId: { in: jobIds } } });
     await prisma.job.deleteMany({ where: { id: { in: jobIds } } });
+    await prisma.authSession.deleteMany({
+      where: { userId: { in: ownedUserIds } },
+    });
     await prisma.organizationMembership.deleteMany({
       where: { userId: { in: ownedUserIds } },
     });
-    await prisma.user.deleteMany({ where: { id: { in: ownedUserIds } } });
-    await prisma.organization.deleteMany({
-      where: { id: { in: [organizationId, otherOrganizationId] } },
-    });
+    // Phase 18 audit events are append-only and retain their actor and
+    // organization foreign keys. Preserve these generated principals and
+    // tenants rather than attempting to bypass audit retention in cleanup.
     await disconnectDatabase();
   });
 

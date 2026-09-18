@@ -26,7 +26,7 @@ const PUBLIC_LIST_SELECT = {
 };
 const PUBLIC_DETAIL_SELECT = { ...PUBLIC_LIST_SELECT, description: true };
 
-export function createJobRepository(prisma) {
+export function createJobRepository(prisma, auditRepository) {
   const findByIdForOrganization = ({ organizationId, jobId }) =>
     prisma.job.findFirst({
       where: { id: jobId, organizationId },
@@ -39,6 +39,9 @@ export function createJobRepository(prisma) {
     expectedVersion,
     status,
     data,
+    actorUserId,
+    requestId,
+    auditAction,
   }) {
     return prisma.$transaction(async (transaction) => {
       const updated = await transaction.job.updateManyAndReturn({
@@ -51,7 +54,23 @@ export function createJobRepository(prisma) {
         data: { ...data, version: { increment: 1 } },
         select: DETAIL_SELECT,
       });
-      if (updated.length === 1) return { outcome: 'updated', job: updated[0] };
+      if (updated.length === 1) {
+        const job = updated[0];
+        await auditRepository?.create(
+          {
+            organizationId,
+            actorUserId,
+            requestId,
+            action: auditAction,
+            resourceType: 'JOB',
+            resourceId: job.id,
+            before: typeof status === 'string' ? { status } : null,
+            after: { status: job.status, title: job.title },
+          },
+          transaction,
+        );
+        return { outcome: 'updated', job };
+      }
       const current = await transaction.job.findFirst({
         where: { id: jobId, organizationId },
         select: DETAIL_SELECT,
@@ -61,7 +80,15 @@ export function createJobRepository(prisma) {
   }
 
   return {
-    async create({ organizationId, id, data, pipeline, applicationForm }) {
+    async create({
+      organizationId,
+      id,
+      data,
+      pipeline,
+      applicationForm,
+      actorUserId,
+      requestId,
+    }) {
       return prisma.$transaction(async (transaction) => {
         const job = await transaction.job.create({
           data: { id, organizationId, ...data },
@@ -95,6 +122,18 @@ export function createJobRepository(prisma) {
             applicationFormId: applicationForm.id,
           },
         });
+        await auditRepository?.create(
+          {
+            organizationId,
+            actorUserId,
+            requestId,
+            action: 'JOB_CREATED',
+            resourceType: 'JOB',
+            resourceId: job.id,
+            after: { status: job.status, title: job.title },
+          },
+          transaction,
+        );
         return job;
       });
     },

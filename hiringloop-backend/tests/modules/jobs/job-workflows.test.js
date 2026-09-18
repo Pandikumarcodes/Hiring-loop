@@ -138,10 +138,12 @@ describe('Job HTTP API', () => {
           .send({ title: '  Draft  ', department: '', location: '   ' })
       ).status,
     ).toBe(201);
-    expect(useCases.create).toHaveBeenCalledWith({
-      organizationId,
-      data: { title: 'Draft', department: null, location: null },
-    });
+    expect(useCases.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        organizationId,
+        data: { title: 'Draft', department: null, location: null },
+      }),
+    );
     for (const forbidden of [
       'status',
       'organizationId',

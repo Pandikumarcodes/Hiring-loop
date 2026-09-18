@@ -20,6 +20,8 @@ export function createMemberController({
           organizationId: request.tenantContext.organizationId,
           membershipId: request.validated.params.membershipId,
           role: request.validated.body.role,
+          actorUserId: request.auth.userId,
+          requestId: request.requestId,
         });
         response.status(200).json({ data: { member } });
       } catch (error) {
@@ -31,6 +33,8 @@ export function createMemberController({
         const result = await removeMember({
           organizationId: request.tenantContext.organizationId,
           membershipId: request.validated.params.membershipId,
+          actorUserId: request.auth.userId,
+          requestId: request.requestId,
         });
         response.status(200).json({ data: result });
       } catch (error) {

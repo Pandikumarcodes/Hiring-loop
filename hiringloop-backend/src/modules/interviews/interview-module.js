@@ -8,6 +8,7 @@ import { createInterviewRepository } from './repositories/interview-repository.j
 import { createInterviewRouter } from './routes/interview-routes.js';
 import { createInterviewUseCases } from './use-cases/interview-use-cases.js';
 import { createNotificationService } from '../notifications/notification-service.js';
+import { createAuditRepository } from '../audit/repositories/audit-repository.js';
 
 const databaseUrl =
   config.environment === 'test' ? config.testDatabaseUrl : config.databaseUrl;
@@ -20,7 +21,7 @@ const organizationRepository = prisma
   ? createOrganizationRepository(prisma)
   : { findMembershipForUserAndOrganization: unavailable };
 const repository = prisma
-  ? createInterviewRepository(prisma)
+  ? createInterviewRepository(prisma, createAuditRepository(prisma))
   : {
       findApplicationForOrganization: unavailable,
       findOrganizationMembers: unavailable,

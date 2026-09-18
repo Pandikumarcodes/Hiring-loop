@@ -86,11 +86,15 @@ describe('member management routes', () => {
   it('uses tenant context for role updates and removal', async () => {
     const services = {
       updateMemberRole: vi.fn(async (input) => {
-        expect(input).toEqual({ organizationId, membershipId, role: 'ADMIN' });
+        expect(input).toMatchObject({
+          organizationId,
+          membershipId,
+          role: 'ADMIN',
+        });
         return member;
       }),
       removeMember: vi.fn(async (input) => {
-        expect(input).toEqual({ organizationId, membershipId });
+        expect(input).toMatchObject({ organizationId, membershipId });
         return { removed: true, membershipId };
       }),
     };

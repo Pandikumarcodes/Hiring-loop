@@ -39,7 +39,25 @@ function assertNameAvailable(pipeline, normalizedName, exceptId) {
   }
 }
 
-export function createPipelineUseCases({ pipelineRepository }) {
+export function createPipelineUseCases({
+  pipelineRepository,
+  auditRepository = null,
+}) {
+  const audit = (tx, input, action, resourceId, before, after, metadata) =>
+    auditRepository?.create(
+      {
+        organizationId: input.organizationId,
+        actorUserId: input.actorUserId,
+        action,
+        resourceType:
+          action === 'PIPELINE_REORDERED' ? 'PIPELINE_STAGE' : 'PIPELINE_STAGE',
+        resourceId,
+        before,
+        after,
+        metadata,
+      },
+      tx,
+    );
   const get = async (input) => {
     const pipeline = await pipelineRepository.findForJob(input);
     if (!pipeline) throw pipelineNotFoundError();
@@ -64,10 +82,11 @@ export function createPipelineUseCases({ pipelineRepository }) {
         const name = input.name.trim();
         const normalizedName = normalizePipelineStageName(name);
         assertNameAvailable(pipeline, normalizedName);
-        return (transaction) =>
-          transaction.pipelineStage.create({
+        const id = generateEntityId();
+        return async (transaction) => {
+          await transaction.pipelineStage.create({
             data: {
-              id: generateEntityId(),
+              id,
               pipelineId: pipeline.id,
               name,
               normalizedName,
@@ -75,6 +94,11 @@ export function createPipelineUseCases({ pipelineRepository }) {
               position: pipeline.stages.length + 1,
             },
           });
+          await audit(transaction, input, 'PIPELINE_STAGE_CREATED', id, null, {
+            name,
+            position: pipeline.stages.length + 1,
+          });
+        };
       }),
     renameStage: (input) =>
       mutation(input, (pipeline) => {
@@ -82,11 +106,20 @@ export function createPipelineUseCases({ pipelineRepository }) {
         const name = input.name.trim();
         const normalizedName = normalizePipelineStageName(name);
         assertNameAvailable(pipeline, normalizedName, stage.id);
-        return (transaction) =>
-          transaction.pipelineStage.update({
+        return async (transaction) => {
+          await transaction.pipelineStage.update({
             where: { id: stage.id, pipelineId: pipeline.id },
             data: { name, normalizedName },
           });
+          await audit(
+            transaction,
+            input,
+            'PIPELINE_STAGE_UPDATED',
+            stage.id,
+            { name: stage.name, position: stage.position },
+            { name, position: stage.position },
+          );
+        };
       }),
     reorderStages: (input) =>
       mutation(input, (pipeline) => {
@@ -115,6 +148,15 @@ export function createPipelineUseCases({ pipelineRepository }) {
               }),
             ),
           );
+          await audit(
+            transaction,
+            input,
+            'PIPELINE_REORDERED',
+            pipeline.id,
+            null,
+            null,
+            { stageCount: requested.length },
+          );
         };
       }),
     deleteStage: (input) =>
@@ -122,6 +164,14 @@ export function createPipelineUseCases({ pipelineRepository }) {
         const stage = stageFor(pipeline, input.stageId);
         if (stage.kind === 'ENTRY') throw pipelineEntryDeleteError();
         return async (transaction) => {
+          await audit(
+            transaction,
+            input,
+            'PIPELINE_STAGE_DELETED',
+            stage.id,
+            { name: stage.name, position: stage.position },
+            null,
+          );
           await transaction.pipelineStage.delete({
             where: { id: stage.id, pipelineId: pipeline.id },
           });

@@ -5,6 +5,7 @@ import { createTenantContextMiddleware } from '../../middleware/tenant-context.j
 import { createResolveTenantContext } from '../organizations/use-cases/resolve-tenant-context.js';
 import { createOrganizationRepository } from '../organizations/repositories/organization-repository.js';
 import { createJobRepository } from './repositories/job-repository.js';
+import { createAuditRepository } from '../audit/repositories/audit-repository.js';
 import { createJobUseCases } from './use-cases/job-use-cases.js';
 import { createJobRouter } from './routes/job-routes.js';
 import { pipelineRouter } from '../pipelines/pipeline-module.js';
@@ -18,7 +19,7 @@ let jobRepository;
 if (databaseUrl) {
   const prisma = getPrismaClient();
   organizationRepository = createOrganizationRepository(prisma);
-  jobRepository = createJobRepository(prisma);
+  jobRepository = createJobRepository(prisma, createAuditRepository(prisma));
 } else {
   const unavailable = async () => {
     throw new Error('Job database is not configured');

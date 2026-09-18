@@ -18,6 +18,7 @@ export function createCreateInvitation({
   return async function createInvitation({
     organizationId,
     inviterMembershipId,
+    actorUserId,
     email,
     role,
   }) {
@@ -41,6 +42,7 @@ export function createCreateInvitation({
       tokenHash: authSecretHasher.hash(rawToken),
       expiresAt: new Date(now.getTime() + INVITATION_TTL_MS),
       inviterMembershipId,
+      actorUserId,
       now,
     });
 

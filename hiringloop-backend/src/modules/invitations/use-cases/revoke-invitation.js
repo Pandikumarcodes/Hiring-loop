@@ -8,7 +8,11 @@ export function createRevokeInvitation({
   invitationRepository,
   clock = () => new Date(),
 }) {
-  return async function revokeInvitation({ organizationId, invitationId }) {
+  return async function revokeInvitation({
+    organizationId,
+    invitationId,
+    actorUserId,
+  }) {
     const invitation = await invitationRepository.findInvitation({
       organizationId,
       invitationId,
@@ -27,6 +31,7 @@ export function createRevokeInvitation({
       organizationId,
       invitationId,
       now,
+      actorUserId,
     });
     if (!revoked) throw conflictError('Invitation is no longer revocable');
     return toInvitationDto(revoked);

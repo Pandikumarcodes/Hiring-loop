@@ -4,6 +4,7 @@ export function createTalentPoolController(useCases) {
     talentPoolId: request.validated.params.talentPoolId,
     candidateId: request.validated.params.candidateId,
     actorUserId: request.auth.userId,
+    requestId: request.requestId,
   });
   const handle =
     (name, status = 200) =>

@@ -14,7 +14,7 @@ const INVITATION_SELECT = {
   updatedAt: true,
 };
 
-export function createInvitationRepository(prisma) {
+export function createInvitationRepository(prisma, auditRepository = null) {
   return {
     async findMemberByEmail({ organizationId, email }) {
       return prisma.organizationMembership.findFirst({
@@ -30,6 +30,7 @@ export function createInvitationRepository(prisma) {
       tokenHash,
       expiresAt,
       inviterMembershipId,
+      actorUserId,
       now,
     }) {
       return prisma.$transaction(async (transaction) => {
@@ -50,26 +51,37 @@ export function createInvitationRepository(prisma) {
           select: { id: true },
         });
 
-        if (active) {
-          return transaction.invitation.update({
-            where: { id: active.id },
-            data: { role, tokenHash, expiresAt, inviterMembershipId },
-            select: INVITATION_SELECT,
-          });
-        }
-
-        return transaction.invitation.create({
-          data: {
-            id: generateEntityId(),
-            organizationId,
-            email,
-            role,
-            tokenHash,
-            expiresAt,
-            inviterMembershipId,
-          },
-          select: INVITATION_SELECT,
-        });
+        const invitation = active
+          ? await transaction.invitation.update({
+              where: { id: active.id },
+              data: { role, tokenHash, expiresAt, inviterMembershipId },
+              select: INVITATION_SELECT,
+            })
+          : await transaction.invitation.create({
+              data: {
+                id: generateEntityId(),
+                organizationId,
+                email,
+                role,
+                tokenHash,
+                expiresAt,
+                inviterMembershipId,
+              },
+              select: INVITATION_SELECT,
+            });
+        if (auditRepository)
+          await auditRepository.create(
+            {
+              organizationId,
+              actorUserId,
+              action: 'INVITATION_CREATED',
+              resourceType: 'INVITATION',
+              resourceId: invitation.id,
+              after: { role: invitation.role },
+            },
+            transaction,
+          );
+        return invitation;
       });
     },
 
@@ -88,19 +100,38 @@ export function createInvitationRepository(prisma) {
       });
     },
 
-    async revokeInvitation({ organizationId, invitationId, now }) {
-      const result = await prisma.invitation.updateMany({
-        where: {
-          organizationId,
-          id: invitationId,
-          acceptedAt: null,
-          revokedAt: null,
-          expiresAt: { gt: now },
-        },
-        data: { revokedAt: now },
+    async revokeInvitation({ organizationId, invitationId, now, actorUserId }) {
+      return prisma.$transaction(async (transaction) => {
+        const result = await transaction.invitation.updateMany({
+          where: {
+            organizationId,
+            id: invitationId,
+            acceptedAt: null,
+            revokedAt: null,
+            expiresAt: { gt: now },
+          },
+          data: { revokedAt: now },
+        });
+        if (result.count !== 1) return null;
+        const invitation = await transaction.invitation.findFirst({
+          where: { organizationId, id: invitationId },
+          select: INVITATION_SELECT,
+        });
+        if (auditRepository)
+          await auditRepository.create(
+            {
+              organizationId,
+              actorUserId,
+              action: 'INVITATION_REVOKED',
+              resourceType: 'INVITATION',
+              resourceId: invitation.id,
+              before: { role: invitation.role },
+              after: { role: invitation.role },
+            },
+            transaction,
+          );
+        return invitation;
       });
-      if (result.count !== 1) return null;
-      return this.findInvitation({ organizationId, invitationId });
     },
 
     async acceptInvitation({ tokenHash, userId, normalizedEmail, now }) {

@@ -38,6 +38,7 @@ model User {
   outcomeEvents ApplicationOutcomeEvent[]
   createdTalentPools TalentPool[] @relation("TalentPoolCreatedBy")
   addedTalentPoolMembers TalentPoolMember[] @relation("TalentPoolMemberAddedBy")
+  auditEventsAsActor AuditEvent[] @relation("AuditEventActor")
 }
 
 model PasswordCredential {
@@ -136,6 +137,36 @@ model Organization {
   outcomeEvents ApplicationOutcomeEvent[]
   talentPools TalentPool[]
   talentPoolMembers TalentPoolMember[]
+  auditEvents AuditEvent[]
+}
+
+enum AuditActorType {
+  USER
+  SYSTEM
+}
+
+model AuditEvent {
+  id           String         @id @db.Uuid
+  organizationId String       @db.Uuid
+  actorUserId  String?        @db.Uuid
+  actorType    AuditActorType
+  action       String         @db.VarChar(64)
+  resourceType String         @db.VarChar(64)
+  resourceId   String         @db.Uuid
+  before       Json?
+  after        Json?
+  metadata     Json?
+  requestId    String?        @db.Uuid
+  occurredAt   DateTime       @default(now()) @db.Timestamptz(6)
+  createdAt    DateTime       @default(now()) @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  actor        User?        @relation("AuditEventActor", fields: [actorUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([organizationId, occurredAt, id])
+  @@index([organizationId, actorUserId, occurredAt, id])
+  @@index([organizationId, action, occurredAt, id])
+  @@index([organizationId, resourceType, resourceId, occurredAt, id])
 }
 
 model OrganizationMembership {

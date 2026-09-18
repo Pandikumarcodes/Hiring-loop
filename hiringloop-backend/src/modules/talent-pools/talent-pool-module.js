@@ -5,6 +5,7 @@ import { createTenantContextMiddleware } from '../../middleware/tenant-context.j
 import { createOrganizationRepository } from '../organizations/repositories/organization-repository.js';
 import { createResolveTenantContext } from '../organizations/use-cases/resolve-tenant-context.js';
 import { createTalentPoolRepository } from './repositories/talent-pool-repository.js';
+import { createAuditRepository } from '../audit/repositories/audit-repository.js';
 import { createTalentPoolUseCases } from './use-cases/talent-pool-use-cases.js';
 import { createTalentPoolRouter } from './routes/talent-pool-routes.js';
 const url =
@@ -17,7 +18,12 @@ const organizationRepository = prisma
   ? createOrganizationRepository(prisma)
   : { findMembershipForUserAndOrganization: unavailable };
 const talentPoolUseCases = prisma
-  ? createTalentPoolUseCases({ repository: createTalentPoolRepository(prisma) })
+  ? createTalentPoolUseCases({
+      repository: createTalentPoolRepository(
+        prisma,
+        createAuditRepository(prisma),
+      ),
+    })
   : {
       list: unavailable,
       create: unavailable,

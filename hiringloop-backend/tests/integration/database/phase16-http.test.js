@@ -204,10 +204,9 @@ describe('Phase 16 HTTP APIs', () => {
     await prisma.organizationMembership.deleteMany({
       where: { organizationId: { in: orgs } },
     });
-    await prisma.user.deleteMany({
-      where: { id: { in: [...users.values()].map((u) => u.id) } },
-    });
-    await prisma.organization.deleteMany({ where: { id: { in: orgs } } });
+    // Phase 18 audit events are append-only and deliberately retain their
+    // organization and actor foreign keys. Keep these generated principals
+    // and tenants rather than attempting to bypass audit retention in cleanup.
     await disconnectDatabase();
   });
 

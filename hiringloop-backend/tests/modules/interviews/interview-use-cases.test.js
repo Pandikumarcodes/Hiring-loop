@@ -218,6 +218,7 @@ describe('interview use cases', () => {
       organizationId,
       interviewId: interview().id,
       actorRole: 'RECRUITER',
+      actorUserId: interviewerId,
       scheduledStartAt: new Date('2026-09-15T04:30:00.000Z'),
       durationMinutes: 45,
       timeZone: 'Europe/London',
@@ -229,7 +230,9 @@ describe('interview use cases', () => {
       actorUserId: interviewerId,
       cancellationReason: 'Panel unavailable',
     });
-    expect(repo.reschedule).toHaveBeenCalled();
+    expect(repo.reschedule).toHaveBeenCalledWith(
+      expect.objectContaining({ actorUserId: interviewerId }),
+    );
     expect(repo.cancel).toHaveBeenCalledWith(
       expect.objectContaining({ cancellationReason: 'Panel unavailable' }),
     );

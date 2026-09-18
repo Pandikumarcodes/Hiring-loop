@@ -8,6 +8,7 @@ import { createScorecardRepository } from './repositories/scorecard-repository.j
 import { createScorecardRouter } from './routes/scorecard-routes.js';
 import { createScorecardUseCases } from './use-cases/scorecard-use-cases.js';
 import { createNotificationService } from '../notifications/notification-service.js';
+import { createAuditRepository } from '../audit/repositories/audit-repository.js';
 const url =
   config.environment === 'test' ? config.testDatabaseUrl : config.databaseUrl;
 const unavailable = async () => {
@@ -18,7 +19,7 @@ const organizationRepository = prisma
   ? createOrganizationRepository(prisma)
   : { findMembershipForUserAndOrganization: unavailable };
 const repository = prisma
-  ? createScorecardRepository(prisma)
+  ? createScorecardRepository(prisma, createAuditRepository(prisma))
   : new Proxy({}, { get: () => unavailable });
 export const scorecardRouter = createScorecardRouter({
   authenticateSession,
