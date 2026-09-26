@@ -499,21 +499,32 @@ Phase 17 final status: **COMPLETE**. Final handoff: `docs/architecture/PHASE_17_
 ## Phase 18 — Analytics & Audit — COMPLETE
 
 - **Objective:** provide hiring analytics and protected audit logging. (FR-21, FR-24)
-- **Features/sub-features:** funnel metrics; time-to-stage; dashboards/reports; audit event capture/query/export policy.
+- **Features/sub-features:** implemented overview, funnel, pipeline,
+  interview, communication, outcome, and job metrics; dashboards/reports; and
+  audit event capture/query. Audit retention and export policy remain open
+  product/architecture decisions.
 - **Engineering concepts to learn:** derived data, metric definitions, audit integrity, privacy-aware reporting.
 - **Frontend work:** dashboards, filters, empty/partial data states, authorized audit views.
 - **Backend work:** metric/query services, audit append/query service, redaction and access policies.
-- **Database work:** derived reporting structures as justified; append-oriented audit records and retention metadata.
+- **Database work:** PostgreSQL-derived aggregate queries; append-only
+  `AuditEvent` records with restrictive foreign keys, investigative indexes,
+  and immutability trigger.
 - **Security considerations:** audit tamper resistance, least-privilege reporting, PII minimization, tenant scope.
 - **Performance considerations:** aggregate queries, pagination, precomputation only when evidence supports it.
 - **Reliability considerations:** audit generation on critical mutations, metric consistency, backfill/rebuild strategy.
 - **Testing expectations:** metric correctness, authorization, redaction, audit completeness and retention tests.
-- **Documentation outputs:** metric glossary, audit policy, report/data lineage docs.
+- **Documentation outputs:** implemented metric definitions and data lineage
+  are recorded in the final handoff. Retention and export policy are explicitly
+  open decisions rather than implemented behavior.
 - **Dependencies:** Phases 08–17; ARCH-05.
 - **Definition of Done:** COMPLETE. Metrics have definitions and scope, and
   critical changes produce protected audit records without becoming product
   activity timelines. Final handoff:
   `docs/architecture/PHASE_18_HANDOFF.md`.
+- **Final audit:** PASS WITH NOTES — no blocking Phase 18 defects found. The
+  implementation includes relevant Phase 17 audit integrations, HTTP/error
+  corrections, offer reliability/concurrency corrections, and database-level
+  analytics jobs `jobId` filtering. Phase 19 remains **NOT STARTED**.
 
 ## Phase 19 — Redis, BullMQ & Background Jobs — NOT STARTED
 

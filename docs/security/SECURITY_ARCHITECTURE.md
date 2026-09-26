@@ -204,7 +204,14 @@ they do not replace request authorization.
 
 ## Auditability
 
-Security and business-critical actions should later produce protected AuditRecords, including login/security events, membership changes, role/permission changes, job lifecycle changes, sensitive candidate/document changes, pipeline transitions, offer actions, and administrative operations. ActivityRecords remain the user-visible recruiting timeline; they are not a substitute for the security audit log.
+Phase 18 implements protected `AuditEvent` records for the approved critical
+organization, membership, invitation, job, pipeline, form, interview,
+scorecard, communication, offer, outcome, and talent-pool actions. Audit reads
+are tenant-scoped and permission-protected, and returned change summaries and
+metadata are allowlisted. Login/security events, sensitive candidate/document
+actions, retention, export, and any further audit coverage remain separate
+product/security decisions. ActivityRecords remain the user-visible recruiting
+timeline; they are not a substitute for the security audit log.
 
 ## Security vs Reliability
 

@@ -1897,7 +1897,11 @@ TalentPool lists use tenant scope and a bounded stable pool-created/name order; 
 
 ActivityRecord is user-facing recruiting history and must not be merged with AuditRecord. **APPROVE NOW** `(organizationId, applicationId, createdAt, id)` for recent Application timelines and `(organizationId, candidateId, createdAt, id)` for Candidate timelines, when those direct target columns are part of the approved physical shape. Job-target activity is **DEFER TO FEATURE PHASE** until Job activity is a confirmed requirement. Chronological reads use keyset pagination over `createdAt, id`; organization-wide recent activity is **DEFER UNTIL MEASURED** because it adds another high-write access path.
 
-AuditRecord’s minimal initial administrative query is tenant + chronological date range: **APPROVE NOW** `(organizationId, createdAt, id)`. Actor, action/event type, resource type/resource ID, and date-range investigative indexes are **DEFER UNTIL MEASURED**. Audit remains protected accountability history, not a recruiter timeline; filters must not expose raw payloads, secrets, or cross-tenant records.
+Phase 18's `AuditEvent` administrative query is tenant + chronological event
+range: `(organizationId, occurredAt, id)`. It also implements tenant-leading
+indexes for actor, action, and resource investigation. Audit remains protected
+accountability history, not a recruiter timeline; filters must not expose raw
+payloads, secrets, or cross-tenant records.
 
 ### Communication, document, and integration queries
 
@@ -1967,7 +1971,7 @@ The following is the conservative initial matrix. Structural indexes are listed 
 | Reverse Talent Pool lookup | TalentPoolMember | org + candidate | `(talentPoolId, candidateId)` covers forward identity | **APPROVE NOW:** `(organizationId, candidateId, talentPoolId)` | Bounded list | Reverse-direction expected workflow | Yes |
 | Application Activity timeline | ActivityRecord | org + application; chronology | No | **APPROVE NOW:** `(organizationId, applicationId, createdAt, id)` | Cursor | Recruiter-facing history | Yes |
 | Candidate Activity timeline | ActivityRecord | org + candidate; chronology | No | **APPROVE NOW:** `(organizationId, candidateId, createdAt, id)` | Cursor | Recruiter-facing history | Yes |
-| Tenant Audit chronology | AuditRecord | org + date/time; chronology | No | **APPROVE NOW:** `(organizationId, createdAt, id)` | Cursor/window | Minimal administrative history path | Yes |
+| Tenant Audit chronology | AuditEvent | org + event time; chronology | No | Implemented: `(organizationId, occurredAt, id)` | Offset/window | Protected administrative history path | Yes |
 | Application/Candidate communications | Communication | org + parent; chronology | Provider identity only | **APPROVE NOW** only when both direct relationships are approved: `(organizationId, applicationId, createdAt, id)` and/or `(organizationId, candidateId, createdAt, id)` | Cursor | Explicit history reads, balanced against write cost | Yes |
 | Active Offer for Application | Offer | tenant + application + active state | Partial unique active-offer index | **ALREADY REQUIRED STRUCTURAL INDEX** | Single row | Integrity index serves primary lookup | Yes |
 | Form questions | ApplicationFormQuestion | form version; position | Unique `(formVersionId, position)` | **ALREADY REQUIRED STRUCTURAL INDEX** | Small bounded set | Deterministic definition order | No separate index |
@@ -1977,7 +1981,7 @@ The following is the conservative initial matrix. Structural indexes are listed 
 | Candidate name / Job title search | Candidate/Job | tenant + text predicate | No | **DEFER TO FEATURE PHASE** | Bounded search page | Predicate, normalization, and volume not implemented | Yes |
 | Job slug lookup | Job | tenant/public workspace + slug | No approved slug requirement | **DEFER TO FEATURE PHASE** | Single row | Do not invent identifier | Yes |
 | Unscheduled Interview queue | Interview | tenant + unscheduled subset + time | No | **DEFER UNTIL MEASURED** | Bounded queue | Partial subset frequency unknown | Yes |
-| Audit actor/action/resource investigation | AuditRecord | tenant + investigative filters + time | Chronology only | **DEFER UNTIL MEASURED** | Cursor/window | Secondary investigative use | Yes |
+| Audit actor/action/resource investigation | AuditEvent | tenant + investigative filters + event time | Chronology | Implemented tenant-leading indexes for actor, action, and resource | Offset/window | Protected investigative use | Yes |
 | Document type/latest lookup | CandidateDocument | tenant + candidate + type/time | Parent identity only | **DEFER TO FEATURE PHASE** | Small bounded set | Candidate child sets expected small | Yes |
 | Integration retry/monitoring feeds | IntegrationEvent | tenant/provider + status/time | Provider idempotency structural path | **DEFER TO FEATURE PHASE** | Bounded queue | Worker/operational contract not implemented | Yes |
 
@@ -1993,7 +1997,7 @@ Partial UNIQUE indexes enforce integrity and are already required where document
 
 ### Index budget and write cost
 
-Initial budgets are intentionally conservative: OrganizationMembership 1 new reverse lookup; Job 2 list/public paths; Candidate 2 directory/email paths; Application 4 core paths (tenant feed, Job, Candidate, Kanban); ApplicationStageHistory 1; Interview up to 3 initial schedule/application/participant paths; Scorecard 1 evaluator queue; TalentPoolMember 1 reverse path; ActivityRecord 2 timelines; AuditRecord 1 chronology; Communication no more than the one or two direct parent paths actually implemented. Structural primary, unique, partial-unique, and selectively required FK-maintenance indexes are counted separately but still incur write cost.
+Initial budgets are intentionally conservative: OrganizationMembership 1 new reverse lookup; Job 2 list/public paths; Candidate 2 directory/email paths; Application 4 core paths (tenant feed, Job, Candidate, Kanban); ApplicationStageHistory 1; Interview up to 3 initial schedule/application/participant paths; Scorecard 1 evaluator queue; TalentPoolMember 1 reverse path; ActivityRecord 2 timelines; AuditEvent chronology plus actor/action/resource investigation; Communication no more than the one or two direct parent paths actually implemented. Structural primary, unique, partial-unique, and selectively required FK-maintenance indexes are counted separately but still incur write cost.
 
 Application, ActivityRecord, AuditRecord, Communication, ApplicationStageHistory, and IntegrationEvent are append-heavy or otherwise write-sensitive. Every additional composite index increases insert/update work, storage, vacuum work, and cache pressure; indexes containing mutable status or stage columns also pay update cost when workflow state changes. Do not add dashboard, every-status, every-sort, or every-foreign-key indexes within this phase. Reassess budgets after feature queries exist.
 
@@ -2345,7 +2349,7 @@ This is the final Phase 02 design gate before limited PostgreSQL/Prisma implemen
 | Note | IMPLEMENT IN LATER FEATURE PHASE | Phase 15 after supported-target design |
 | Communication, CommunicationRecipient, Notification | IMPLEMENT IN LATER FEATURE PHASE | Phase 16 communication/notification workflows |
 | Offer, OfferVersion, TalentPool, TalentPoolMember | IMPLEMENT IN LATER FEATURE PHASE | Phase 17 |
-| AuditRecord | IMPLEMENT IN LATER FEATURE PHASE | Phase 18 protected audit |
+| AuditRecord (`AuditEvent` implementation) | IMPLEMENTED IN PHASE 18 | Protected append-only audit; retention/export policy remains open |
 | Integration, ExternalReference, IntegrationEvent | IMPLEMENT IN LATER FEATURE PHASE | Phase 20 provider integration |
 | ApplicationSubmissionDeduplication | IMPLEMENT IN LATER FEATURE PHASE | Phase 10/11 public/import submission contract |
 | CommunicationTemplate | DEFERRED | Template/content policy is later |
@@ -2388,7 +2392,7 @@ Invitation is deliberately not in the foundation. Its token, resend, expiry, acc
 | Scorecard family, Note | Yes | No | Phase 15 | Feedback and collaboration policy |
 | Communication/Notification family | Yes | No | Phase 16 | Provider intent/delivery contract |
 | Offer/OfferVersion, Talent Pool family | Yes | No | Phase 17 | Later business policies |
-| AuditRecord | Yes | No | Phase 18 | Protected audit/retention policy |
+| AuditRecord (`AuditEvent` implementation) | Yes | Yes | Phase 18 | Protected append-only audit; retention/export policy remains open |
 | Integration family | Yes | No | Phase 20 | Provider callback and reconciliation contract |
 | Submission deduplication | Yes | No | Phase 10/11 | Exact key/replay policy remains feature-owned |
 | Removed/deferred concepts | Yes, for traceability | No | N/A | Must not become initial tables |
