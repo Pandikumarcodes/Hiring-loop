@@ -99,15 +99,31 @@ export function createOfferUseCases({
       );
     },
     async revise({ organizationId, offerId, actorUserId, requestId, data }) {
-      const result = await offerRepository.createRevision({
-        organizationId,
-        offerId,
-        actorUserId,
-        expectedRevision: data.expectedRevision,
-        versionId: generateEntityId(),
-        terms: terms(data),
-        requestId,
-      });
+      let result;
+      try {
+        result = await offerRepository.createRevision({
+          organizationId,
+          offerId,
+          actorUserId,
+          expectedRevision: data.expectedRevision,
+          versionId: generateEntityId(),
+          terms: terms(data),
+          requestId,
+        });
+      } catch (error) {
+        if (
+          error?.code === 'P2002' &&
+          (error.meta?.target === 'OfferVersion_offerId_versionNumber_key' ||
+            error.meta?.driverAdapterError?.cause?.constraint?.index ===
+              'OfferVersion_offerId_versionNumber_key' ||
+            (Array.isArray(error.meta?.target) &&
+              error.meta.target.length === 2 &&
+              error.meta.target.includes('offerId') &&
+              error.meta.target.includes('versionNumber')))
+        )
+          throw fail(409, 'OFFER_VERSION_CONFLICT', 'Offer version is stale');
+        throw error;
+      }
       if (result.outcome === 'missing')
         throw fail(404, 'OFFER_NOT_FOUND', 'Offer not found');
       if (result.outcome !== 'created')

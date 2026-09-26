@@ -106,6 +106,13 @@ export function createOfferRepository(prisma, auditRepository) {
       requestId,
     }) {
       return prisma.$transaction(async (db) => {
+        // Serialize version allocation on the tenant-scoped parent offer row.
+        const lockedRows = await db.$queryRaw`
+          SELECT "id" FROM "Offer"
+          WHERE "id" = ${offerId}::uuid AND "organizationId" = ${organizationId}::uuid
+          FOR UPDATE
+        `;
+        if (lockedRows.length !== 1) return { outcome: 'missing' };
         const offer = await db.offer.findFirst({
           where: { id: offerId, organizationId },
           include: { versions: true },
@@ -313,7 +320,10 @@ export function createOfferRepository(prisma, auditRepository) {
           },
           db,
         );
-        return findById({ organizationId, offerId });
+        return db.offer.findFirst({
+          where: { id: offerId, organizationId },
+          include: OFFER_INCLUDE,
+        });
       });
     },
   };

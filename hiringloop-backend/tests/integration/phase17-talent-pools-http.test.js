@@ -80,6 +80,39 @@ describe('Phase 17 talent pool HTTP APIs', () => {
       ).status,
     ).toBe(404);
   });
+  it('returns 409 for a duplicate pool rename without changing either pool', async () => {
+    const first = await mutate(f.users.ADMIN, 'post', poolsUrl(f)).send({
+      name: `First ${generateEntityId()}`,
+      description: 'First description',
+    });
+    const second = await mutate(f.users.ADMIN, 'post', poolsUrl(f)).send({
+      name: `Second ${generateEntityId()}`,
+      description: 'Second description',
+    });
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(201);
+    const conflict = await mutate(
+      f.users.ADMIN,
+      'patch',
+      `${poolsUrl(f)}/${second.body.data.id}`,
+    ).send({
+      name: first.body.data.name,
+      description: 'Overwritten',
+      expectedRevision: second.body.data.revision,
+    });
+    expect(conflict.status).toBe(409);
+    expect(conflict.body.error.code).toBe('TALENT_POOL_CONFLICT');
+    for (const original of [first.body.data, second.body.data]) {
+      const stored = await f.prisma.talentPool.findFirst({
+        where: { id: original.id, organizationId: f.organizationId },
+      });
+      expect(stored).toMatchObject({
+        name: original.name,
+        description: original.description,
+        revision: original.revision,
+      });
+    }
+  });
   it('adds, searches, paginates, idempotently re-adds and removes members with relationship validation', async () => {
     const pool = await mutate(f.users.ADMIN, 'post', poolsUrl(f)).send({
       name: `Members ${generateEntityId()}`,

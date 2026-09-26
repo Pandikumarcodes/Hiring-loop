@@ -1,6 +1,10 @@
 import { z } from 'zod';
 
 const id = z.uuid();
+const compensationMinor = z.coerce
+  .bigint()
+  .nonnegative()
+  .max(9223372036854775807n);
 export const offerApplicationParamsSchema = z.object({
   organizationId: id,
   applicationId: id,
@@ -10,8 +14,8 @@ export const offerTermsSchema = z
   .object({
     jobTitle: z.string().trim().min(1).max(160),
     currency: z.string().regex(/^[A-Z]{3}$/),
-    baseCompensationMinor: z.coerce.bigint().nonnegative(),
-    bonusCompensationMinor: z.coerce.bigint().nonnegative().optional(),
+    baseCompensationMinor: compensationMinor,
+    bonusCompensationMinor: compensationMinor.optional(),
     additionalCompensationText: z.string().trim().max(10000).optional(),
     startDate: z.coerce.date().optional(),
     expirationDate: z.coerce.date().optional(),

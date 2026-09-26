@@ -47,13 +47,33 @@ export function createTalentPoolUseCases({ repository }) {
       requestId,
       data,
     }) {
-      const changed = await repository.update({
-        organizationId,
-        talentPoolId,
-        actorUserId,
-        requestId,
-        data,
-      });
+      let changed;
+      try {
+        changed = await repository.update({
+          organizationId,
+          talentPoolId,
+          actorUserId,
+          requestId,
+          data,
+        });
+      } catch (error) {
+        if (
+          error?.code === 'P2002' &&
+          (error.meta?.target === 'TalentPool_organizationId_name_key' ||
+            error.meta?.driverAdapterError?.cause?.constraint?.index ===
+              'TalentPool_organizationId_name_key' ||
+            (Array.isArray(error.meta?.target) &&
+              error.meta.target.length === 2 &&
+              error.meta.target.includes('organizationId') &&
+              error.meta.target.includes('name')))
+        )
+          throw fail(
+            409,
+            'TALENT_POOL_CONFLICT',
+            'Talent pool name already exists',
+          );
+        throw error;
+      }
       if (!changed.count) {
         if (!(await repository.find({ organizationId, talentPoolId })))
           throw fail(404, 'TALENT_POOL_NOT_FOUND', 'Talent pool not found');

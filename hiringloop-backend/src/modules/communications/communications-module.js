@@ -40,6 +40,9 @@ const templateBody = z
     expectedRevision: z.number().int().positive().optional(),
   })
   .strict();
+const templateUpdateBody = templateBody.extend({
+  expectedRevision: z.number().int().positive(),
+});
 const page = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(25),
@@ -284,7 +287,7 @@ export function communicationRouter() {
   r.patch(
     '/communication-templates/:templateId',
     ...ctx(PERMISSIONS.COMMUNICATION_TEMPLATE_MANAGE, true),
-    validateRequest({ params: templateParams, body: templateBody }),
+    validateRequest({ params: templateParams, body: templateUpdateBody }),
     async (req, res, next) => {
       try {
         const b = req.validated.body;
@@ -316,6 +319,24 @@ export function communicationRouter() {
           }),
         });
       } catch (e) {
+        if (
+          e?.code === 'P2002' &&
+          (e.meta?.target === 'CommunicationTemplate_organizationId_name_key' ||
+            e.meta?.driverAdapterError?.cause?.constraint?.index ===
+              'CommunicationTemplate_organizationId_name_key' ||
+            (Array.isArray(e.meta?.target) &&
+              e.meta.target.length === 2 &&
+              e.meta.target.includes('organizationId') &&
+              e.meta.target.includes('name')))
+        ) {
+          return next(
+            new ApplicationError({
+              status: 409,
+              code: 'COMMUNICATION_TEMPLATE_CONFLICT',
+              message: 'A template with this name already exists',
+            }),
+          );
+        }
         next(e);
       }
     },

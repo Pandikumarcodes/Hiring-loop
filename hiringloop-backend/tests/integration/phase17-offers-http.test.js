@@ -78,6 +78,153 @@ describe('Phase 17 offer HTTP APIs', () => {
       ).toBe(403);
   });
 
+  it('bounds both compensation fields on create, draft edit, and revision', async () => {
+    const max = '9223372036854775807';
+    const oversized = '9223372036854775808';
+    const invalidApp = await f.application(f.organizationId);
+    for (const field of ['baseCompensationMinor', 'bonusCompensationMinor']) {
+      const rejected = await create(
+        f.users.ADMIN,
+        invalidApp.id,
+        terms({ [field]: oversized }),
+      );
+      expect(rejected.status).toBe(400);
+      expect(rejected.body.error).toMatchObject({
+        code: 'VALIDATION_ERROR',
+        requestId: expect.any(String),
+      });
+      expect(rejected.body.error.details).toContainEqual({
+        path: [field],
+        message: expect.any(String),
+      });
+    }
+    expect(
+      await f.prisma.offer.count({ where: { applicationId: invalidApp.id } }),
+    ).toBe(0);
+
+    const app = await f.application(f.organizationId);
+    const created = await create(
+      f.users.ADMIN,
+      app.id,
+      terms({ baseCompensationMinor: '0', bonusCompensationMinor: max }),
+    );
+    expect(created.status).toBe(201);
+    expect(created.body.data.currentVersion).toMatchObject({
+      baseCompensationMinor: '0',
+      bonusCompensationMinor: max,
+    });
+    const id = created.body.data.id;
+    const draftUrl = `${offerUrl(f, id)}/draft`;
+    const revisionsUrl = `${offerUrl(f, id)}/revisions`;
+    for (const [url, method] of [
+      [draftUrl, 'patch'],
+      [revisionsUrl, 'post'],
+    ]) {
+      for (const field of ['baseCompensationMinor', 'bonusCompensationMinor']) {
+        const rejected = await mutate(f.users.ADMIN, method, url).send(
+          terms({ expectedRevision: 1, [field]: oversized }),
+        );
+        expect(rejected.status).toBe(400);
+        expect(rejected.body.error.code).toBe('VALIDATION_ERROR');
+        expect(rejected.body.error.details).toContainEqual({
+          path: [field],
+          message: expect.any(String),
+        });
+      }
+    }
+    expect(await f.prisma.offerVersion.count({ where: { offerId: id } })).toBe(
+      1,
+    );
+    const edited = await mutate(f.users.ADMIN, 'patch', draftUrl).send(
+      terms({ expectedRevision: 1, baseCompensationMinor: max }),
+    );
+    expect(edited.status).toBe(200);
+    expect(edited.body.data.baseCompensationMinor).toBe(max);
+    const revised = await mutate(f.users.ADMIN, 'post', revisionsUrl).send(
+      terms({ expectedRevision: 1, baseCompensationMinor: max }),
+    );
+    expect(revised.status).toBe(201);
+    expect(revised.body.data.currentVersion.baseCompensationMinor).toBe(max);
+    expect(await f.prisma.offerVersion.count({ where: { offerId: id } })).toBe(
+      2,
+    );
+  });
+
+  it('serializes concurrent revisions and keeps the winning version current', async () => {
+    const app = await f.application(f.organizationId);
+    const made = await create(f.users.ADMIN, app.id);
+    const id = made.body.data.id;
+    const url = `${offerUrl(f, id)}/revisions`;
+    const [left, right] = await Promise.all([
+      mutate(f.users.ADMIN, 'post', url).send(
+        terms({ expectedRevision: 1, jobTitle: 'Concurrent left' }),
+      ),
+      mutate(f.users.ADMIN, 'post', url).send(
+        terms({ expectedRevision: 1, jobTitle: 'Concurrent right' }),
+      ),
+    ]);
+    expect([left.status, right.status].sort()).toEqual([201, 409]);
+    const loser = [left, right].find((response) => response.status === 409);
+    expect(loser.body.error).toMatchObject({
+      code: 'OFFER_VERSION_CONFLICT',
+      requestId: expect.any(String),
+    });
+    const winner = [left, right].find((response) => response.status === 201);
+    const stored = await f.prisma.offer.findUnique({
+      where: { id },
+      include: { currentVersion: true, versions: true },
+    });
+    expect(stored.revision).toBe(2);
+    expect(
+      stored.versions.map((version) => version.versionNumber).sort(),
+    ).toEqual([1, 2]);
+    expect(stored.currentVersionId).toBe(winner.body.data.currentVersion.id);
+    expect(stored.currentVersion.jobTitle).toBe(
+      winner.body.data.currentVersion.jobTitle,
+    );
+    expect(
+      (
+        await mutate(f.users.HIRING_MANAGER, 'post', url).send(
+          terms({ expectedRevision: 2 }),
+        )
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await mutate(
+          f.users.ADMIN,
+          'post',
+          `${offerUrl(f, id, f.otherOrganizationId)}/revisions`,
+        ).send(terms({ expectedRevision: 2 }))
+      ).status,
+    ).toBe(404);
+    expect(
+      (
+        await mutate(f.users.OTHER, 'post', url).send(
+          terms({ expectedRevision: 2 }),
+        )
+      ).status,
+    ).toBe(404);
+    const foreignOffer = await create(f.users.OTHER, f.foreign.id, terms());
+    // The other member can create only through their own organization route.
+    expect(foreignOffer.status).toBe(404);
+    const otherCreated = await mutate(
+      f.users.OTHER,
+      'post',
+      offerApplicationUrl(f, f.foreign.id, f.otherOrganizationId),
+    ).send(terms());
+    expect(otherCreated.status).toBe(201);
+    expect(
+      (
+        await mutate(
+          f.users.ADMIN,
+          'post',
+          `${offerUrl(f, otherCreated.body.data.id)}/revisions`,
+        ).send(terms({ expectedRevision: 1 }))
+      ).status,
+    ).toBe(404);
+  });
+
   it('edits drafts, rejects stale and issued edits, and creates immutable incremented revisions', async () => {
     const app = await f.application(f.organizationId);
     const made = await create(f.users.ADMIN, app.id);
@@ -334,13 +481,21 @@ describe('Phase 17 offer HTTP APIs', () => {
         })
       ).status,
     ).toBe(409);
-    expect(
-      (
-        await mutate(f.users.ADMIN, 'post', `${offerUrl(f, id)}/withdraw`).send(
-          { expectedRevision: 1 },
-        )
-      ).status,
-    ).toBe(200);
+    const withdrawn = await mutate(
+      f.users.ADMIN,
+      'post',
+      `${offerUrl(f, id)}/withdraw`,
+    ).send({ expectedRevision: 1 });
+    expect(withdrawn.status).toBe(200);
+    expect(withdrawn.body.data).toMatchObject({
+      id,
+      status: 'WITHDRAWN',
+      revision: 2,
+    });
+    expect(await f.prisma.offer.findUnique({ where: { id } })).toMatchObject({
+      status: 'WITHDRAWN',
+      revision: 2,
+    });
     expect(
       (
         await mutate(f.users.ADMIN, 'post', `${offerUrl(f, id)}/withdraw`).send(

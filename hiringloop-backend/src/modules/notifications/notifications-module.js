@@ -10,6 +10,7 @@ import { requirePermission } from '../../middleware/require-permission.js';
 import { PERMISSIONS } from '../../authorization/permissions.js';
 import { validateRequest } from '../../middleware/validate-request.js';
 import { generateEntityId } from '../../utils/ids.js';
+import { notFoundError } from '../../errors/application-error.js';
 const uuid = z.string().uuid();
 const org = z.object({ organizationId: uuid });
 const item = z.object({ organizationId: uuid, notificationId: uuid });
@@ -123,7 +124,7 @@ export function notificationRouter() {
             recipientUserId: q.auth.userId,
           },
         });
-        if (!x) return s.sendStatus(404);
+        if (!x) throw notFoundError('Notification not found');
         s.json({ data: notificationDto(x) });
       } catch (e) {
         n(e);

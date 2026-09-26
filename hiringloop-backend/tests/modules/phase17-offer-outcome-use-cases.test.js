@@ -70,6 +70,28 @@ describe('Phase 17 offer use cases', () => {
       }),
     ).rejects.toMatchObject({ code: 'OFFER_VERSION_IMMUTABLE' });
   });
+  it('maps only the offer version number uniqueness collision to a conflict', async () => {
+    const repository = {
+      createRevision: vi.fn().mockRejectedValue({
+        code: 'P2002',
+        meta: { target: 'OfferVersion_offerId_versionNumber_key' },
+      }),
+    };
+    const useCases = createOfferUseCases({ offerRepository: repository });
+    const input = {
+      organizationId: org,
+      offerId: offer().id,
+      actorUserId: 'actor',
+      data: { ...terms, expectedRevision: 1 },
+    };
+    await expect(useCases.revise(input)).rejects.toMatchObject({
+      status: 409,
+      code: 'OFFER_VERSION_CONFLICT',
+    });
+    const unrelated = { code: 'P2002', meta: { target: 'other_key' } };
+    repository.createRevision.mockRejectedValueOnce(unrelated);
+    await expect(useCases.revise(input)).rejects.toBe(unrelated);
+  });
   it('makes an existing pending send retry-safe without dispatching', async () => {
     const { createHash } = await import('node:crypto');
     const key = '00000000-0000-4000-8000-000000000005';

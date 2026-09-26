@@ -567,6 +567,92 @@ describe('Phase 16 HTTP APIs', () => {
     ).toHaveProperty('pagination.pageSize', 25);
   });
 
+  it('returns 409 for a duplicate template rename without changing either template', async () => {
+    const base = `/api/v1/organizations/${organizationId}/communication-templates`;
+    const first = await mutation(users.get('recruiter'), 'post', base).send({
+      name: `First ${generateEntityId()}`,
+      subject: 'First subject',
+      body: 'First body',
+    });
+    const second = await mutation(users.get('recruiter'), 'post', base).send({
+      name: `Second ${generateEntityId()}`,
+      subject: 'Second subject',
+      body: 'Second body',
+    });
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(201);
+    const conflict = await mutation(
+      users.get('recruiter'),
+      'patch',
+      `${base}/${second.body.data.id}`,
+    ).send({
+      name: first.body.data.name,
+      subject: 'Overwritten subject',
+      body: 'Overwritten body',
+      expectedRevision: second.body.data.revision,
+    });
+    expect(conflict.status).toBe(409);
+    expect(conflict.body.error.code).toBe('COMMUNICATION_TEMPLATE_CONFLICT');
+    for (const original of [first.body.data, second.body.data]) {
+      const stored = await prisma.communicationTemplate.findFirst({
+        where: { id: original.id, organizationId },
+      });
+      expect(stored).toMatchObject({
+        name: original.name,
+        subject: original.subject,
+        body: original.body,
+        revision: original.revision,
+      });
+    }
+  });
+
+  it('requires a template revision and rejects stale writes while advancing valid writes', async () => {
+    const base = `/api/v1/organizations/${organizationId}/communication-templates`;
+    const created = await mutation(users.get('recruiter'), 'post', base).send({
+      name: `Revision ${generateEntityId()}`,
+      subject: 'Original',
+      body: 'Original body',
+    });
+    expect(created.status).toBe(201);
+    const url = `${base}/${created.body.data.id}`;
+    const initialRevision = created.body.data.revision;
+    const valid = await mutation(users.get('recruiter'), 'patch', url).send({
+      name: created.body.data.name,
+      subject: 'Newer',
+      body: 'Newer body',
+      expectedRevision: initialRevision,
+    });
+    expect(valid.status).toBe(200);
+    expect(valid.body.data).toMatchObject({
+      subject: 'Newer',
+      body: 'Newer body',
+      revision: initialRevision + 1,
+    });
+    const stale = await mutation(users.get('recruiter'), 'patch', url).send({
+      name: created.body.data.name,
+      subject: 'Stale',
+      body: 'Stale body',
+      expectedRevision: initialRevision,
+    });
+    expect(stale.status).toBe(409);
+    expect(stale.body.error.code).toBe('COMMUNICATION_TEMPLATE_CONFLICT');
+    const missingRevision = await mutation(
+      users.get('recruiter'),
+      'patch',
+      url,
+    ).send({ name: created.body.data.name, subject: 'Blind', body: 'Blind' });
+    expect(missingRevision.status).toBe(400);
+    expect(missingRevision.body.error.code).toBe('VALIDATION_ERROR');
+    const stored = await prisma.communicationTemplate.findFirst({
+      where: { id: created.body.data.id, organizationId },
+    });
+    expect(stored).toMatchObject({
+      subject: 'Newer',
+      body: 'Newer body',
+      revision: initialRevision + 1,
+    });
+  });
+
   it('keeps notification inbox, unread counts, read operations, and preferences scoped to the recipient tenant', async () => {
     const me = users.get('recruiter');
     const other = users.get('other-user');
@@ -630,9 +716,41 @@ describe('Phase 16 HTTP APIs', () => {
     expect(
       (await mutation(me, 'patch', `${base}/${ownUnread}/read`)).status,
     ).toBe(200);
+    const missing = await mutation(
+      me,
+      'patch',
+      `${base}/${generateEntityId()}/read`,
+    );
+    expect(missing.status).toBe(404);
+    expect(missing.headers['content-type']).toMatch(/application\/json/);
+    expect(missing.body).toEqual({
+      error: {
+        code: 'NOT_FOUND',
+        message: 'Notification not found',
+        requestId: expect.any(String),
+      },
+    });
+    const ownedByOther = await mutation(
+      me,
+      'patch',
+      `${base}/${otherUnread}/read`,
+    );
+    expect(ownedByOther.status).toBe(404);
+    expect(ownedByOther.body.error.code).toBe('NOT_FOUND');
+    const foreignTenant = await mutation(
+      users.get('admin'),
+      'patch',
+      `${base}/${otherTenantUnread}/read`,
+    );
+    expect(foreignTenant.status).toBe(404);
+    expect(foreignTenant.body.error.code).toBe('NOT_FOUND');
     expect(
-      (await mutation(me, 'patch', `${base}/${otherUnread}/read`)).status,
-    ).toBe(404);
+      (
+        await prisma.notification.findUnique({
+          where: { id: otherTenantUnread },
+        })
+      ).readAt,
+    ).toBeNull();
     const all = await mutation(me, 'post', `${base}/read-all`);
     expect(all.status).toBe(200);
     expect(
