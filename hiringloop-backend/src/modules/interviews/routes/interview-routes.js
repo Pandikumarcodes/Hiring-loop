@@ -35,6 +35,13 @@ export function createInterviewRouter({
     requirePermission(permission),
   ];
 
+  router.get(
+    '/interviews/participants',
+    ...context(PERMISSIONS.INTERVIEW_PARTICIPANT_READ),
+    validateRequest({ params: interviewOrganizationParamsSchema }),
+    controller.listEligibleParticipants,
+  );
+
   router.post(
     '/applications/:applicationId/interviews',
     ...mutationContext(PERMISSIONS.INTERVIEW_CREATE),

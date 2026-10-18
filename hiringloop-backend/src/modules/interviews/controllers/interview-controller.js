@@ -10,6 +10,19 @@ export function createInterviewController(useCases) {
   });
 
   return {
+    listEligibleParticipants: async (request, response, next) => {
+      try {
+        response.status(200).json({
+          data: {
+            participants: await useCases.listEligibleParticipants(
+              actor(request),
+            ),
+          },
+        });
+      } catch (error) {
+        next(error);
+      }
+    },
     schedule: async (request, response, next) => {
       try {
         response.status(201).json({

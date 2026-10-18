@@ -8,6 +8,33 @@ const scorecardInclude = {
   templateVersion: { include: versionInclude },
   responses: { orderBy: { criterionId: 'asc' } },
 };
+const rollbackOutcome = Symbol('scorecardRollbackOutcome');
+const abortWithOutcome = (outcome) => {
+  throw { [rollbackOutcome]: outcome };
+};
+const outcomeTransaction = async (transaction) => {
+  try {
+    return await transaction();
+  } catch (error) {
+    if (error?.[rollbackOutcome]) return { outcome: error[rollbackOutcome] };
+    throw error;
+  }
+};
+
+async function lockInterviewForParticipantWrite(
+  tx,
+  { organizationId, interviewId },
+) {
+  if (typeof tx.$queryRaw !== 'function') return;
+  const rows = await tx.$queryRaw`
+    SELECT "id"
+    FROM "Interview"
+    WHERE "id" = ${interviewId} AND "organizationId" = ${organizationId}
+    FOR SHARE
+  `;
+  if (rows.length !== 1) abortWithOutcome('not_found');
+}
+
 export function createScorecardRepository(prisma, auditRepository = null) {
   const template = (input, db = prisma) =>
     db.scorecardTemplate.findFirst({
@@ -159,13 +186,17 @@ export function createScorecardRepository(prisma, auditRepository = null) {
     },
     async saveMy(input, client) {
       const work = async (tx) => {
+        // Roster replacement takes FOR UPDATE on Interview. A compatible
+        // shared lock lets scorecards for different participants proceed
+        // together while serializing their writes against participant removal.
+        await lockInterviewForParticipantWrite(tx, input);
         const mine = await this.findMy(input, tx);
         const participant = mine?.participants[0];
-        if (!mine || !participant) return { outcome: 'not_found' };
+        if (!mine || !participant) abortWithOutcome('not_found');
         let s = participant.scorecard;
         if (!s) {
           if (input.expectedRevision !== undefined)
-            return { outcome: 'conflict' };
+            abortWithOutcome('conflict');
           const t = await template(
             {
               organizationId: input.organizationId,
@@ -173,7 +204,7 @@ export function createScorecardRepository(prisma, auditRepository = null) {
             },
             tx,
           );
-          if (!t?.activeVersion) return { outcome: 'no_template' };
+          if (!t?.activeVersion) abortWithOutcome('no_template');
           try {
             s = await tx.scorecard.create({
               data: {
@@ -187,13 +218,16 @@ export function createScorecardRepository(prisma, auditRepository = null) {
               },
               include: scorecardInclude,
             });
-          } catch {
-            return { outcome: 'conflict' };
+          } catch (error) {
+            // A uniqueness race aborts PostgreSQL's transaction; translate it
+            // only after the transaction has rolled back.
+            if (error?.code === 'P2002') abortWithOutcome('conflict');
+            throw error;
           }
         } else {
-          if (s.status !== 'DRAFT') return { outcome: 'submitted' };
+          if (s.status !== 'DRAFT') abortWithOutcome('submitted');
           if (s.revision !== input.expectedRevision)
-            return { outcome: 'conflict' };
+            abortWithOutcome('conflict');
           const lock = await tx.scorecard.updateMany({
             where: {
               id: s.id,
@@ -207,7 +241,7 @@ export function createScorecardRepository(prisma, auditRepository = null) {
               revision: { increment: 1 },
             },
           });
-          if (lock.count !== 1) return { outcome: 'conflict' };
+          if (lock.count !== 1) abortWithOutcome('conflict');
           s = await tx.scorecard.findUnique({
             where: { id: s.id },
             include: scorecardInclude,
@@ -217,7 +251,7 @@ export function createScorecardRepository(prisma, auditRepository = null) {
           s.templateVersion.criteria.map((c) => [c.id, c]),
         );
         if (input.responses.some((r) => !criteria.has(r.criterionId)))
-          return { outcome: 'invalid_response' };
+          abortWithOutcome('invalid_response');
         await tx.scorecardResponse.deleteMany({
           where: {
             scorecardId: s.id,
@@ -232,7 +266,7 @@ export function createScorecardRepository(prisma, auditRepository = null) {
             (c.type === 'TEXT' &&
               (r.ratingValue != null || r.textValue == null))
           )
-            return { outcome: 'invalid_response' };
+            abortWithOutcome('invalid_response');
           await tx.scorecardResponse.upsert({
             where: {
               scorecardId_criterionId: {
@@ -266,60 +300,64 @@ export function createScorecardRepository(prisma, auditRepository = null) {
           participant,
         };
       };
-      return client ? work(client) : prisma.$transaction(work);
+      return client
+        ? work(client)
+        : outcomeTransaction(() => prisma.$transaction(work));
     },
     async submitMy(input) {
-      return prisma.$transaction(async (tx) => {
-        const saved = await this.saveMy(input, tx);
-        if (saved.outcome !== 'saved') return saved;
-        const s = saved.scorecard;
-        const responses = new Map(s.responses.map((r) => [r.criterionId, r]));
-        const missing = s.templateVersion.criteria.some(
-          (c) => c.required && !responses.has(c.id),
-        );
-        if (missing || !s.overallRecommendation)
-          return { outcome: 'incomplete' };
-        const lock = await tx.scorecard.updateMany({
-          where: {
-            id: s.id,
-            organizationId: input.organizationId,
-            status: 'DRAFT',
-            revision: s.revision,
-          },
-          data: {
-            status: 'SUBMITTED',
-            submittedAt: input.clock(),
-            revision: { increment: 1 },
-          },
-        });
-        if (lock.count !== 1) return { outcome: 'conflict' };
-        if (auditRepository)
-          await auditRepository.create(
-            {
-              organizationId: input.organizationId,
-              actorUserId: input.actorUserId,
-              action: 'SCORECARD_SUBMITTED',
-              resourceType: 'SCORECARD',
-              resourceId: s.id,
-              after: { status: 'SUBMITTED' },
-              metadata: {
-                interviewId: saved.interview.id,
-                applicationId: saved.interview.applicationId,
-                templateVersionId: s.templateVersionId,
-              },
-            },
-            tx,
+      return outcomeTransaction(() =>
+        prisma.$transaction(async (tx) => {
+          const saved = await this.saveMy(input, tx);
+          if (saved.outcome !== 'saved') abortWithOutcome(saved.outcome);
+          const s = saved.scorecard;
+          const responses = new Map(s.responses.map((r) => [r.criterionId, r]));
+          const missing = s.templateVersion.criteria.some(
+            (c) => c.required && !responses.has(c.id),
           );
-        return {
-          outcome: 'submitted',
-          scorecard: await tx.scorecard.findUnique({
-            where: { id: s.id },
-            include: scorecardInclude,
-          }),
-          interview: saved.interview,
-          participant: saved.participant,
-        };
-      });
+          if (missing || !s.overallRecommendation)
+            abortWithOutcome('incomplete');
+          const lock = await tx.scorecard.updateMany({
+            where: {
+              id: s.id,
+              organizationId: input.organizationId,
+              status: 'DRAFT',
+              revision: s.revision,
+            },
+            data: {
+              status: 'SUBMITTED',
+              submittedAt: input.clock(),
+              revision: { increment: 1 },
+            },
+          });
+          if (lock.count !== 1) abortWithOutcome('conflict');
+          if (auditRepository)
+            await auditRepository.create(
+              {
+                organizationId: input.organizationId,
+                actorUserId: input.actorUserId,
+                action: 'SCORECARD_SUBMITTED',
+                resourceType: 'SCORECARD',
+                resourceId: s.id,
+                after: { status: 'SUBMITTED' },
+                metadata: {
+                  interviewId: saved.interview.id,
+                  applicationId: saved.interview.applicationId,
+                  templateVersionId: s.templateVersionId,
+                },
+              },
+              tx,
+            );
+          return {
+            outcome: 'submitted',
+            scorecard: await tx.scorecard.findUnique({
+              where: { id: s.id },
+              include: scorecardInclude,
+            }),
+            interview: saved.interview,
+            participant: saved.participant,
+          };
+        }),
+      );
     },
     findApplication({ organizationId, applicationId }) {
       return prisma.application.findFirst({

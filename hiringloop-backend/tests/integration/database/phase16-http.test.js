@@ -335,7 +335,7 @@ describe('Phase 16 HTTP APIs', () => {
   it('persists confirmed and ambiguous provider outcomes without leaking provider errors', async () => {
     const send = vi.spyOn(authEmailDelivery, 'sendCandidateEmail');
     send.mockRejectedValueOnce(
-      new EmailDeliveryError({ category: 'sendgrid-error' }),
+      new EmailDeliveryError({ category: 'provider-rejected' }),
     );
     const failed = await mutation(
       users.get('recruiter'),
@@ -355,7 +355,7 @@ describe('Phase 16 HTTP APIs', () => {
       orderBy: { createdAt: 'desc' },
     });
     expect(failedRow).toMatchObject({
-      failureCategory: 'sendgrid-error',
+      failureCategory: 'provider-rejected',
       sentAt: null,
     });
     expect(failedRow.failedAt).toBeTruthy();
@@ -390,10 +390,82 @@ describe('Phase 16 HTTP APIs', () => {
     send.mockRestore();
   });
 
+  it('keeps an accepted message PENDING if the SENT update fails and never resends it', async () => {
+    const send = vi
+      .spyOn(authEmailDelivery, 'sendCandidateEmail')
+      .mockResolvedValue({ providerMessageId: 'accepted-before-db-failure' });
+    const idempotencyKey = generateEntityId();
+    const update = vi
+      .spyOn(prisma.communication, 'updateMany')
+      .mockRejectedValueOnce(new Error('simulated database write failure'));
+    const first = await mutation(
+      users.get('recruiter'),
+      'post',
+      endpoint(),
+    ).send(payload({ idempotencyKey }));
+    expect(first.status).toBe(500);
+    const pending = await prisma.communication.findFirst({
+      where: { organizationId, applicationId, idempotencyKey },
+    });
+    expect(pending).toMatchObject({ status: 'PENDING', sentAt: null });
+
+    const replay = await mutation(
+      users.get('recruiter'),
+      'post',
+      endpoint(),
+    ).send(payload({ idempotencyKey }));
+    expect(replay.status).toBe(200);
+    expect(replay.body.data.communication.status).toBe('PENDING');
+    expect(send).toHaveBeenCalledTimes(1);
+    update.mockRestore();
+    send.mockRestore();
+  });
+
+  it('dispatches only once for concurrent requests with the same idempotency key', async () => {
+    let releaseProvider;
+    let providerStarted;
+    const started = new Promise((resolve) => {
+      providerStarted = resolve;
+    });
+    const hold = new Promise((resolve) => {
+      releaseProvider = resolve;
+    });
+    const send = vi
+      .spyOn(authEmailDelivery, 'sendCandidateEmail')
+      .mockImplementation(async () => {
+        providerStarted();
+        await hold;
+        return { providerMessageId: 'single-dispatch' };
+      });
+    const idempotencyKey = generateEntityId();
+    const firstRequest = mutation(users.get('admin'), 'post', endpoint())
+      .send(payload({ idempotencyKey }))
+      .then((response) => response);
+    await started;
+    const replayRequest = mutation(users.get('admin'), 'post', endpoint()).send(
+      payload({ idempotencyKey }),
+    );
+    const replay = await replayRequest;
+    releaseProvider();
+    const first = await firstRequest;
+    expect([first.status, replay.status].sort()).toEqual([200, 201]);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(
+      await prisma.communication.count({
+        where: {
+          organizationId,
+          createdByUserId: users.get('admin').id,
+          idempotencyKey,
+        },
+      }),
+    ).toBe(1);
+    send.mockRestore();
+  });
+
   it('makes communication sending idempotent and rejects conflicting reuse without duplicate failure notification', async () => {
     const send = vi
       .spyOn(authEmailDelivery, 'sendCandidateEmail')
-      .mockRejectedValue(new EmailDeliveryError());
+      .mockRejectedValue(new EmailDeliveryError({ category: 'not-sent' }));
     const idempotencyKey = generateEntityId();
     const first = await mutation(users.get('admin'), 'post', endpoint()).send(
       payload({ subject: 'A', body: 'A', idempotencyKey }),

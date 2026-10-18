@@ -38,6 +38,7 @@ export function createAwsS3ApplicationStorage({ bucket, region, expiresIn }) {
           Bucket: bucket,
           Key: objectKey,
           ContentType: mimeType,
+          IfNoneMatch: '*',
         });
         const url = await runtime.presigner.getSignedUrl(
           runtime.client,
@@ -46,7 +47,13 @@ export function createAwsS3ApplicationStorage({ bucket, region, expiresIn }) {
             expiresIn,
           },
         );
-        return { url, requiredHeaders: { 'Content-Type': mimeType } };
+        return {
+          url,
+          requiredHeaders: {
+            'Content-Type': mimeType,
+            'If-None-Match': '*',
+          },
+        };
       } catch (error) {
         if (error instanceof StorageProviderError) throw error;
         throw new StorageProviderError();
@@ -79,6 +86,29 @@ export function createAwsS3ApplicationStorage({ bucket, region, expiresIn }) {
           contentLength: result.ContentLength,
           contentType: result.ContentType,
         };
+      } catch (error) {
+        if (
+          error?.$metadata?.httpStatusCode === 404 ||
+          error?.name === 'NotFound'
+        ) {
+          throw new StorageObjectNotFoundError();
+        }
+        if (error instanceof StorageProviderError) throw error;
+        throw new StorageProviderError();
+      }
+    },
+
+    async readObjectPrefix({ objectKey, bytes = 8 }) {
+      try {
+        const runtime = await client();
+        const result = await runtime.client.send(
+          new runtime.s3.GetObjectCommand({
+            Bucket: bucket,
+            Key: objectKey,
+            Range: `bytes=0-${bytes - 1}`,
+          }),
+        );
+        return Buffer.from(await result.Body.transformToByteArray());
       } catch (error) {
         if (
           error?.$metadata?.httpStatusCode === 404 ||

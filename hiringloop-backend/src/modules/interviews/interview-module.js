@@ -25,6 +25,7 @@ const repository = prisma
   : {
       findApplicationForOrganization: unavailable,
       findOrganizationMembers: unavailable,
+      listEligibleParticipants: unavailable,
       findByIdForAccess: unavailable,
       listByApplication: unavailable,
       listForOrganization: unavailable,

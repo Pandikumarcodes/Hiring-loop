@@ -176,6 +176,14 @@ export function createOfferRepository(prisma, auditRepository) {
       requestId,
     }) {
       return prisma.$transaction(async (db) => {
+        // Serialize send claims with other sends and revision allocation before
+        // reading lifecycle/idempotency state. Dispatch remains after commit.
+        const lockedRows = await db.$queryRaw`
+          SELECT "id" FROM "Offer"
+          WHERE "id" = ${offerId}::uuid AND "organizationId" = ${organizationId}::uuid
+          FOR UPDATE
+        `;
+        if (lockedRows.length !== 1) return { outcome: 'missing' };
         const offer = await db.offer.findFirst({
           where: { id: offerId, organizationId },
           include: SEND_INCLUDE,

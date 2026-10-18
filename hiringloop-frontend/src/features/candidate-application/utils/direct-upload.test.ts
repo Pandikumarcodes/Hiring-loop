@@ -11,12 +11,13 @@ describe('direct resume upload', () => {
     const file = new File(['resume'], 'resume.pdf', { type: 'application/pdf' })
     await putResumeToSignedUrl('https://signed.example', file, {
       'Content-Type': 'application/pdf',
+      'If-None-Match': '*',
     })
     expect(fetchMock).toHaveBeenCalledWith('https://signed.example', {
       method: 'PUT',
       body: file,
       credentials: 'omit',
-      headers: { 'Content-Type': 'application/pdf' },
+      headers: { 'Content-Type': 'application/pdf', 'If-None-Match': '*' },
     })
   })
 })

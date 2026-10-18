@@ -15,6 +15,12 @@
 
 ### Current phase status
 
+- Remediation Phase 4A — Offer Send Concurrency and HTTP Error Integrity —
+  **COMPLETE**. E18 was reproduced as PostgreSQL P0001 / Prisma P2039 and
+  repaired with a tenant-scoped parent offer lock. Deterministic HTTP/PostgreSQL
+  regressions preserve communication idempotency and post-commit dispatch.
+  Verification and remaining delivery limits are recorded in
+  `docs/codebase-analysis/26-offer-send-concurrency-verification.md`.
 - Phase 10 — Public Career Site — **COMPLETE**. It provides exactly 2 public
   APIs, 2 public screens, and 2 public routes; Organization slugs; OPEN-only
   visibility; scoped public DTOs; pagination; rate limiting; and accessible

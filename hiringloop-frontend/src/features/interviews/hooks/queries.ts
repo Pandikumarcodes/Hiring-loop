@@ -1,6 +1,7 @@
 import { queryOptions, useQuery } from '@tanstack/react-query'
 import {
   getInterview,
+  listEligibleInterviewParticipants,
   listApplicationInterviews,
   listInterviews,
 } from '../api/interviews.api'
@@ -13,6 +14,16 @@ export const applicationInterviewsQueryOptions = (
   queryOptions({
     queryKey: interviewKeys.application(o, a),
     queryFn: ({ signal }) => listApplicationInterviews(o, a, signal),
+    enabled,
+    meta: { clearOnAuthChange: true },
+  })
+export const eligibleInterviewParticipantsQueryOptions = (
+  o: string,
+  enabled = true,
+) =>
+  queryOptions({
+    queryKey: interviewKeys.participants(o),
+    queryFn: ({ signal }) => listEligibleInterviewParticipants(o, signal),
     enabled,
     meta: { clearOnAuthChange: true },
   })
@@ -42,6 +53,8 @@ export const useApplicationInterviews = (
   a: string,
   enabled = true,
 ) => useQuery(applicationInterviewsQueryOptions(o, a, enabled))
+export const useEligibleInterviewParticipants = (o: string, enabled = true) =>
+  useQuery(eligibleInterviewParticipantsQueryOptions(o, enabled))
 export const useCalendarInterviews = (
   o: string,
   f: string,

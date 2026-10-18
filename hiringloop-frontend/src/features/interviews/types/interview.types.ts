@@ -22,6 +22,10 @@ export interface InterviewDto {
     reason: string | null
   } | null
 }
+export interface InterviewParticipantOption {
+  user: { id: string; email: string }
+  role: 'ADMIN' | 'RECRUITER' | 'HIRING_MANAGER' | 'INTERVIEWER'
+}
 export interface ScheduleInterviewInput {
   title: string
   format: InterviewFormat

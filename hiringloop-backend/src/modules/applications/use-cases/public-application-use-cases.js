@@ -84,6 +84,23 @@ function ensureMimeType(mimeType) {
   }
 }
 
+function contentMatchesMimeType(content, mimeType) {
+  if (mimeType === 'application/pdf')
+    return content.subarray(0, 5).toString() === '%PDF-';
+  if (mimeType === 'application/msword') {
+    return content
+      .subarray(0, 8)
+      .equals(Buffer.from('D0CF11E0A1B11AE1', 'hex'));
+  }
+  if (
+    mimeType ===
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ) {
+    return content.subarray(0, 4).equals(Buffer.from('504B0304', 'hex'));
+  }
+  return false;
+}
+
 function isIsoDate(value) {
   return (
     typeof value === 'string' &&
@@ -255,6 +272,11 @@ export function createPublicApplicationUseCases({
         throw invalidApplicationUploadError();
       ensureMimeType(object.contentType);
       if (object.contentType.toLowerCase() !== upload.mimeType.toLowerCase())
+        throw invalidApplicationUploadError();
+      const prefix = await storage.readObjectPrefix({
+        objectKey: upload.objectKey,
+      });
+      if (!contentMatchesMimeType(prefix, upload.mimeType))
         throw invalidApplicationUploadError();
     } catch (error) {
       if (error instanceof StorageObjectNotFoundError)

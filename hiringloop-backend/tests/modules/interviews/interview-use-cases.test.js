@@ -4,6 +4,7 @@ import { createInterviewUseCases } from '../../../src/modules/interviews/use-cas
 import {
   listInterviewsQuerySchema,
   scheduleInterviewBodySchema,
+  updateInterviewBodySchema,
 } from '../../../src/modules/interviews/schemas/interview-schemas.js';
 
 const organizationId = '01990b72-7c3a-7b2d-b6bb-9a6a7a1c0001';
@@ -211,6 +212,56 @@ describe('interview use cases', () => {
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
   });
 
+  it('allows recruiting roles, but not interviewers, to discover tenant participants', async () => {
+    const repo = repository({
+      listEligibleParticipants: vi.fn(async ({ organizationId: id }) =>
+        id === organizationId
+          ? [
+              {
+                userId: interviewerId,
+                role: 'INTERVIEWER',
+                user: { email: 'interviewer@example.com' },
+              },
+            ]
+          : [],
+      ),
+    });
+    const cases = useCases(repo);
+
+    await expect(
+      cases.listEligibleParticipants({
+        organizationId,
+        actorRole: 'RECRUITER',
+      }),
+    ).resolves.toEqual([
+      {
+        user: { id: interviewerId, email: 'interviewer@example.com' },
+        role: 'INTERVIEWER',
+      },
+    ]);
+    await expect(
+      cases.listEligibleParticipants({
+        organizationId,
+        actorRole: 'INTERVIEWER',
+      }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+
+  it('does not report a partial participant replacement when history blocks removal', async () => {
+    const repo = repository({
+      updateMetadata: vi.fn(async () => ({ outcome: 'participant_history' })),
+    });
+    await expect(
+      useCases(repo).update({
+        organizationId,
+        interviewId: interview().id,
+        actorRole: 'RECRUITER',
+        actorUserId: interviewerId,
+        participantUserIds: [secondInterviewerId],
+      }),
+    ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+  });
+
   it('handles reschedule, cancellation, and cancelled interview read behavior', async () => {
     const repo = repository();
     const cases = useCases(repo);
@@ -265,6 +316,11 @@ describe('interview validation', () => {
       participantUserIds: [interviewerId, interviewerId],
     });
     expect(result.success).toBe(false);
+    expect(
+      updateInterviewBodySchema.safeParse({
+        participantUserIds: [interviewerId, interviewerId],
+      }).success,
+    ).toBe(false);
   });
 
   it('requires a bounded chronological calendar range', () => {

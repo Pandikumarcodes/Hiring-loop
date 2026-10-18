@@ -51,6 +51,14 @@ function conflictError(result) {
   }
 }
 
+function participantError(result) {
+  if (result?.outcome === 'invalid_participant') {
+    throw invalidInterviewParticipantError({
+      invalidUserIds: result.invalidUserIds,
+    });
+  }
+}
+
 export function createInterviewUseCases({
   repository,
   notificationService = null,
@@ -110,6 +118,16 @@ export function createInterviewUseCases({
   }
 
   return {
+    async listEligibleParticipants({ organizationId, actorRole }) {
+      assertManagementRole(actorRole);
+      const members = await repository.listEligibleParticipants({
+        organizationId,
+      });
+      return members.map(({ userId, role, user }) => ({
+        user: { id: userId, email: user.email },
+        role,
+      }));
+    },
     async schedule({
       organizationId,
       applicationId,
@@ -152,6 +170,7 @@ export function createInterviewUseCases({
         },
         participants,
       });
+      participantError(result);
       conflictError(result);
       await notifyParticipants(
         result.interview,
@@ -231,6 +250,12 @@ export function createInterviewUseCases({
       });
       if (result.outcome === 'not_found') throw interviewNotFoundError();
       if (result.outcome === 'cancelled') throw interviewCannotUpdateError();
+      participantError(result);
+      if (result.outcome === 'participant_history') {
+        throw validationError(
+          'Participants with existing scorecards cannot be removed from an interview',
+        );
+      }
       conflictError(result);
       return toInterviewDto(result.interview);
     },

@@ -51,6 +51,33 @@ export const createDraft = (o: string, j: string, csrf: string) =>
     'scorecardTemplate',
     csrf,
   )
+// Empty strings explicitly clear optional text in the API; read DTOs use null.
+const templateBody = (input: TemplateInput): JsonValue => ({
+  expectedRevision: input.expectedRevision,
+  title: input.title,
+  instructions: input.instructions ?? '',
+  criteria: input.criteria.map((criterion) => ({
+    ...(criterion.id ? { id: criterion.id } : {}),
+    label: criterion.label,
+    description: criterion.description ?? '',
+    type: criterion.type,
+    required: criterion.required,
+    position: criterion.position,
+  })),
+})
+const scorecardBody = (input: ScorecardInput): JsonValue => ({
+  ...(input.expectedRevision === undefined
+    ? {}
+    : { expectedRevision: input.expectedRevision }),
+  responses: input.responses.map((response) => ({
+    criterionId: response.criterionId,
+    ratingValue: response.ratingValue,
+    textValue: response.textValue ?? '',
+    comment: response.comment ?? '',
+  })),
+  overallRecommendation: input.overallRecommendation ?? null,
+  overallComment: input.overallComment ?? '',
+})
 export const updateDraft = (
   o: string,
   j: string,
@@ -60,7 +87,7 @@ export const updateDraft = (
   mutate<ScorecardTemplate>(
     `${job(o, j)}/draft`,
     'PATCH',
-    input as unknown as JsonValue,
+    templateBody(input),
     'scorecardTemplate',
     csrf,
   )
@@ -94,7 +121,7 @@ export const saveMine = (
   mutate<Scorecard>(
     `${interview(o, i)}/my-scorecard`,
     'PATCH',
-    input as unknown as JsonValue,
+    scorecardBody(input),
     'scorecard',
     csrf,
   )
@@ -107,7 +134,7 @@ export const submitMine = (
   mutate<Scorecard>(
     `${interview(o, i)}/my-scorecard/submit`,
     'POST',
-    input as unknown as JsonValue,
+    scorecardBody(input),
     'scorecard',
     csrf,
   )

@@ -1,7 +1,7 @@
 import sendGridClient from '@sendgrid/mail';
 
 export class EmailDeliveryError extends Error {
-  constructor({ category = 'provider-error', status } = {}) {
+  constructor({ category = 'ambiguous', status } = {}) {
     super('Email delivery failed');
     this.name = 'EmailDeliveryError';
     this.category = category;
@@ -43,10 +43,31 @@ export function invitationAcceptanceUrl(frontendOrigin, token) {
   ).toString();
 }
 
+const definitelyNotTransmitted = new Set([
+  'EAI_AGAIN',
+  'EHOSTUNREACH',
+  'ENETUNREACH',
+  'ENOTFOUND',
+  'ECONNREFUSED',
+]);
+
 function providerFailure(error) {
+  const code = typeof error?.code === 'string' ? error.code : undefined;
+  const responseStatus = error?.response?.status ?? error?.response?.statusCode;
+  const numericStatus =
+    Number.isInteger(responseStatus) && responseStatus >= 100
+      ? responseStatus
+      : Number.isInteger(error?.code) && error.code >= 100
+        ? error.code
+        : undefined;
+  let category = 'ambiguous';
+  if (numericStatus >= 400 && numericStatus < 500 && numericStatus !== 408)
+    category = 'provider-rejected';
+  else if (!numericStatus && definitelyNotTransmitted.has(code))
+    category = 'not-sent';
   return new EmailDeliveryError({
-    category: 'sendgrid-error',
-    status: error?.code,
+    category,
+    status: numericStatus,
   });
 }
 
@@ -273,16 +294,16 @@ export function createInMemoryEmailDelivery() {
 export function createNonDeliveringEmailDelivery() {
   return {
     async sendCandidateEmail() {
-      throw new EmailDeliveryError();
+      throw new EmailDeliveryError({ category: 'not-sent' });
     },
     async sendEmailVerification() {
-      throw new EmailDeliveryError();
+      throw new EmailDeliveryError({ category: 'not-sent' });
     },
     async sendPasswordReset() {
-      throw new EmailDeliveryError();
+      throw new EmailDeliveryError({ category: 'not-sent' });
     },
     async sendInvitation() {
-      throw new EmailDeliveryError();
+      throw new EmailDeliveryError({ category: 'not-sent' });
     },
   };
 }

@@ -344,7 +344,7 @@ describe('Phase 17 offer HTTP APIs', () => {
     const failedApp = await f.application(f.organizationId);
     const failedOffer = await create(f.users.ADMIN, failedApp.id);
     delivery.mockRejectedValueOnce(
-      new EmailDeliveryError({ category: 'sendgrid-error' }),
+      new EmailDeliveryError({ category: 'provider-rejected' }),
     );
     const failed = await mutate(
       f.users.ADMIN,
@@ -401,7 +401,7 @@ describe('Phase 17 offer HTTP APIs', () => {
     const delivery = vi
       .spyOn(authEmailDelivery, 'sendCandidateEmail')
       .mockRejectedValueOnce(
-        new EmailDeliveryError({ category: 'sendgrid-error' }),
+        new EmailDeliveryError({ category: 'provider-rejected' }),
       )
       .mockResolvedValueOnce({ providerMessageId: 'retry-sent' });
 
@@ -425,7 +425,7 @@ describe('Phase 17 offer HTTP APIs', () => {
     expect(failedCommunication).toMatchObject({
       status: 'FAILED',
       offerVersionId: beforeRetry.currentVersionId,
-      failureCategory: 'sendgrid-error',
+      failureCategory: 'provider-rejected',
     });
     expect(
       await f.prisma.notification.count({

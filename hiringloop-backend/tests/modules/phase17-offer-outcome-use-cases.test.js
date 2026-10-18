@@ -169,6 +169,72 @@ describe('Phase 17 offer use cases', () => {
     ).resolves.toMatchObject({ status: 'SENT' });
     expect(delivery.dispatchPersisted).toHaveBeenCalledTimes(1);
   });
+  it('recovers only communication idempotency collisions and propagates unexpected database errors', async () => {
+    const { createHash } = await import('node:crypto');
+    const key = '00000000-0000-4000-8000-000000000005';
+    const communication = {
+      id: 'communication',
+      status: 'SENT',
+      payloadHash: createHash('sha256')
+        .update(`${offer().currentVersion.id}:1:${key}`)
+        .digest('hex'),
+    };
+    const repository = {
+      findById: vi.fn().mockResolvedValue(offer()),
+      prepareSend: vi.fn(),
+      findCommunication: vi.fn().mockResolvedValue(communication),
+    };
+    const delivery = { dispatchPersisted: vi.fn() };
+    const useCases = createOfferUseCases({
+      offerRepository: repository,
+      communicationService: delivery,
+    });
+    const input = {
+      organizationId: org,
+      offerId: offer().id,
+      actorUserId: 'actor',
+      data: { expectedRevision: 1, idempotencyKey: key },
+    };
+    for (const meta of [
+      { target: 'Communication_idempotency_key' },
+      {
+        target: [
+          'organizationId',
+          'applicationId',
+          'createdByUserId',
+          'idempotencyKey',
+        ],
+      },
+      {
+        driverAdapterError: {
+          cause: { constraint: { index: 'Communication_idempotency_key' } },
+        },
+      },
+    ]) {
+      repository.prepareSend.mockRejectedValueOnce({ code: 'P2002', meta });
+      await expect(useCases.send(input)).resolves.toMatchObject({
+        status: 'SENT',
+        retrySafe: true,
+      });
+    }
+    repository.findCommunication.mockClear();
+    for (const error of [
+      { code: 'P2002', meta: { target: 'Communication_pkey' } },
+      { code: 'P2002' },
+      { code: 'P2034' },
+      { code: 'P2039' },
+    ]) {
+      repository.prepareSend.mockRejectedValueOnce(error);
+      await expect(useCases.send(input)).rejects.toBe(error);
+    }
+    expect(repository.findCommunication).not.toHaveBeenCalled();
+    expect(delivery.dispatchPersisted).not.toHaveBeenCalled();
+    repository.prepareSend.mockResolvedValueOnce({ outcome: 'missing' });
+    await expect(useCases.send(input)).rejects.toMatchObject({
+      status: 404,
+      code: 'OFFER_NOT_FOUND',
+    });
+  });
   it('rejects invalid terminal transitions', async () => {
     const repository = {
       transition: vi.fn().mockResolvedValue(null),

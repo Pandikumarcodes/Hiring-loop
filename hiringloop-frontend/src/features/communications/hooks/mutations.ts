@@ -42,10 +42,14 @@ export function useTemplateMutations(organizationId: string) {
     onSuccess: invalidate,
   })
   const update = useMutation({
-    mutationFn: (input: TemplateInput & { id: string }) =>
-      runAuthenticatedAuthMutation(client, (csrf) =>
-        updateTemplate(organizationId, input.id, input, csrf),
-      ),
+    mutationFn: (
+      input: TemplateInput & { id: string; expectedRevision: number },
+    ) => {
+      const { id, ...body } = input
+      return runAuthenticatedAuthMutation(client, (csrf) =>
+        updateTemplate(organizationId, id, body, csrf),
+      )
+    },
     onSuccess: invalidate,
   })
   const remove = useMutation({

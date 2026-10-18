@@ -50,6 +50,7 @@ function makeUseCases(overrides = {}) {
       contentLength: 1234,
       contentType: 'application/pdf',
     })),
+    readObjectPrefix: vi.fn(async () => Buffer.from('%PDF-1.7')),
     ...overrides.storage,
   };
   return {
@@ -180,6 +181,28 @@ describe('public application use cases', () => {
     await expect(
       first.useCases.submit({ ...submission(), resumeUploadId: 'upload-2' }),
     ).rejects.toMatchObject({ code: 'IDEMPOTENCY_CONFLICT' });
+  });
+
+  it('rejects content whose bytes do not match the declared resume MIME type', async () => {
+    const { useCases, applicationRepository } = makeUseCases();
+    await expect(useCases.submit(submission())).resolves.toMatchObject({
+      submitted: true,
+    });
+
+    const mismatched = makeUseCases({
+      storage: {
+        readObjectPrefix: vi.fn(async () => Buffer.from('<html>')),
+      },
+    });
+    await expect(
+      mismatched.useCases.submit(submission()),
+    ).rejects.toMatchObject({
+      code: 'INVALID_APPLICATION_UPLOAD',
+    });
+    expect(
+      mismatched.applicationRepository.createAtomicSubmission,
+    ).not.toHaveBeenCalled();
+    expect(applicationRepository.createAtomicSubmission).toHaveBeenCalledOnce();
   });
 
   it('rejects closed jobs, expired uploads, and missing required answers', async () => {

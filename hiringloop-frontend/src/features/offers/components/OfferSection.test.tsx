@@ -135,7 +135,7 @@ describe('OfferSection', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(/changed elsewhere/i)
     await user.click(screen.getByRole('button', { name: 'Save offer' }))
     expect(a.edit.mutate).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'offer-1', expectedRevision: 4 }),
+      expect.objectContaining({ id: 'offer-1', expectedRevision: 1 }),
       expect.any(Object),
     )
   })

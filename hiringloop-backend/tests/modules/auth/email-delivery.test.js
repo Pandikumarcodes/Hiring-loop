@@ -83,6 +83,43 @@ describe('console email delivery', () => {
 });
 
 describe('SendGrid email verification delivery', () => {
+  it.each([
+    [401, 'provider-rejected'],
+    [429, 'provider-rejected'],
+    [408, 'ambiguous'],
+    [500, 'ambiguous'],
+    ['ECONNREFUSED', 'not-sent'],
+    ['ENOTFOUND', 'not-sent'],
+    ['ETIMEDOUT', 'ambiguous'],
+    ['ECONNRESET', 'ambiguous'],
+  ])('classifies provider failure %s as %s', async (code, category) => {
+    const client = {
+      setApiKey: vi.fn(),
+      send: vi.fn(async () => {
+        const error = new Error('private provider message');
+        error.code = code;
+        throw error;
+      }),
+    };
+    const delivery = createSendGridEmailDelivery({
+      client,
+      apiKey: 'SG.test-key',
+      from: 'no-reply@hiringloop.test',
+      frontendOrigin: 'https://app.hiringloop.test',
+    });
+
+    await expect(
+      delivery.sendCandidateEmail({
+        to: 'candidate@example.test',
+        subject: 'Test',
+        text: 'Test message',
+      }),
+    ).rejects.toMatchObject({
+      category,
+      message: 'Email delivery failed',
+    });
+  });
+
   it('initializes once and sends the configured verification message', async () => {
     const client = { setApiKey: vi.fn(), send: vi.fn(async () => []) };
     const delivery = createSendGridEmailDelivery({
@@ -170,7 +207,7 @@ describe('SendGrid email verification delivery', () => {
     ).rejects.toEqual(
       expect.objectContaining({
         name: 'EmailDeliveryError',
-        category: 'sendgrid-error',
+        category: 'provider-rejected',
         status: 401,
         message: 'Email delivery failed',
       }),

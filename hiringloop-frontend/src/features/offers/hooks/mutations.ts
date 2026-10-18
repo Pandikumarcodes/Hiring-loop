@@ -28,13 +28,19 @@ export function useOfferActions(o: string, a: string) {
     edit: useMutation({
       mutationFn: (
         x: OfferTermsInput & { id: string; expectedRevision: number },
-      ) => secured((csrf) => editOffer(o, x.id, x, csrf)),
+      ) => {
+        const { id, ...input } = x
+        return secured((csrf) => editOffer(o, id, input, csrf))
+      },
       onSuccess: refresh,
     }),
     revise: useMutation({
       mutationFn: (
         x: OfferTermsInput & { id: string; expectedRevision: number },
-      ) => secured((csrf) => reviseOffer(o, x.id, x, csrf)),
+      ) => {
+        const { id, ...input } = x
+        return secured((csrf) => reviseOffer(o, id, input, csrf))
+      },
       onSuccess: refresh,
     }),
     send: useMutation({

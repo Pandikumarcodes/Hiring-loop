@@ -27,13 +27,16 @@ export function useTalentPoolActions(o: string) {
       onSuccess: pools,
     }),
     add: useMutation({
-      mutationFn: (x: {
+      mutationFn: ({
+        poolId,
+        ...member
+      }: {
         poolId: string
         candidateId: string
         sourceApplicationId?: string
       }) =>
         runAuthenticatedAuthMutation(c, (csrf) =>
-          addMember(o, x.poolId, x, csrf),
+          addMember(o, poolId, member, csrf),
         ),
       onSuccess: pools,
     }),

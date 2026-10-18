@@ -351,7 +351,12 @@ function OfferForm({
     if (mode === 'create') actions.create.mutate(clean, { onSuccess: onClose })
     else
       m.mutate(
-        { ...clean, id: offer!.id, expectedRevision: offer!.revision } as never,
+        {
+          ...clean,
+          id: offer!.id,
+          expectedRevision:
+            mode === 'edit' ? offer!.currentVersion!.revision : offer!.revision,
+        } as never,
         { onSuccess: onClose },
       )
   }

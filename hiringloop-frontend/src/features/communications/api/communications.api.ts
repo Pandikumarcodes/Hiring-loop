@@ -97,18 +97,16 @@ export async function createTemplate(
 export async function updateTemplate(
   organizationId: string,
   templateId: string,
-  input: TemplateInput,
+  input: TemplateInput & { expectedRevision: number },
   csrfToken: string,
 ) {
+  const { id: _routeId, ...body } = input as typeof input & { id?: unknown }
   const response = await apiRequest<{ data: CommunicationTemplateDto }>(
     `${base(organizationId)}/communication-templates/${encodeURIComponent(templateId)}`,
     {
       method: 'PATCH',
       headers: { 'X-CSRF-Token': csrfToken },
-      body: input as unknown as Record<
-        string,
-        import('../../../shared/types').JsonValue
-      >,
+      body: body as Record<string, import('../../../shared/types').JsonValue>,
     },
   )
   if (!record(response) || !record(response.data)) return invalid()

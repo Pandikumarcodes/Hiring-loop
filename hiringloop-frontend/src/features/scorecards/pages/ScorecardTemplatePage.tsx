@@ -96,6 +96,7 @@ export function ScorecardTemplatePage() {
             version={template.draft}
             busy={update.isPending || publish.isPending}
             conflict={conflict}
+            failed={Boolean(update.error || publish.error)}
             reload={() => void query.refetch()}
             save={(value) => update.mutate(value)}
             publish={() => setPublishing(true)}
@@ -171,6 +172,7 @@ function Editor({
   version,
   busy,
   conflict,
+  failed,
   reload,
   save,
   publish,
@@ -178,6 +180,7 @@ function Editor({
   version: TemplateVersion
   busy: boolean
   conflict: boolean
+  failed: boolean
   reload: () => void
   save: (value: {
     expectedRevision: number
@@ -353,6 +356,12 @@ function Editor({
         </div>
       ) : null}
       <div className="mt-5 flex gap-3">
+        {failed && !conflict ? (
+          <p role="alert" className="text-sm text-red-800">
+            We could not save or publish this scorecard. Review the form and try
+            again.
+          </p>
+        ) : null}
         <Button
           loading={busy}
           disabled={!title.trim()}

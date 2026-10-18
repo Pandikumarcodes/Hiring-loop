@@ -9,7 +9,7 @@ import {
   Input,
   Select,
 } from '../../../shared/components/ui'
-import { useMembers } from '../../team/hooks/queries'
+import { useEligibleInterviewParticipants } from '../hooks/queries'
 import type {
   InterviewDto,
   ScheduleInterviewInput,
@@ -65,7 +65,7 @@ export function InterviewFormDialog({
     [meetingUrl, setMeetingUrl] = useState(interview?.meetingUrl ?? ''),
     [location, setLocation] = useState(interview?.location ?? ''),
     [formError, setFormError] = useState('')
-  const members = useMembers(organizationId)
+  const members = useEligibleInterviewParticipants(organizationId)
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
     if (

@@ -4,6 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "test:e2e": "set PLAYWRIGHT_BROWSERS_PATH=0&& playwright test",
+    "test:e2e:headed": "set PLAYWRIGHT_BROWSERS_PATH=0&& playwright test --headed",
+    "test:e2e:report": "playwright show-report",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint .",
@@ -38,6 +41,7 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@playwright/test": "1.64.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.6",

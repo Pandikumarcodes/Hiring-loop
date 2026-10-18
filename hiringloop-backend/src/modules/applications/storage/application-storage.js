@@ -20,5 +20,6 @@ export function createUnavailableApplicationStorage() {
     createSignedPutUrl: unavailable,
     createSignedGetUrl: unavailable,
     headObject: unavailable,
+    readObjectPrefix: unavailable,
   };
 }

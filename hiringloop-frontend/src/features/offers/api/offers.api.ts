@@ -43,7 +43,7 @@ export const editOffer = (
   data(`${base(o)}/offers/${encodeURIComponent(id)}/draft`, {
     method: 'PATCH',
     headers: { 'X-CSRF-Token': csrf },
-    body: input as unknown as import('../../../shared/types').JsonObject,
+    body: offerEditBody(input),
   })
 export const reviseOffer = (
   o: string,
@@ -54,8 +54,14 @@ export const reviseOffer = (
   data<OfferDto>(`${base(o)}/offers/${encodeURIComponent(id)}/revisions`, {
     method: 'POST',
     headers: { 'X-CSRF-Token': csrf },
-    body: input as unknown as import('../../../shared/types').JsonObject,
+    body: offerEditBody(input),
   })
+const offerEditBody = (
+  input: OfferTermsInput & { expectedRevision: number },
+) => {
+  const { id: _routeId, ...body } = input as typeof input & { id?: unknown }
+  return body as import('../../../shared/types').JsonObject
+}
 export const sendOffer = (
   o: string,
   id: string,

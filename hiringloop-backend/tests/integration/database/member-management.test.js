@@ -71,6 +71,44 @@ async function createFixture() {
   return fixture;
 }
 
+async function holdOrganizationLock(organizationId) {
+  let markAcquired;
+  let release;
+  const acquired = new Promise((resolve) => (markAcquired = resolve));
+  const released = new Promise((resolve) => (release = resolve));
+  const task = prisma.$transaction(async (transaction) => {
+    await transaction.$queryRaw`
+      SELECT "id" FROM "Organization" WHERE "id" = ${organizationId} FOR UPDATE
+    `;
+    const [backend] = await transaction.$queryRaw`
+      SELECT pg_backend_pid()::int AS pid
+    `;
+    markAcquired(backend.pid);
+    await released;
+  });
+  return { pid: await acquired, release, task };
+}
+
+async function waitForOrganizationLockWaiters(blockerPid, expectedCount) {
+  const deadline = Date.now() + 4000;
+  let rows = [];
+  while (Date.now() < deadline) {
+    rows = await prisma.$queryRaw`
+      SELECT pid
+      FROM pg_stat_activity
+      WHERE datname = current_database()
+        AND pid <> pg_backend_pid()
+        AND ${blockerPid} = ANY(pg_blocking_pids(pid))
+        AND query ILIKE '%FOR UPDATE%'
+    `;
+    if (rows.length >= expectedCount) return;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  throw new Error(
+    `Expected ${expectedCount} organization-lock waiters; observed ${rows.length}`,
+  );
+}
+
 async function cleanupFixture(fixture) {
   await prisma.invitation.deleteMany({
     where: { organizationId: fixture.organizationId },
@@ -262,28 +300,37 @@ describe('member management database behavior', () => {
 
   it('serializes concurrent remove/demote operations against different Admins', async () => {
     const fixture = await createFixture();
-    const results = await Promise.all([
-      repository.removeMembership({
+    const holder = await holdOrganizationLock(fixture.organizationId);
+    try {
+      const removal = repository.removeMembership({
         organizationId: fixture.organizationId,
         membershipId: fixture.membershipAId,
-      }),
-      repository.updateMembershipRole({
+      });
+      const demotion = repository.updateMembershipRole({
         organizationId: fixture.organizationId,
         membershipId: fixture.membershipBId,
         role: 'RECRUITER',
-      }),
-    ]);
-    expect(results.filter(({ outcome }) => outcome === 'removed')).toHaveLength(
-      1,
-    );
-    expect(
-      results.filter(({ outcome }) => outcome === 'final_admin'),
-    ).toHaveLength(1);
-    expect(
-      await prisma.organizationMembership.count({
-        where: { organizationId: fixture.organizationId, role: 'ADMIN' },
-      }),
-    ).toBe(1);
+      });
+      // Prisma's local adapter may admit only one interactive transaction at
+      // this boundary; prove lock contention without assuming two waiters are
+      // simultaneously visible in pg_stat_activity.
+      await waitForOrganizationLockWaiters(holder.pid, 1);
+      holder.release();
+      const results = await Promise.all([removal, demotion]);
+      const outcomes = results.map(({ outcome }) => outcome).sort();
+      expect(outcomes).toEqual([
+        'final_admin',
+        expect.stringMatching(/removed|updated/),
+      ]);
+      expect(
+        await prisma.organizationMembership.count({
+          where: { organizationId: fixture.organizationId, role: 'ADMIN' },
+        }),
+      ).toBe(1);
+    } finally {
+      holder.release();
+      await holder.task;
+    }
   });
 
   it('serializes concurrent Admin self-leave/removal attempts', async () => {

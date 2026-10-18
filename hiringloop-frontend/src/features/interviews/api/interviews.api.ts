@@ -3,6 +3,7 @@ import { ApiError } from '../../../shared/lib/apiErrors'
 import type { JsonValue } from '../../../shared/types'
 import type {
   InterviewDto,
+  InterviewParticipantOption,
   RescheduleInterviewInput,
   ScheduleInterviewInput,
   UpdateInterviewInput,
@@ -43,6 +44,26 @@ export async function listApplicationInterviews(
       { signal },
     ),
   )
+}
+export async function listEligibleInterviewParticipants(
+  o: string,
+  signal?: AbortSignal,
+) {
+  const response = await apiRequest(`${base(o)}/interviews/participants`, {
+    signal,
+  })
+  const value =
+    record(response) && record(response.data)
+      ? response.data.participants
+      : null
+  if (!Array.isArray(value)) {
+    throw new ApiError({
+      kind: 'response',
+      code: 'INVALID_API_RESPONSE',
+      message: 'The server returned an invalid interview participant response.',
+    })
+  }
+  return value as InterviewParticipantOption[]
 }
 export async function listInterviews(
   o: string,

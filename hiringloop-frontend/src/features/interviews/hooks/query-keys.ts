@@ -6,4 +6,6 @@ export const interviewKeys = {
     ['interviews', 'calendar', organizationId, from, to, mine] as const,
   detail: (organizationId: string, interviewId: string) =>
     ['interviews', 'detail', organizationId, interviewId] as const,
+  participants: (organizationId: string) =>
+    ['interviews', 'participants', organizationId] as const,
 }

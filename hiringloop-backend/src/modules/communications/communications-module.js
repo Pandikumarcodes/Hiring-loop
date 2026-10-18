@@ -32,7 +32,7 @@ const sendBody = z
     idempotencyKey: id,
   })
   .strict();
-const templateBody = z
+export const templateBody = z
   .object({
     name: z.string().trim().min(1).max(160),
     subject: z.string().trim().min(1).max(998),
@@ -40,7 +40,7 @@ const templateBody = z
     expectedRevision: z.number().int().positive().optional(),
   })
   .strict();
-const templateUpdateBody = templateBody.extend({
+export const templateUpdateBody = templateBody.extend({
   expectedRevision: z.number().int().positive(),
 });
 const page = z.object({

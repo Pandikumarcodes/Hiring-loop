@@ -160,7 +160,25 @@ export function createOfferUseCases({
           requestId,
         });
       } catch (error) {
-        if (error?.code !== 'P2002') throw error;
+        const target = error?.meta?.target;
+        const idempotencyFields = [
+          'organizationId',
+          'applicationId',
+          'createdByUserId',
+          'idempotencyKey',
+        ];
+        if (
+          error?.code !== 'P2002' ||
+          !(
+            target === 'Communication_idempotency_key' ||
+            error.meta?.driverAdapterError?.cause?.constraint?.index ===
+              'Communication_idempotency_key' ||
+            (Array.isArray(target) &&
+              target.length === idempotencyFields.length &&
+              idempotencyFields.every((field) => target.includes(field)))
+          )
+        )
+          throw error;
         const communication = await offerRepository.findCommunication({
           organizationId,
           applicationId: existingOffer.applicationId,
@@ -170,6 +188,8 @@ export function createOfferUseCases({
         if (!communication) throw error;
         result = { outcome: 'existing', offer: existingOffer, communication };
       }
+      if (result.outcome === 'missing')
+        throw fail(404, 'OFFER_NOT_FOUND', 'Offer not found');
       if (result.outcome === 'recipient_missing')
         throw fail(
           409,
