@@ -10,6 +10,7 @@ import {
   Button,
   Card,
   Input,
+  PageContainer,
   PageHeader,
   Select,
 } from '../../../shared/components/ui'
@@ -39,6 +40,7 @@ import {
   localDateString,
 } from '../utils/analytics-utils'
 import { can } from '../../jobs/utils/job-utils'
+import { isApiError } from '../../../shared/lib/apiErrors'
 
 const jobListFilters: JobFilters = {
   page: 1,
@@ -106,7 +108,26 @@ export function AnalyticsPage() {
   }
 
   if (organization.isPending) return <LoadingState label="Loading analytics" />
-  if (organization.isError || !allowed)
+  if (organization.isError) {
+    const denied =
+      isApiError(organization.error) && organization.error.status === 403
+    return (
+      <Page>
+        <ErrorState
+          title={
+            denied ? 'Analytics access unavailable' : 'Analytics unavailable'
+          }
+          description={
+            denied
+              ? 'You do not have permission to view analytics in this workspace.'
+              : 'We could not load this workspace. Please try again.'
+          }
+          onRetry={denied ? undefined : () => void organization.refetch()}
+        />
+      </Page>
+    )
+  }
+  if (!allowed)
     return (
       <Page>
         <ErrorState
@@ -130,6 +151,13 @@ export function AnalyticsPage() {
         validRange={validRange}
         onChange={update}
       />
+      {jobs.isError ? (
+        <ErrorState
+          title="Job filter unavailable"
+          description="Analytics are still available, but we could not load jobs for filtering."
+          onRetry={() => void jobs.refetch()}
+        />
+      ) : null}
       {!validRange ? (
         <p
           className="mb-6 rounded-control border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
@@ -159,11 +187,7 @@ export function AnalyticsPage() {
 }
 
 function Page({ children }: { children: React.ReactNode }) {
-  return (
-    <section className="mx-auto w-full max-w-7xl min-w-0 px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
-      {children}
-    </section>
-  )
+  return <PageContainer className="py-10 lg:py-14">{children}</PageContainer>
 }
 
 function FilterBar({

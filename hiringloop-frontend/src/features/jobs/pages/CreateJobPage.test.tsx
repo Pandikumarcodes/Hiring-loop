@@ -8,10 +8,15 @@ import type { JobDetailDto } from '../types/job.types'
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   transition: vi.fn(),
+  organization: vi.fn(),
+  pending: { value: false },
 }))
 
 vi.mock('../hooks/mutations', () => ({
-  useCreateJob: () => ({ mutateAsync: mocks.create, isPending: false }),
+  useCreateJob: () => ({
+    mutateAsync: mocks.create,
+    isPending: mocks.pending.value,
+  }),
   useTransitionJob: () => ({
     mutateAsync: mocks.transition,
     isPending: false,
@@ -19,11 +24,7 @@ vi.mock('../hooks/mutations', () => ({
 }))
 
 vi.mock('../../organizations/hooks/queries', () => ({
-  useOrganization: () => ({
-    isPending: false,
-    isError: false,
-    data: { permissions: ['job:create'] },
-  }),
+  useOrganization: mocks.organization,
 }))
 
 import { CreateJobPage } from './CreateJobPage'
@@ -79,7 +80,7 @@ function renderPage() {
 
 async function completeReadyJob() {
   const user = userEvent.setup()
-  await user.type(screen.getByLabelText('Job title'), 'Engineer')
+  await user.type(screen.getByLabelText(/Job title/), 'Engineer')
   await user.selectOptions(
     screen.getByLabelText('Employment type'),
     'FULL_TIME',
@@ -92,6 +93,12 @@ async function completeReadyJob() {
 beforeEach(() => {
   mocks.create.mockReset()
   mocks.transition.mockReset()
+  mocks.pending.value = false
+  mocks.organization.mockReturnValue({
+    isPending: false,
+    isError: false,
+    data: { permissions: ['job:create'] },
+  })
 })
 afterEach(cleanup)
 
@@ -121,12 +128,59 @@ describe('Create Job navigation', () => {
       `/app/organizations/${organizationId}/jobs/${jobId}|`,
     )
     expect(mocks.create).toHaveBeenCalledTimes(1)
+    expect(mocks.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Engineer',
+        employmentType: 'FULL_TIME',
+        workplaceType: 'REMOTE',
+        description: 'Build things',
+      }),
+    )
     expect(mocks.transition).toHaveBeenCalledTimes(1)
     expect(mocks.transition).toHaveBeenCalledWith({
       action: 'open',
       expectedVersion: 1,
       targetJobId: jobId,
     })
+  })
+
+  test('shows a useful failure without losing entered job fields', async () => {
+    mocks.create.mockRejectedValue(new Error('offline'))
+    renderPage()
+    const user = await completeReadyJob()
+    expect(screen.getByRole('link', { name: 'Jobs' })).toHaveAttribute(
+      'href',
+      `/app/organizations/${organizationId}/jobs`,
+    )
+    await user.click(screen.getByRole('button', { name: 'Save draft' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'We could not create this job.',
+    )
+    expect(screen.getByLabelText(/Job title/)).toHaveValue('Engineer')
+    expect(mocks.create).toHaveBeenCalledTimes(1)
+  })
+
+  test('keeps actions disabled while saving and denies users without create access', () => {
+    mocks.pending.value = true
+    renderPage()
+    expect(screen.getByRole('button', { name: 'Save draft' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Save & open' })).toBeDisabled()
+    cleanup()
+    mocks.pending.value = false
+    mocks.organization.mockReturnValue({
+      isPending: false,
+      isError: false,
+      data: { permissions: [] },
+    })
+    renderPage()
+    expect(
+      screen.getByText(
+        'You do not have permission to create jobs in this workspace.',
+      ),
+    ).toBeVisible()
+    expect(
+      screen.queryByRole('button', { name: 'Save draft' }),
+    ).not.toBeInTheDocument()
   })
 
   test('keeps the created Draft and routes to edit when opening fails', async () => {

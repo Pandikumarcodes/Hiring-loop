@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Button } from '../../../shared/components/ui'
+import { Badge, Button } from '../../../shared/components/ui'
 import { ErrorState } from '../../../shared/components/feedback'
 import { isApiError } from '../../../shared/lib/apiErrors'
 import { useScheduleInterview } from '../hooks/mutations'
@@ -57,7 +57,7 @@ export function ApplicationInterviews({
   ] as const
   return (
     <section className="rounded-card border border-border bg-surface p-5 shadow-sm sm:p-6">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-bold">Interviews</h2>
         {canSchedule ? (
           <Button onClick={() => setOpen(true)}>Schedule interview</Button>
@@ -73,10 +73,19 @@ export function ApplicationInterviews({
                   {items.map((i) => (
                     <Link
                       key={i.id}
-                      className="rounded-control border border-border p-3 hover:bg-primary-soft focus-visible:outline-3 focus-visible:outline-primary-dark"
+                      className="min-w-0 rounded-control border border-border p-3 transition-colors hover:bg-primary-soft focus-visible:outline-3 focus-visible:outline-primary-dark focus-visible:outline-offset-2"
                       to={`/app/organizations/${organizationId}/interviews/${i.id}`}
                     >
-                      <strong>{i.title}</strong>
+                      <span className="flex flex-wrap items-center justify-between gap-2">
+                        <strong className="break-words">{i.title}</strong>
+                        <Badge
+                          variant={
+                            i.status === 'CANCELLED' ? 'neutral' : 'success'
+                          }
+                        >
+                          {i.status === 'CANCELLED' ? 'Cancelled' : 'Scheduled'}
+                        </Badge>
+                      </span>
                       <p className="mt-1 text-sm text-text-secondary">
                         {interviewTime(i)} · {i.participants.length} interviewer
                         {i.participants.length === 1 ? '' : 's'}{' '}

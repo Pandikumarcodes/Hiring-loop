@@ -1,13 +1,24 @@
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { Button, PageHeader } from '../../../shared/components/ui'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import {
+  Badge,
+  Button,
+  PageContainer,
+  PageHeader,
+} from '../../../shared/components/ui'
 import { ErrorState, LoadingState } from '../../../shared/components/feedback'
 import { isApiError } from '../../../shared/lib/apiErrors'
 import { JobForm } from '../components/JobForm'
 import { useUpdateJob } from '../hooks/mutations'
 import { useJob } from '../hooks/queries'
 import type { JobInput } from '../types/job.types'
-import { can, detailToInput, jobError, validateJob } from '../utils/job-utils'
+import {
+  can,
+  detailToInput,
+  jobError,
+  jobTitle,
+  validateJob,
+} from '../utils/job-utils'
 import { useOrganization } from '../../organizations/hooks/queries'
 import { jobRoutes } from '../utils/job-routes'
 export function EditJobPage() {
@@ -22,21 +33,41 @@ export function EditJobPage() {
     Boolean(organizationId && jobId && mayUpdate),
   )
   const update = useUpdateJob(organizationId, jobId)
-  const [value, setValue] = useState<JobInput | null>(null)
+  const [draft, setDraft] = useState<{
+    key: string
+    value: JobInput
+    version: number
+  } | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [message, setMessage] = useState(
     (location.state as { notice?: string } | null)?.notice ?? '',
   )
   const conflict =
     isApiError(update.error) && update.error.code === 'JOB_VERSION_CONFLICT'
+  const draftKey = `${organizationId}:${jobId}`
   // Initialize once from server state; later cache changes must not erase edits.
   useEffect(() => {
-    // oxlint-disable-next-line react/set-state-in-effect -- protect in-progress edits
-    if (query.data && !value) setValue(detailToInput(query.data))
-  }, [query.data, value])
+    if (query.data && draft?.key !== draftKey)
+      // oxlint-disable-next-line react/set-state-in-effect -- initialize once while protecting in-progress edits
+      setDraft({
+        key: draftKey,
+        value: detailToInput(query.data),
+        version: query.data.version,
+      })
+  }, [query.data, draft, draftKey])
   if (organization.isPending)
     return <LoadingState label="Checking job access" />
-  if (organization.isError || !mayUpdate)
+  if (organization.isError)
+    return (
+      <Wrap>
+        <ErrorState
+          title="Workspace unavailable"
+          description="We could not check job access."
+          onRetry={() => void organization.refetch()}
+        />
+      </Wrap>
+    )
+  if (!mayUpdate)
     return (
       <Wrap>
         <ErrorState
@@ -54,7 +85,7 @@ export function EditJobPage() {
         />
       </Wrap>
     )
-  if (query.isPending || !query.data || !value)
+  if (query.isPending || !query.data || !draft || draft.key !== draftKey)
     return <LoadingState label="Loading job" />
   if (query.data.status === 'ARCHIVED')
     return (
@@ -72,9 +103,11 @@ export function EditJobPage() {
         />
       </Wrap>
     )
-  const currentValue = value
+  const currentValue = draft.value
+  const currentVersion = draft.version
   const currentJob = query.data
   async function save() {
+    if (update.isPending) return
     const next = validateJob(currentValue)
     setErrors(next)
     setMessage('')
@@ -82,7 +115,7 @@ export function EditJobPage() {
     try {
       await update.mutateAsync({
         ...currentValue,
-        expectedVersion: currentJob.version,
+        expectedVersion: currentVersion,
       })
       navigate(jobRoutes.detail(organizationId, jobId), { replace: true })
     } catch (error) {
@@ -91,15 +124,33 @@ export function EditJobPage() {
   }
   async function reload() {
     const latest = await query.refetch()
-    if (latest.data) setValue(detailToInput(latest.data))
+    if (latest.isSuccess)
+      setDraft({
+        key: draftKey,
+        value: detailToInput(latest.data),
+        version: latest.data.version,
+      })
     update.reset()
     setMessage('')
   }
   return (
     <Wrap>
       <PageHeader
-        title="Edit job"
-        description="Update the role details. Lifecycle status is managed separately."
+        breadcrumbs={
+          <Link
+            className="font-semibold text-text-secondary hover:text-primary-dark hover:underline"
+            to={jobRoutes.detail(organizationId, jobId)}
+          >
+            {jobTitle(currentJob.title)}
+          </Link>
+        }
+        title={`Edit ${jobTitle(currentJob.title)}`}
+        description={
+          <span className="inline-flex flex-wrap items-center gap-2">
+            Update the role details. Lifecycle status is managed separately.{' '}
+            <Badge variant="neutral">{currentJob.status}</Badge>
+          </span>
+        }
       />
       {message ? (
         <div
@@ -117,11 +168,11 @@ export function EditJobPage() {
         </div>
       ) : null}
       <JobForm
-        value={value}
+        value={draft.value}
         errors={errors}
         busy={update.isPending}
         submitLabel="Save changes"
-        onChange={setValue}
+        onChange={(value) => setDraft({ ...draft, value })}
         onSubmit={() => void save()}
         onCancel={() => navigate(jobRoutes.detail(organizationId, jobId))}
       />
@@ -129,7 +180,5 @@ export function EditJobPage() {
   )
 }
 const Wrap = ({ children }: { children: React.ReactNode }) => (
-  <section className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 lg:py-14">
-    {children}
-  </section>
+  <PageContainer width="standard">{children}</PageContainer>
 )

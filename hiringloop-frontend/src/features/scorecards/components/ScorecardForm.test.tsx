@@ -86,4 +86,46 @@ describe('ScorecardForm', () => {
     await user.click(screen.getByRole('button', { name: 'Submit Scorecard' }))
     expect(submit).toHaveBeenCalled()
   })
+
+  test('shows existing responses and disables duplicate writes while saving', () => {
+    const save = vi.fn(),
+      submit = vi.fn()
+    render(
+      <ScorecardForm
+        scorecard={{
+          ...scorecard,
+          responses: [
+            {
+              criterionId: 'rating',
+              ratingValue: 4,
+              textValue: null,
+              comment: null,
+            },
+            {
+              criterionId: 'text',
+              ratingValue: null,
+              textValue: 'Existing assessment',
+              comment: null,
+            },
+          ],
+          overallRecommendation: 'YES',
+        }}
+        busy
+        error={undefined}
+        onSave={save}
+        onSubmit={submit}
+      />,
+    )
+    expect(screen.getByRole('radio', { name: '4' })).toBeChecked()
+    expect(screen.getByRole('radio', { name: 'YES' })).toBeChecked()
+    expect(
+      screen.getByRole('textbox', { name: 'Design response' }),
+    ).toHaveValue('Existing assessment')
+    expect(screen.getByRole('button', { name: 'Save Draft' })).toBeDisabled()
+    expect(
+      screen.getByRole('button', { name: 'Submit Scorecard' }),
+    ).toBeDisabled()
+    expect(save).not.toHaveBeenCalled()
+    expect(submit).not.toHaveBeenCalled()
+  })
 })

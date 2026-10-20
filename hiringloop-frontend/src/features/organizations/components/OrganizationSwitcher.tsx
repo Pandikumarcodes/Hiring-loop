@@ -1,24 +1,23 @@
+import { useId } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { LoadingIndicator } from '../../../shared/components/feedback'
 import { Select } from '../../../shared/components/ui'
 import { useOrganization, useOrganizations } from '../hooks/queries'
-import { isOrganizationId } from '../utils/organization-utils'
+import { organizationIdFromPath } from '../utils/organization-utils'
 
-function routeOrganizationId(pathname: string): string | undefined {
-  const segments = pathname.split('/').filter(Boolean)
-  const id =
-    segments[0] === 'app' && segments[1] === 'organizations'
-      ? segments[2]
-      : undefined
-  return isOrganizationId(id) ? id : undefined
-}
-
-export function OrganizationSwitcher() {
+export function OrganizationSwitcher({
+  compact = false,
+  onNavigate,
+}: {
+  compact?: boolean
+  onNavigate?: () => void
+}) {
+  const selectId = useId()
   const location = useLocation()
   const navigate = useNavigate()
   const organizations = useOrganizations()
-  const currentId = routeOrganizationId(location.pathname)
+  const currentId = organizationIdFromPath(location.pathname)
   const currentOrganization = useOrganization(
     currentId ?? '',
     Boolean(currentId),
@@ -35,9 +34,21 @@ export function OrganizationSwitcher() {
     : organizations.data[0]
 
   return (
-    <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3 lg:max-w-3xl">
+    <div
+      className={
+        compact
+          ? 'flex min-w-0 flex-col items-stretch gap-2'
+          : 'flex min-w-0 flex-1 items-center gap-2 sm:gap-3 lg:max-w-3xl'
+      }
+    >
       {organizations.data.length === 1 ? (
-        <div className="flex min-w-0 max-w-[min(18rem,55vw)] flex-1 items-center gap-2">
+        <div
+          className={
+            compact
+              ? 'flex min-w-0 flex-col gap-1'
+              : 'flex min-w-0 max-w-[min(18rem,55vw)] flex-1 items-center gap-2'
+          }
+        >
           <span className="shrink-0 text-xs font-bold text-text-secondary">
             Workspace
           </span>
@@ -49,21 +60,29 @@ export function OrganizationSwitcher() {
           </span>
         </div>
       ) : (
-        <div className="flex min-w-0 flex-1 items-center gap-2">
+        <div
+          className={
+            compact
+              ? 'flex min-w-0 flex-col items-stretch gap-1'
+              : 'flex min-w-0 flex-1 items-center gap-2'
+          }
+        >
           <label
             className="shrink-0 text-xs font-bold text-text-secondary"
-            htmlFor="organization-switcher"
+            htmlFor={selectId}
           >
             Workspace
           </label>
           <Select
             className="min-w-0 flex-1 lg:max-w-[31.25rem]"
             aria-label="Switch organization"
-            id="organization-switcher"
+            id={selectId}
             value={current ? current.id : ''}
             onChange={(event) => {
-              if (event.target.value)
+              if (event.target.value) {
                 navigate(`/app/organizations/${event.target.value}`)
+                onNavigate?.()
+              }
             }}
           >
             {!current ? <option value="">Choose a workspace</option> : null}
@@ -76,8 +95,9 @@ export function OrganizationSwitcher() {
         </div>
       )}
       <Link
-        className="inline-flex min-h-11 shrink-0 items-center rounded-control border border-teal-200 bg-primary-soft px-3 text-xs font-bold text-primary-dark hover:bg-teal-100"
+        className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-1 rounded-control border border-teal-200 bg-primary-soft px-3 text-xs font-bold text-primary-dark hover:bg-teal-100 ${compact ? 'w-full' : ''}`}
         to="/app/organizations/new"
+        onClick={onNavigate}
       >
         <span aria-hidden="true">+</span> New workspace
       </Link>

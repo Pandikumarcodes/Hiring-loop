@@ -26,14 +26,17 @@ export function ScorecardReadOnly({
         .map((c) => {
           const r = byId.get(c.id)
           return (
-            <section key={c.id}>
+            <section
+              key={c.id}
+              className="min-w-0 rounded-card border border-border bg-surface p-4 sm:p-5"
+            >
               <h3 className="font-semibold">{c.label}</h3>
               {c.description ? (
                 <p className="mt-1 text-sm text-text-secondary">
                   {c.description}
                 </p>
               ) : null}
-              <p className="mt-2 whitespace-pre-wrap">
+              <p className="mt-2 whitespace-pre-wrap break-words">
                 {c.type === 'RATING'
                   ? r?.ratingValue
                     ? `${r.ratingValue} / 5`
@@ -48,7 +51,7 @@ export function ScorecardReadOnly({
             </section>
           )
         })}
-      <section>
+      <section className="min-w-0 rounded-card border border-border bg-surface p-4 sm:p-5">
         <h3 className="font-semibold">Overall recommendation</h3>
         <p className="mt-1">{recommendationLabel(recommendation)}</p>
         {comment ? (

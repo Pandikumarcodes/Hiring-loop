@@ -3,7 +3,20 @@ import { userEvent } from '@testing-library/user-event'
 import { describe, expect, test, vi } from 'vitest'
 
 import { EmptyState, ErrorState, LoadingIndicator } from './feedback'
-import { Badge, Button, Field, Input, PageHeader, Select, Textarea } from './ui'
+import {
+  Alert,
+  Badge,
+  Button,
+  DataTableShell,
+  Field,
+  FilterToolbar,
+  Input,
+  PageHeader,
+  PageContainer,
+  ListPagination,
+  Select,
+  Textarea,
+} from './ui'
 
 describe('shared UI', () => {
   test('Button preserves native semantics, click behavior, variants, and disabled state', async () => {
@@ -116,5 +129,117 @@ describe('shared UI', () => {
       screen.getByRole('heading', { name: 'A reusable page' }),
     ).toBeVisible()
     expect(screen.getByText('Ready')).toHaveClass('ui-badge--success')
+  })
+
+  test('page layout primitives expose breadcrumbs, action slots, filter summaries, and table captions', () => {
+    const { container } = render(
+      <PageContainer width="standard" data-testid="page-container">
+        <PageHeader
+          title="Hiring positions"
+          breadcrumbs={
+            <ol>
+              <li>Workspace</li>
+              <li>Jobs</li>
+            </ol>
+          }
+          primaryAction={<Button>Create job</Button>}
+          secondaryActions={<Button variant="secondary">Export</Button>}
+        />
+        <FilterToolbar
+          resultsSummary="24 results"
+          clearAction={<Button variant="ghost">Clear filters</Button>}
+        >
+          <Input aria-label="Search records" />
+        </FilterToolbar>
+        <DataTableShell caption="Hiring positions">
+          <thead>
+            <tr>
+              <th scope="col">Title</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Engineer</td>
+            </tr>
+          </tbody>
+        </DataTableShell>
+      </PageContainer>,
+    )
+
+    expect(screen.getByTestId('page-container')).toHaveClass('max-w-6xl')
+    expect(
+      screen.getByRole('navigation', { name: 'Breadcrumb' }),
+    ).toHaveTextContent('WorkspaceJobs')
+    expect(
+      screen.getByRole('heading', { name: 'Hiring positions' }),
+    ).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Create job' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Export' })).toBeVisible()
+    expect(
+      screen.getByRole('group', { name: 'List filters' }),
+    ).toHaveTextContent('24 results')
+    expect(container.querySelector('caption')).toHaveTextContent(
+      'Hiring positions',
+    )
+  })
+
+  test('list pagination reports authoritative totals and disables boundary controls', async () => {
+    const user = userEvent.setup()
+    const onPageChange = vi.fn()
+    const { rerender } = render(
+      <ListPagination
+        page={2}
+        pageSize={25}
+        totalItems={51}
+        totalPages={3}
+        onPageChange={onPageChange}
+      />,
+    )
+    expect(screen.getByText('Showing 26–50 of 51 · Page 2 of 3')).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Next' }))
+    expect(onPageChange).toHaveBeenCalledWith(3)
+    expect(screen.getByRole('button', { name: 'Previous' })).toBeEnabled()
+    rerender(
+      <ListPagination
+        page={3}
+        pageSize={25}
+        totalItems={51}
+        totalPages={3}
+        onPageChange={onPageChange}
+      />,
+    )
+    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
+    rerender(
+      <ListPagination
+        page={1}
+        pageSize={25}
+        totalItems={51}
+        totalPages={3}
+        onPageChange={onPageChange}
+      />,
+    )
+    expect(screen.getByRole('button', { name: 'Previous' })).toBeDisabled()
+  })
+
+  test('semantic status styles preserve accessible content and native busy behavior', async () => {
+    const user = userEvent.setup()
+    const onClick = vi.fn()
+    render(
+      <>
+        <Alert variant="warning">Review required</Alert>
+        <Badge variant="info">Scheduled</Badge>
+        <Button loading onClick={onClick}>
+          Saving
+        </Button>
+      </>,
+    )
+
+    expect(screen.getByText('Review required')).toHaveClass('bg-warning-soft')
+    expect(screen.getByText('Scheduled')).toHaveClass('ui-badge--info')
+    const button = screen.getByRole('button', { name: 'Saving' })
+    expect(button).toBeDisabled()
+    expect(button).toHaveAttribute('aria-busy', 'true')
+    await user.click(button)
+    expect(onClick).not.toHaveBeenCalled()
   })
 })

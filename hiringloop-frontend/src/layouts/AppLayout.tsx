@@ -1,105 +1,209 @@
-import { Link, Outlet, useNavigate } from 'react-router-dom'
-import { ChevronDown } from 'lucide-react'
+import { useState } from 'react'
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { ChevronDown, ChevronRight, Menu } from 'lucide-react'
+
 import { AuthAlert } from '../features/auth/components'
 import { useLogout } from '../features/auth/hooks/mutations'
 import { useCurrentUser } from '../features/auth/hooks/queries'
 import { genericMutationError } from '../features/auth/utils/ui-utils'
-import { OrganizationSwitcher } from '../features/organizations'
+import { useOrganization } from '../features/organizations/hooks/queries'
+import { organizationIdFromPath } from '../features/organizations/utils/organization-utils'
 import { NotificationBell } from '../features/notifications'
-import { BrandMark } from '../features/auth/components/BrandMark'
 import {
   Avatar,
   AvatarFallback,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../shared/components/ui'
+import { AppSidebar } from './AppSidebar'
+import { currentNavigationLabel, workspacePath } from './app-navigation'
 
 export function AppLayout() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const organizationId = organizationIdFromPath(location.pathname)
+  const organizationQuery = useOrganization(
+    organizationId ?? '',
+    Boolean(organizationId),
+  )
+  const organization =
+    organizationId && organizationQuery.isSuccess
+      ? organizationQuery.data
+      : undefined
+  const home =
+    organizationId && organization ? workspacePath(organizationId) : '/app'
   const logout = useLogout()
   const currentUser = useCurrentUser()
   const email = currentUser.user?.email ?? 'Account'
   const initial = email[0]?.toUpperCase() ?? 'P'
+  const section =
+    organizationId && organization
+      ? currentNavigationLabel(
+          location.pathname,
+          organizationId,
+          organization.permissions,
+        )
+      : location.pathname === '/app/organizations/new'
+        ? 'New workspace'
+        : 'Workspaces'
+
   async function handleLogout() {
     if (logout.isPending) return
     try {
       await logout.mutateAsync()
       navigate('/login', { replace: true })
     } catch {
-      /* shown in shell */
+      // The shell displays the mutation error.
     }
   }
+
+  const sidebarProps = {
+    organizationId,
+    organization,
+    organizationPending: Boolean(organizationId && organizationQuery.isPending),
+    organizationError: Boolean(organizationId && organizationQuery.isError),
+    email,
+    logoutPending: logout.isPending,
+    onLogout: () => void handleLogout(),
+  }
+
   return (
-    <div className="app-frame min-h-dvh bg-background">
-      <header className="border-b border-border bg-surface shadow-sm">
-        <div className="mx-auto grid w-full max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 px-4 py-2.5 sm:px-6 lg:grid lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-6 lg:px-8">
-          <Link
-            className="inline-flex shrink-0 items-center text-primary-dark"
-            to="/"
-            aria-label="HiringLoop home"
-          >
-            <BrandMark className="app-brand" />
-          </Link>
-          <nav
-            aria-label="Application shell navigation"
-            className="col-span-2 row-start-2 flex min-w-0 items-center gap-2 lg:col-start-2 lg:col-span-1 lg:row-start-1 lg:justify-end lg:gap-4"
-          >
-            <OrganizationSwitcher />
-          </nav>
-          <div className="flex items-center gap-1">
-            <NotificationBell />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-control p-1 text-text-primary hover:bg-primary-soft focus-visible:outline-3 focus-visible:outline-primary-dark focus-visible:outline-offset-2"
-                  aria-label={`Open account menu for ${email}`}
-                >
-                  <Avatar>
-                    <AvatarFallback>{initial}</AvatarFallback>
-                  </Avatar>
-                  <ChevronDown
-                    className="h-4 w-4 text-text-secondary"
+    <div className="app-frame min-h-dvh min-w-0 bg-background lg:pl-64">
+      <a className="skip-link" href="#main-content">
+        Skip to main content
+      </a>
+      <aside
+        aria-label="Workspace sidebar"
+        className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-border bg-surface lg:block"
+      >
+        <AppSidebar {...sidebarProps} />
+      </aside>
+
+      <div className="flex min-h-dvh min-w-0 flex-col">
+        <header className="sticky top-0 z-30 border-b border-border bg-surface/95 shadow-surface backdrop-blur-sm">
+          <div className="flex min-h-16 min-w-0 items-center gap-3 px-4 sm:px-6 lg:px-8">
+            <MobileNavigation key={location.pathname} {...sidebarProps} />
+            <div className="min-w-0 flex-1">
+              {organization ? (
+                <div className="flex min-w-0 items-center gap-1 text-sm">
+                  <Link
+                    className="min-w-0 truncate font-semibold text-text-secondary hover:text-primary-dark"
+                    to={home}
+                    title={organization.name}
+                  >
+                    {organization.name}
+                  </Link>
+                  <ChevronRight
+                    className="h-4 w-4 shrink-0 text-text-secondary"
                     aria-hidden="true"
                   />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" aria-label="Account menu">
-                <div className="flex min-w-0 items-center gap-3 px-3 py-3">
-                  <Avatar>
-                    <AvatarFallback>{initial}</AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0">
-                    <strong className="block truncate text-sm" title={email}>
-                      {email}
-                    </strong>
-                    <span className="text-xs text-text-secondary">
-                      Signed in account
-                    </span>
-                  </div>
+                  <span className="min-w-0 truncate font-semibold text-text-primary">
+                    {section}
+                  </span>
                 </div>
-                <DropdownMenuSeparator className="my-1 bg-border" />
-                <DropdownMenuItem
-                  disabled={logout.isPending}
-                  onSelect={() => void handleLogout()}
-                >
-                  {logout.isPending ? 'Signing out…' : 'Sign out'}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              ) : (
+                <span className="block truncate text-sm font-semibold text-text-primary">
+                  {organizationId && organizationQuery.isPending
+                    ? 'Loading workspace…'
+                    : organizationId && organizationQuery.isError
+                      ? 'Workspace unavailable'
+                      : section}
+                </span>
+              )}
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              <NotificationBell
+                enabled={Boolean(
+                  organization?.permissions?.includes('notification:view-own'),
+                )}
+              />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-control p-1 text-text-primary hover:bg-primary-soft focus-visible:outline-3 focus-visible:outline-primary-dark focus-visible:outline-offset-2"
+                    aria-label={`Open account menu for ${email}`}
+                  >
+                    <Avatar>
+                      <AvatarFallback>{initial}</AvatarFallback>
+                    </Avatar>
+                    <ChevronDown
+                      className="h-4 w-4 text-text-secondary"
+                      aria-hidden="true"
+                    />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" aria-label="Account menu">
+                  <div className="flex min-w-0 items-center gap-3 px-3 py-3">
+                    <Avatar>
+                      <AvatarFallback>{initial}</AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <strong className="block truncate text-sm" title={email}>
+                        {email}
+                      </strong>
+                      <span className="text-xs text-text-secondary">
+                        Signed in account
+                      </span>
+                    </div>
+                  </div>
+                  <DropdownMenuSeparator className="my-1 bg-border" />
+                  <DropdownMenuItem
+                    disabled={logout.isPending}
+                    onSelect={() => void handleLogout()}
+                  >
+                    {logout.isPending ? 'Signing out…' : 'Sign out'}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
-        </div>
-      </header>
-      {logout.isError ? (
-        <AuthAlert>
-          {genericMutationError(logout.error)} Please try signing out again.
-        </AuthAlert>
-      ) : null}
-      <main id="main-content" tabIndex={-1} className="min-w-0 outline-none">
-        <Outlet />
-      </main>
+        </header>
+        {logout.isError ? (
+          <AuthAlert>
+            {genericMutationError(logout.error)} Please try signing out again.
+          </AuthAlert>
+        ) : null}
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="min-w-0 flex-1 outline-none"
+        >
+          <Outlet />
+        </main>
+      </div>
     </div>
+  )
+}
+
+function MobileNavigation(props: React.ComponentProps<typeof AppSidebar>) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <button
+          type="button"
+          className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-control text-text-primary hover:bg-primary-soft focus-visible:outline-3 focus-visible:outline-primary-dark lg:hidden"
+          aria-label="Open navigation"
+        >
+          <Menu className="h-5 w-5" aria-hidden="true" />
+        </button>
+      </DialogTrigger>
+      <DialogContent className="left-0 top-0 h-dvh max-h-dvh w-[min(18rem,calc(100vw-2rem))] max-w-none translate-x-0 translate-y-0 overflow-hidden rounded-none border-y-0 border-l-0 border-r border-border p-0 sm:w-64">
+        <DialogTitle className="sr-only">Workspace navigation</DialogTitle>
+        <DialogDescription className="sr-only">
+          Choose a workspace or open a HiringLoop page.
+        </DialogDescription>
+        <AppSidebar {...props} mobile onNavigate={() => setOpen(false)} />
+      </DialogContent>
+    </Dialog>
   )
 }

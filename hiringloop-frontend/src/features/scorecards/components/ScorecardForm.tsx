@@ -63,8 +63,10 @@ export function ScorecardForm({
   return (
     <form
       className="grid gap-6"
+      aria-busy={busy}
       onSubmit={(e) => {
         e.preventDefault()
+        if (busy) return
         if (incomplete) {
           setInvalid(true)
           return
@@ -73,7 +75,7 @@ export function ScorecardForm({
       }}
     >
       {t.instructions ? (
-        <p className="whitespace-pre-wrap text-text-secondary">
+        <p className="whitespace-pre-wrap rounded-control bg-surface-muted p-4 text-sm text-text-secondary">
           {t.instructions}
         </p>
       ) : null}
@@ -84,11 +86,16 @@ export function ScorecardForm({
           return (
             <fieldset
               key={c.id}
-              className="rounded-control border border-border p-4"
+              className="min-w-0 rounded-card border border-border bg-surface p-4 sm:p-5"
             >
-              <legend className="px-1 font-bold">
+              <legend className="px-1 text-base font-bold text-text-primary">
                 {c.label}
-                {c.required ? ' *' : ''}
+                {c.required ? (
+                  <>
+                    <span aria-hidden="true"> *</span>
+                    <span className="sr-only"> required</span>
+                  </>
+                ) : null}
               </legend>
               {c.description ? (
                 <p className="mb-3 text-sm text-text-secondary">
@@ -96,17 +103,20 @@ export function ScorecardForm({
                 </p>
               ) : null}
               {c.type === 'RATING' ? (
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-2">
                   {[1, 2, 3, 4, 5].map((v) => (
                     <label
                       key={v}
-                      className="inline-flex min-h-11 items-center gap-1"
+                      className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-2 rounded-control border border-border px-3 text-sm font-semibold transition-colors hover:bg-primary-soft focus-within:outline-3 focus-within:outline-primary-dark"
                     >
                       <input
                         type="radio"
                         name={`rating-${c.id}`}
                         checked={r?.ratingValue === v}
-                        onChange={() => change(c.id, { ratingValue: v })}
+                        onChange={() => {
+                          change(c.id, { ratingValue: v })
+                          setInvalid(false)
+                        }}
                       />
                       {v}
                     </label>
@@ -117,13 +127,14 @@ export function ScorecardForm({
                   aria-label={`${c.label} response`}
                   value={r?.textValue ?? ''}
                   maxLength={10000}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     change(c.id, { textValue: e.target.value || null })
-                  }
+                    setInvalid(false)
+                  }}
                 />
               )}
-              <label className="mt-3 block text-sm font-semibold">
-                Comment (optional)
+              <label className="mt-4 block text-sm font-semibold">
+                {c.label} comment (optional)
                 <Textarea
                   value={r?.comment ?? ''}
                   maxLength={5000}
@@ -135,16 +146,25 @@ export function ScorecardForm({
             </fieldset>
           )
         })}
-      <fieldset className="rounded-control border border-border p-4">
-        <legend className="px-1 font-bold">Overall Recommendation *</legend>
+      <fieldset className="min-w-0 rounded-card border border-border bg-surface p-4 sm:p-5">
+        <legend className="px-1 text-base font-bold text-text-primary">
+          Overall Recommendation <span aria-hidden="true">*</span>
+          <span className="sr-only"> required</span>
+        </legend>
         <div className="mt-2 flex flex-wrap gap-3">
           {choices.map((v) => (
-            <label key={v} className="inline-flex min-h-11 items-center gap-1">
+            <label
+              key={v}
+              className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-control border border-border px-3 text-sm font-semibold transition-colors hover:bg-primary-soft focus-within:outline-3 focus-within:outline-primary-dark"
+            >
               <input
                 type="radio"
                 name="recommendation"
                 checked={recommendation === v}
-                onChange={() => setRecommendation(v)}
+                onChange={() => {
+                  setRecommendation(v)
+                  setInvalid(false)
+                }}
               />
               {v.replaceAll('_', ' ')}
             </label>
@@ -170,12 +190,14 @@ export function ScorecardForm({
           {error}
         </p>
       ) : null}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3 border-t border-border pt-5">
         <Button
           type="button"
           variant="secondary"
           loading={busy}
-          onClick={() => onSave(responses, recommendation, comment)}
+          onClick={() => {
+            if (!busy) onSave(responses, recommendation, comment)
+          }}
         >
           Save Draft
         </Button>

@@ -1,20 +1,25 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { ApiError } from '../../../shared/lib/apiErrors'
 import { MyScorecardPage } from './MyScorecardPage'
 
 let conflict = false
 const query = vi.fn()
-vi.mock('react-router-dom', () => ({
+const saveMutation = vi.fn()
+vi.mock('react-router-dom', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('react-router-dom')>()),
   useParams: () => ({ organizationId: 'org', interviewId: 'interview' }),
 }))
 vi.mock('../hooks/queries', () => ({ useMyScorecard: () => query() }))
 vi.mock('../hooks/mutations', () => ({
   useSaveMyScorecard: () => ({
-    mutate: vi.fn(),
+    mutate: saveMutation,
     isPending: false,
+    isSuccess: false,
     isError: conflict,
+    reset: vi.fn(),
     error: conflict
       ? new ApiError({
           kind: 'response',
@@ -29,6 +34,7 @@ vi.mock('../hooks/mutations', () => ({
     isPending: false,
     isError: false,
     error: null,
+    reset: vi.fn(),
   }),
 }))
 const scorecard = {
@@ -66,6 +72,7 @@ describe('MyScorecardPage', () => {
   afterEach(cleanup)
   beforeEach(() => {
     conflict = false
+    saveMutation.mockClear()
     query.mockReturnValue({
       data: scorecard,
       isPending: false,
@@ -73,9 +80,15 @@ describe('MyScorecardPage', () => {
       refetch: vi.fn(),
     })
   })
+  const renderPage = () =>
+    render(
+      <MemoryRouter>
+        <MyScorecardPage />
+      </MemoryRouter>,
+    )
   test('shows a conflict-specific message and explicit reload without retrying', () => {
     conflict = true
-    render(<MyScorecardPage />)
+    renderPage()
     expect(screen.getByRole('alert')).toHaveTextContent(
       'changed in another session',
     )
@@ -84,11 +97,45 @@ describe('MyScorecardPage', () => {
     ).toBeInTheDocument()
   })
   test('uses an accessible submit confirmation dialog', async () => {
-    render(<MyScorecardPage />)
+    renderPage()
     const user = userEvent.setup()
     await user.click(screen.getByRole('radio', { name: '5' }))
     await user.click(screen.getByRole('radio', { name: 'YES' }))
     await user.click(screen.getByRole('button', { name: 'Submit Scorecard' }))
     expect(screen.getByRole('dialog')).toHaveTextContent('Submit scorecard?')
+  })
+  test('preserves unsaved responses and the original revision during background refetch', async () => {
+    const user = userEvent.setup()
+    const view = renderPage()
+    await user.click(screen.getByRole('radio', { name: '5' }))
+    await user.type(
+      screen.getByRole('textbox', { name: 'Overall Comments' }),
+      'My draft',
+    )
+
+    query.mockReturnValue({
+      data: { ...scorecard, revision: 2 },
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    })
+    view.rerender(
+      <MemoryRouter>
+        <MyScorecardPage />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByRole('radio', { name: '5' })).toBeChecked()
+    expect(
+      screen.getByRole('textbox', { name: 'Overall Comments' }),
+    ).toHaveValue('My draft')
+    await user.click(screen.getByRole('button', { name: 'Save Draft' }))
+    expect(saveMutation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        expectedRevision: 1,
+        overallComment: 'My draft',
+      }),
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    )
   })
 })

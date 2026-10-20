@@ -288,6 +288,45 @@ describe('candidate list', () => {
     )
   })
 
+  test('does not show previous workspace results or filter options while new tenant data loads', () => {
+    useCandidatesMock.mockReturnValue({
+      data: page,
+      isPending: false,
+      isError: false,
+      isPlaceholderData: true,
+      refetch: vi.fn(),
+    })
+    useJobsMock.mockReturnValue({
+      data: { jobs: [{ id: 'job-1', title: 'Senior Engineer' }] },
+      isPending: false,
+      isError: false,
+      isPlaceholderData: true,
+    })
+    usePipelineMock.mockReturnValue({
+      data: { stages: [{ id: 'stage-1', name: 'Phone screen' }] },
+      isPending: false,
+      isError: false,
+      isPlaceholderData: true,
+    })
+    renderAt(
+      <CandidatesPage />,
+      '/app/organizations/org-2/candidates?jobId=job-1&stageId=stage-1',
+    )
+
+    expect(
+      screen.getByRole('status', { name: 'Loading candidates' }),
+    ).toBeVisible()
+    expect(
+      screen.queryByRole('link', { name: 'Alice Applicant' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('combobox', { name: 'Job' }),
+    ).not.toHaveDisplayValue('Senior Engineer')
+    expect(
+      screen.getByRole('combobox', { name: 'Pipeline stage' }),
+    ).toBeDisabled()
+  })
+
   test('shows empty and denied states', () => {
     useCandidatesMock.mockReturnValue({
       data: { candidates: [], pagination: page.pagination },
@@ -336,6 +375,17 @@ describe('candidate and application details', () => {
     expect(
       screen.getByRole('heading', { name: 'Senior Engineer' }),
     ).toBeVisible()
+    expect(
+      screen.getByRole('navigation', { name: 'Application sections' }),
+    ).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Stage history' })).toHaveAttribute(
+      'href',
+      '#application-history',
+    )
+    expect(
+      screen.getByRole('link', { name: 'Candidate profile' }),
+    ).toHaveAttribute('href', '/app/organizations/org-1/candidates/candidate-1')
+    expect(screen.getAllByText('Alice Applicant')).toHaveLength(2)
     expect(screen.getByText('Phone screen')).toBeVisible()
     expect(screen.getByText('I enjoy building useful products.')).toBeVisible()
     expect(screen.getByText('Authorized')).toBeVisible()

@@ -223,4 +223,25 @@ describe('AnalyticsPage', () => {
       screen.getByRole('heading', { name: 'Analytics access unavailable' }),
     ).toBeVisible()
   })
+
+  test('offers a retry when the workspace lookup fails without denying access', () => {
+    const refetch = vi.fn()
+    setup()
+    useOrganizationMock.mockReturnValue({
+      isPending: false,
+      isError: true,
+      error: new Error('temporary failure'),
+      refetch,
+    })
+    render(
+      <MemoryRouter>
+        <AnalyticsPage />
+      </MemoryRouter>,
+    )
+    expect(
+      screen.getByRole('heading', { name: 'Analytics unavailable' }),
+    ).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    expect(refetch).toHaveBeenCalledOnce()
+  })
 })

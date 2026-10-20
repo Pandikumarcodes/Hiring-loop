@@ -19,6 +19,9 @@ const mocks = vi.hoisted(() => ({
 vi.mock('../../organizations/hooks/queries', () => ({
   useOrganization: mocks.organization,
 }))
+vi.mock('../../jobs/hooks/queries', () => ({
+  useJob: () => ({ data: { title: 'Engineer' }, isPending: false }),
+}))
 vi.mock('../hooks/queries', () => ({ useApplicationForm: mocks.form }))
 vi.mock('../hooks/mutations', () => ({
   useCreateDraft: () => ({
@@ -121,6 +124,7 @@ function ready(
   permissions = ['application-form:view', 'application-form:configure'],
   data = builder(),
 ) {
+  mocks.refetch.mockResolvedValue({ isSuccess: true, data })
   mocks.organization.mockReturnValue({
     isPending: false,
     isError: false,
@@ -188,6 +192,10 @@ describe('Application Form Builder page', () => {
     ready(undefined, builder(false))
     page()
     expect(screen.getByText('Published V1')).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Engineer' })).toHaveAttribute(
+      'href',
+      '/app/organizations/org/jobs/job',
+    )
     expect(
       screen.getByText(
         'No custom questions yet. Select Edit form to create a draft.',
@@ -515,5 +523,40 @@ describe('Application Form Builder page', () => {
       screen.queryByRole('button', { name: 'Publish draft' }),
     ).not.toBeInTheDocument()
     expect(mocks.add).not.toHaveBeenCalled()
+  })
+
+  test('preserves a question edit through refetch and failed save without adopting a newer revision', async () => {
+    const user = userEvent.setup()
+    ready()
+    mocks.update.mockRejectedValueOnce(new Error('offline'))
+    const view = page()
+    await user.click(screen.getByRole('button', { name: 'Edit Portfolio' }))
+    const label = screen.getByRole('textbox', { name: /Question/ })
+    await user.clear(label)
+    await user.type(label, 'Portfolio URL')
+    mocks.form.mockReturnValue({
+      isPending: false,
+      isError: false,
+      data: { ...builder(), draft: { ...draft, revision: 8 } },
+      refetch: mocks.refetch,
+    })
+    view.rerender(route())
+    expect(screen.getByRole('textbox', { name: /Question/ })).toHaveValue(
+      'Portfolio URL',
+    )
+    await user.click(screen.getByRole('button', { name: 'Save question' }))
+    expect(mocks.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        questionId: 'q1',
+        input: expect.objectContaining({
+          label: 'Portfolio URL',
+          expectedRevision: 7,
+        }),
+      }),
+    )
+    expect(screen.getByRole('dialog', { name: 'Edit question' })).toBeVisible()
+    expect(screen.getByRole('textbox', { name: /Question/ })).toHaveValue(
+      'Portfolio URL',
+    )
   })
 })

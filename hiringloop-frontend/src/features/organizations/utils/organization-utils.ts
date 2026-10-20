@@ -5,6 +5,15 @@ export function isOrganizationId(value: string | undefined): value is string {
   return Boolean(value && ORGANIZATION_ID_PATTERN.test(value))
 }
 
+export function organizationIdFromPath(pathname: string): string | undefined {
+  const segments = pathname.split('/').filter(Boolean)
+  const id =
+    segments[0] === 'app' && segments[1] === 'organizations'
+      ? segments[2]
+      : undefined
+  return isOrganizationId(id) ? id : undefined
+}
+
 export function organizationMutationError(error: unknown): string {
   if (
     error &&

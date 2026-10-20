@@ -50,7 +50,7 @@ export function InterviewFormDialog({
     [date, setDate] = useState(
       interview
         ? dateInput(interview.scheduledStartAt, tz)
-        : new Date().toISOString().slice(0, 10),
+        : dateInput(new Date().toISOString(), tz),
     ),
     [time, setTime] = useState(
       interview ? timeInput(interview.scheduledStartAt, tz) : '10:00',
@@ -65,14 +65,19 @@ export function InterviewFormDialog({
     [meetingUrl, setMeetingUrl] = useState(interview?.meetingUrl ?? ''),
     [location, setLocation] = useState(interview?.location ?? ''),
     [formError, setFormError] = useState('')
-  const members = useEligibleInterviewParticipants(organizationId)
+  const members = useEligibleInterviewParticipants(
+    organizationId,
+    mode !== 'reschedule',
+  )
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
+    if (busy) return
     if (
       !title.trim() ||
       !date ||
       !time ||
       !zone ||
+      !Number.isFinite(Number(minutes)) ||
       +minutes < 1 ||
       !ids.length
     ) {
@@ -105,7 +110,12 @@ export function InterviewFormDialog({
         <DialogDescription id="interview-form-description">
           Choose the interview details and assigned organization members.
         </DialogDescription>
-        <form className="mt-5 grid gap-4" onSubmit={submit} noValidate>
+        <form
+          className="mt-5 grid gap-5"
+          onSubmit={submit}
+          noValidate
+          aria-busy={busy}
+        >
           {error || formError ? (
             <p
               role="alert"
@@ -149,7 +159,11 @@ export function InterviewFormDialog({
                   </Select>
                 )}
               </Field>
-              <Field id="interview-duration" label="Duration" required>
+              <Field
+                id="interview-duration"
+                label="Duration (minutes)"
+                required
+              >
                 {(p) => (
                   <Select
                     id="interview-duration"
@@ -177,7 +191,12 @@ export function InterviewFormDialog({
                 </Field>
               ) : null}
               {mode === 'schedule' ? (
-                <Field id="interview-time" label="Start time" required>
+                <Field
+                  id="interview-time"
+                  label="Start time"
+                  helperText={`In ${zone}`}
+                  required
+                >
                   {(p) => (
                     <Input
                       id="interview-time"
@@ -208,7 +227,12 @@ export function InterviewFormDialog({
                   </Field>
                 ) : null}
                 {mode === 'reschedule' ? (
-                  <Field id="interview-time" label="Start time" required>
+                  <Field
+                    id="interview-time"
+                    label="Start time"
+                    helperText={`In ${zone}`}
+                    required
+                  >
                     {(p) => (
                       <Input
                         id="interview-time"
@@ -221,7 +245,12 @@ export function InterviewFormDialog({
                   </Field>
                 ) : null}
               </div>
-              <Field id="interview-timezone" label="Timezone" required>
+              <Field
+                id="interview-timezone"
+                label="Timezone"
+                helperText="Date and time are interpreted in this timezone."
+                required
+              >
                 {(p) => (
                   <Select
                     id="interview-timezone"
@@ -264,7 +293,7 @@ export function InterviewFormDialog({
             </Field>
           ) : null}
           {mode !== 'reschedule' ? (
-            <fieldset>
+            <fieldset className="rounded-control border border-border p-4">
               <legend className="font-semibold">
                 Interviewers <span aria-hidden="true">*</span>
               </legend>
@@ -281,7 +310,7 @@ export function InterviewFormDialog({
                   {members.data?.map((m) => (
                     <label
                       key={m.user.id}
-                      className="flex items-center gap-2 text-sm"
+                      className="flex min-h-11 items-center gap-2 text-sm"
                     >
                       <input
                         type="checkbox"
@@ -313,7 +342,13 @@ export function InterviewFormDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" loading={busy}>
+            <Button
+              type="submit"
+              loading={busy}
+              disabled={
+                mode === 'schedule' && (members.isPending || members.isError)
+              }
+            >
               {mode === 'edit'
                 ? 'Save changes'
                 : mode === 'reschedule'

@@ -1,5 +1,11 @@
-import { Link, useSearchParams, useParams } from 'react-router-dom'
-import { Button, PageHeader } from '../../../shared/components/ui'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
+import {
+  Badge,
+  Button,
+  Card,
+  PageContainer,
+  PageHeader,
+} from '../../../shared/components/ui'
 import {
   EmptyState,
   ErrorState,
@@ -7,96 +13,199 @@ import {
 } from '../../../shared/components/feedback'
 import { useOrganization } from '../../organizations/hooks/queries'
 import { useCalendarInterviews } from '../hooks/queries'
-import { interviewTime } from '../utils/interview-utils'
-function range(date: string) {
-  const d = new Date(`${date}T00:00:00.000Z`)
-  const from = d.toISOString(),
-    to = new Date(d.getTime() + 7 * 86400000).toISOString()
-  return { from, to }
+import type { InterviewDto } from '../types/interview.types'
+import { dateInput, interviewTime } from '../utils/interview-utils'
+
+function addDays(date: string, days: number) {
+  const value = new Date(`${date}T00:00:00.000Z`)
+  value.setUTCDate(value.getUTCDate() + days)
+  return value.toISOString().slice(0, 10)
 }
-export function InterviewsPage() {
-  const { organizationId = '' } = useParams(),
-    [search, setSearch] = useSearchParams(),
-    org = useOrganization(organizationId),
-    requestedMine = search.get('mine') === 'true',
-    start = search.get('start') ?? new Date().toISOString().slice(0, 10),
-    interviewer = Boolean(
-      org.data && !org.data.permissions?.includes('interview:view'),
-    ),
-    mine = interviewer || requestedMine,
-    r = range(start),
-    q = useCalendarInterviews(
-      organizationId,
-      r.from,
-      r.to,
-      mine,
-      Boolean(org.data),
-    )
-  const canView = org.data?.permissions?.includes('interview:view-assigned')
-  const move = (n: number) => {
-    const d = new Date(`${start}T00:00:00.000Z`)
-    d.setUTCDate(d.getUTCDate() + n * 7)
-    setSearch({ start: d.toISOString().slice(0, 10), mine: String(mine) })
+
+function displayDate(date: string) {
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: 'UTC',
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(new Date(`${date}T12:00:00.000Z`))
+}
+
+function interviewDays(interviews: readonly InterviewDto[]) {
+  const groups = new Map<string, InterviewDto[]>()
+  for (const interview of [...interviews].sort((a, b) =>
+    a.scheduledStartAt.localeCompare(b.scheduledStartAt),
+  )) {
+    const day = dateInput(interview.scheduledStartAt, interview.timeZone)
+    groups.set(day, [...(groups.get(day) ?? []), interview])
   }
-  if (org.isPending || q.isPending)
-    return <LoadingState label="Loading interviews" />
-  if (!canView || q.isError)
+  return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b))
+}
+
+export function InterviewsPage() {
+  const { organizationId = '' } = useParams()
+  const [search, setSearch] = useSearchParams()
+  const organization = useOrganization(organizationId, Boolean(organizationId))
+  const permissions = organization.data?.permissions
+  const canViewAll = permissions?.includes('interview:view') ?? false
+  const canViewAssigned =
+    permissions?.includes('interview:view-assigned') ?? false
+  const canView = canViewAll || canViewAssigned
+  const assignedOnly = !canViewAll
+  const mine = assignedOnly || search.get('mine') === 'true'
+  const requestedStart = search.get('start')
+  const start =
+    requestedStart &&
+    /^\d{4}-\d{2}-\d{2}$/.test(requestedStart) &&
+    !Number.isNaN(Date.parse(`${requestedStart}T00:00:00.000Z`))
+      ? requestedStart
+      : new Date().toISOString().slice(0, 10)
+  const end = addDays(start, 7)
+  const interviews = useCalendarInterviews(
+    organizationId,
+    `${start}T00:00:00.000Z`,
+    `${end}T00:00:00.000Z`,
+    mine,
+    Boolean(organizationId && organization.data && canView),
+  )
+  const setWeek = (next: string, assigned = mine) =>
+    setSearch({ start: next, mine: String(assigned) })
+
+  if (organization.isPending)
+    return <LoadingState label="Checking interview access" />
+  if (organization.isError)
     return (
-      <main className="mx-auto max-w-6xl px-4 py-10">
+      <PageContainer width="standard">
+        <ErrorState
+          title="Workspace unavailable"
+          description="We could not check interview access."
+          onRetry={() => void organization.refetch()}
+        />
+      </PageContainer>
+    )
+  if (!canView)
+    return (
+      <PageContainer width="standard">
         <ErrorState
           title="Interviews unavailable"
           description="You do not have permission to view these interviews."
-          onRetry={q.isError ? () => void q.refetch() : undefined}
         />
-      </main>
+      </PageContainer>
     )
+  if (interviews.isPending || interviews.isPlaceholderData)
+    return <LoadingState label="Loading interviews" />
+  if (interviews.isError)
+    return (
+      <PageContainer width="standard">
+        <ErrorState
+          title="Interviews unavailable"
+          description="We could not load the interview schedule."
+          onRetry={() => void interviews.refetch()}
+        />
+      </PageContainer>
+    )
+
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10">
+    <PageContainer width="standard">
       <PageHeader
-        title={mine || interviewer ? 'My interviews' : 'Interviews'}
-        description={`Schedule for ${start} through ${new Date(r.to).toLocaleDateString()}`}
+        title={mine ? 'My interviews' : 'Interviews'}
+        description={
+          <>
+            {mine
+              ? 'Interviews assigned to you'
+              : 'Organization interview schedule'}
+            {organization.data.name ? ` · ${organization.data.name}` : ''}
+          </>
+        }
       />
-      <div className="mt-6 flex flex-wrap gap-2">
-        <Button variant="secondary" onClick={() => move(-7)}>
-          Previous week
-        </Button>
-        <Button variant="secondary" onClick={() => move(7)}>
-          Next week
-        </Button>
-        {!interviewer ? (
-          <label className="ml-auto flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={mine}
-              onChange={(e) =>
-                setSearch({ start, mine: String(e.target.checked) })
-              }
-            />{' '}
-            My interviews
-          </label>
-        ) : null}
-      </div>
-      {q.data?.length ? (
-        <div className="mt-6 grid gap-3">
-          {q.data.map((i) => (
-            <Link
-              key={i.id}
-              to={`/app/organizations/${organizationId}/interviews/${i.id}`}
-              className="rounded-card border border-border bg-surface p-4 hover:bg-primary-soft"
-            >
-              <div className="flex flex-wrap justify-between gap-2">
-                <strong>{i.title}</strong>
-                <span className="text-sm">
-                  {i.status === 'CANCELLED' ? 'Cancelled' : i.format}
-                </span>
+      <Card className="p-4 sm:p-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="secondary"
+            onClick={() => setWeek(addDays(start, -7))}
+          >
+            Previous week
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => setWeek(new Date().toISOString().slice(0, 10))}
+          >
+            Current week
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => setWeek(addDays(start, 7))}
+          >
+            Next week
+          </Button>
+          {!assignedOnly ? (
+            <label className="flex min-h-11 items-center gap-2 text-sm font-semibold sm:ml-auto">
+              <input
+                type="checkbox"
+                checked={mine}
+                onChange={(event) => setWeek(start, event.target.checked)}
+              />
+              My interviews
+            </label>
+          ) : null}
+        </div>
+        <p className="mt-3 text-sm text-text-secondary" aria-live="polite">
+          {displayDate(start)} through {displayDate(addDays(start, 6))}
+        </p>
+      </Card>
+      {interviews.data?.length ? (
+        <div className="mt-6 grid gap-6">
+          {interviewDays(interviews.data).map(([day, items]) => (
+            <section key={day} aria-label={displayDate(day)}>
+              <h2 className="mb-3 text-lg font-bold text-text-primary">
+                {displayDate(day)}
+              </h2>
+              <div className="grid gap-3">
+                {items.map((interview) => (
+                  <Link
+                    key={interview.id}
+                    to={`/app/organizations/${organizationId}/interviews/${interview.id}`}
+                    className="block min-w-0 rounded-card border border-border bg-surface-raised p-4 shadow-surface transition-colors hover:border-primary hover:bg-primary-soft focus-visible:outline-3 focus-visible:outline-primary-dark focus-visible:outline-offset-2 sm:p-5"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <strong className="min-w-0 break-words text-base text-text-primary">
+                        {interview.title}
+                      </strong>
+                      <Badge
+                        variant={
+                          interview.status === 'CANCELLED'
+                            ? 'neutral'
+                            : 'success'
+                        }
+                      >
+                        {interview.status === 'CANCELLED'
+                          ? 'Cancelled'
+                          : 'Scheduled'}
+                      </Badge>
+                    </div>
+                    <p className="mt-2 break-words text-sm font-semibold">
+                      {interview.application.candidate.name} ·{' '}
+                      {interview.application.job.title}
+                    </p>
+                    <p className="mt-1 text-sm text-text-secondary">
+                      {interviewTime(interview)}
+                    </p>
+                    <p className="mt-1 break-words text-sm text-text-secondary">
+                      {interview.format === 'ONSITE'
+                        ? 'Onsite'
+                        : interview.format === 'VIDEO'
+                          ? 'Video'
+                          : 'Phone'}
+                      {' · '}
+                      {interview.participants.length} interviewer
+                      {interview.participants.length === 1 ? '' : 's'}
+                      {interview.location ? ` · ${interview.location}` : ''}
+                    </p>
+                  </Link>
+                ))}
               </div>
-              <p className="mt-2 text-sm text-text-secondary">
-                {i.application.candidate.name} · {i.application.job.title}
-              </p>
-              <p className="mt-1 text-sm text-text-secondary">
-                {interviewTime(i)}
-              </p>
-            </Link>
+            </section>
           ))}
         </div>
       ) : (
@@ -104,12 +213,17 @@ export function InterviewsPage() {
           <EmptyState
             title={
               mine
-                ? 'You have no interviews scheduled for this period.'
-                : 'No interviews scheduled for this period.'
+                ? 'No matching interviews this week'
+                : 'No interviews scheduled this week'
+            }
+            description={
+              mine
+                ? 'Try another week or view the organization schedule.'
+                : 'Try another week to see more interviews.'
             }
           />
         </div>
       )}
-    </main>
+    </PageContainer>
   )
 }

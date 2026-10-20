@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { Link, useParams } from 'react-router-dom'
@@ -167,6 +174,13 @@ export function PublicApplyPage() {
     }
   }
 
+  function submitForm(event: FormEvent<HTMLFormElement>) {
+    void handleSubmit(
+      (values) => void submit(values),
+      () => undefined,
+    )(event)
+  }
+
   if (jobQuery.isPending || formQuery.isPending)
     return (
       <ApplyWrap>
@@ -309,14 +323,7 @@ export function PublicApplyPage() {
           ? `Please correct ${Object.keys(errors).length === 1 ? 'the error' : 'the errors'} below.`
           : ''}
       </div>
-      <form
-        className="grid min-w-0 gap-6"
-        onSubmit={handleSubmit(
-          (values) => void submit(values),
-          () => undefined,
-        )}
-        noValidate
-      >
+      <form className="grid min-w-0 gap-6" onSubmit={submitForm} noValidate>
         <FormSection title="Your details">
           <div className="grid gap-5 sm:grid-cols-2">
             <Field

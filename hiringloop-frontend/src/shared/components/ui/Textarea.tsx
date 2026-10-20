@@ -10,7 +10,7 @@ export const Textarea = forwardRef<
       {...props}
       ref={ref}
       className={cn(
-        'ui-textarea min-h-28 w-full resize-y rounded-control border border-border bg-surface px-3 py-2.5 text-sm text-text-primary shadow-sm outline-none placeholder:text-text-secondary/70 focus:border-primary-dark focus:ring-2 focus:ring-primary/25 disabled:cursor-not-allowed disabled:opacity-60',
+        'ui-textarea min-h-28 w-full resize-y rounded-control border border-border-strong bg-surface px-3 py-2.5 text-sm text-text-primary shadow-sm transition-colors placeholder:text-text-secondary focus-visible:border-primary-dark focus-visible:ring-2 focus-visible:ring-primary/25 disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-text-secondary aria-[invalid=true]:border-error aria-[invalid=true]:focus-visible:ring-error/20',
         className,
       )}
     />

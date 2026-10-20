@@ -1,16 +1,11 @@
 import { useState } from 'react'
-import {
-  ArrowDown,
-  ArrowLeft,
-  ArrowUp,
-  Pencil,
-  Plus,
-  Trash2,
-} from 'lucide-react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Link, useParams } from 'react-router-dom'
 import { ErrorState } from '../../../shared/components/feedback'
 import {
   Button,
+  Badge,
+  Card,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -18,6 +13,7 @@ import {
   Field,
   Input,
   PageHeader,
+  PageContainer,
 } from '../../../shared/components/ui'
 import { ConfirmDialog } from '../../team/components/ConfirmDialog'
 import { useOrganization } from '../../organizations/hooks/queries'
@@ -43,7 +39,6 @@ import {
 
 export function PipelineConfigurationPage() {
   const { organizationId = '', jobId = '' } = useParams()
-  const navigate = useNavigate()
   const organization = useOrganization(organizationId, Boolean(organizationId))
   const mayView = canViewPipeline(organization.data?.permissions)
   const job = useJob(
@@ -64,10 +59,20 @@ export function PipelineConfigurationPage() {
   const [editing, setEditing] = useState<PipelineStageDto | null>(null)
   const [deleting, setDeleting] = useState<PipelineStageDto | null>(null)
   const [notice, setNotice] = useState('')
+  const [saved, setSaved] = useState(false)
 
-  if (organization.isPending || job.isPending || pipeline.isPending)
-    return <PipelineSkeleton />
-  if (organization.isError || !mayView)
+  if (organization.isPending) return <PipelineSkeleton />
+  if (organization.isError)
+    return (
+      <Wrap>
+        <ErrorState
+          title="Workspace unavailable"
+          description="We could not check pipeline access."
+          onRetry={() => void organization.refetch()}
+        />
+      </Wrap>
+    )
+  if (!mayView)
     return (
       <Wrap>
         <ErrorState
@@ -76,6 +81,7 @@ export function PipelineConfigurationPage() {
         />
       </Wrap>
     )
+  if (job.isPending || pipeline.isPending) return <PipelineSkeleton />
   if (job.isError)
     return (
       <Wrap>
@@ -122,11 +128,18 @@ export function PipelineConfigurationPage() {
     : !canConfigurePipeline(organization.data.permissions)
       ? 'You have view-only access to this pipeline.'
       : ''
+  const busy =
+    create.isPending ||
+    rename.isPending ||
+    reorder.isPending ||
+    remove.isPending
 
   async function run(action: () => Promise<unknown>) {
     setNotice('')
+    setSaved(false)
     try {
       await action()
+      setSaved(true)
     } catch (error) {
       setNotice(pipelineError(error))
     }
@@ -148,14 +161,15 @@ export function PipelineConfigurationPage() {
 
   return (
     <Wrap>
-      <button
-        type="button"
-        onClick={() => navigate(jobRoutes.detail(organizationId, jobId))}
-        className="mb-5 inline-flex min-h-11 items-center gap-2 rounded-control px-2 text-sm font-bold text-primary-dark hover:bg-primary-soft"
-      >
-        <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Back to job
-      </button>
       <PageHeader
+        breadcrumbs={
+          <Link
+            className="font-semibold text-text-secondary hover:text-primary-dark hover:underline"
+            to={jobRoutes.detail(organizationId, jobId)}
+          >
+            {jobTitle(job.data.title)}
+          </Link>
+        }
         title="Pipeline Configuration"
         description={
           <span className="inline-flex flex-wrap items-center gap-2">
@@ -170,6 +184,7 @@ export function PipelineConfigurationPage() {
         actions={
           editable ? (
             <Button
+              disabled={busy}
               onClick={() => {
                 setNotice('')
                 setAddOpen(true)
@@ -188,15 +203,17 @@ export function PipelineConfigurationPage() {
           {notice}
         </div>
       ) : null}
+      {saved ? (
+        <p role="status" className="mb-5 text-sm text-success">
+          Pipeline updated.
+        </p>
+      ) : null}
       {readOnlyReason ? (
         <div className="mb-5 rounded-control border border-border bg-background p-4 text-sm text-text-secondary">
           {readOnlyReason}
         </div>
       ) : null}
-      <section
-        aria-labelledby="pipeline-stages-title"
-        className="rounded-card border border-border bg-surface shadow-sm"
-      >
+      <Card aria-labelledby="pipeline-stages-title" className="overflow-hidden">
         <div className="border-b border-border px-5 py-4 sm:px-6">
           <h2 id="pipeline-stages-title" className="text-lg font-bold">
             Hiring stages
@@ -213,7 +230,7 @@ export function PipelineConfigurationPage() {
               index={index}
               total={ordered.length}
               editable={editable}
-              moving={reorder.isPending}
+              moving={busy}
               onMove={move}
               onEdit={() => {
                 setNotice('')
@@ -226,13 +243,14 @@ export function PipelineConfigurationPage() {
             />
           ))}
         </ol>
-      </section>
+      </Card>
       {addOpen ? (
         <StageDialog
           title="Add stage"
           description="Add a standard hiring stage to the end of this pipeline."
           confirmLabel="Add stage"
           busy={create.isPending}
+          actionError={notice}
           onCancel={() => setAddOpen(false)}
           onSubmit={(name) =>
             run(async () => {
@@ -252,6 +270,7 @@ export function PipelineConfigurationPage() {
           initialName={editing.name}
           confirmLabel="Save changes"
           busy={rename.isPending}
+          actionError={notice}
           onCancel={() => setEditing(null)}
           onSubmit={(name) =>
             run(async () => {
@@ -315,15 +334,9 @@ function StageRow({
           <h3 className="break-words font-bold text-text-primary">
             {stage.name}
           </h3>
-          <span
-            className={
-              entry
-                ? 'rounded-full bg-primary-soft px-2.5 py-1 text-xs font-bold text-primary-dark'
-                : 'rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-text-secondary'
-            }
-          >
+          <Badge variant={entry ? 'info' : 'neutral'}>
             {entry ? 'Entry stage' : 'Standard stage'}
-          </span>
+          </Badge>
         </div>
         <p className="mt-1 text-sm text-text-secondary">Stage {index + 1}</p>
       </div>
@@ -358,6 +371,7 @@ function StageRow({
           <Button
             variant="secondary"
             className="px-3"
+            disabled={moving}
             onClick={onEdit}
             aria-label={`Edit ${stage.name}`}
           >
@@ -368,6 +382,7 @@ function StageRow({
             <Button
               variant="danger"
               className="px-3"
+              disabled={moving}
               onClick={onDelete}
               aria-label={`Delete ${stage.name}`}
             >
@@ -387,6 +402,7 @@ function StageDialog({
   initialName = '',
   confirmLabel,
   busy,
+  actionError,
   onCancel,
   onSubmit,
 }: {
@@ -395,6 +411,7 @@ function StageDialog({
   initialName?: string
   confirmLabel: string
   busy: boolean
+  actionError?: string
   onCancel: () => void
   onSubmit: (name: string) => void
 }) {
@@ -415,10 +432,17 @@ function StageDialog({
         >
           {description}
         </DialogDescription>
+        {actionError ? (
+          <p role="alert" className="mt-3 text-sm text-error">
+            {actionError}
+          </p>
+        ) : null}
         <form
           className="mt-5 grid gap-5"
+          aria-busy={busy}
           onSubmit={(event) => {
             event.preventDefault()
+            if (busy) return
             const next = validateStageName(name)
             setError(next)
             if (!next) onSubmit(name.trim())
@@ -446,7 +470,7 @@ function StageDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" loading={busy}>
+            <Button type="submit" loading={busy} disabled={busy}>
               {confirmLabel}
             </Button>
           </div>
@@ -479,7 +503,5 @@ function PipelineSkeleton() {
   )
 }
 const Wrap = ({ children }: { children: React.ReactNode }) => (
-  <section className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
-    {children}
-  </section>
+  <PageContainer width="standard">{children}</PageContainer>
 )

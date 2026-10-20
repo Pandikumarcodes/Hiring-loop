@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Button, PageHeader } from '../../../shared/components/ui'
+import {
+  Button,
+  PageContainer,
+  PageHeader,
+} from '../../../shared/components/ui'
 import {
   EmptyState,
   ErrorState,
@@ -58,17 +62,17 @@ export function NotificationsPage() {
   if (list.isPending) return <LoadingState label="Loading notifications" />
   if (list.isError)
     return (
-      <section className="mx-auto max-w-5xl px-4 py-10">
+      <PageContainer width="standard" className="max-w-5xl py-10 lg:py-14">
         <ErrorState
           title="Notifications unavailable"
           description="We could not load your notifications."
           onRetry={() => void list.refetch()}
         />
-      </section>
+      </PageContainer>
     )
   const rows = list.data?.data ?? []
   return (
-    <section className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+    <PageContainer width="standard" className="max-w-5xl py-10 lg:py-14">
       <PageHeader
         title="Notifications"
         description="Stay up to date with activity in your hiring workspace."
@@ -115,34 +119,60 @@ export function NotificationsPage() {
         />
       )}
       <PreferenceSection
-        org={organizationId}
+        key={organizationId}
         items={preferences.data ?? []}
+        loading={preferences.isPending}
+        loadError={preferences.isError && !preferences.data}
+        onRetryLoad={() => void preferences.refetch()}
         busy={mutations.preferences.isPending}
         error={mutations.preferences.isError}
+        saved={mutations.preferences.isSuccess}
         onSave={(items) => mutations.preferences.mutate(items)}
+        onRetrySave={() => {
+          if (mutations.preferences.variables?.length)
+            mutations.preferences.mutate(mutations.preferences.variables)
+        }}
       />
-    </section>
+    </PageContainer>
   )
 }
 function PreferenceSection({
   items,
+  loading,
+  loadError,
+  onRetryLoad,
   busy,
   error,
+  saved,
   onSave,
+  onRetrySave,
 }: {
-  org: string
   items: readonly NotificationPreferenceDto[]
+  loading: boolean
+  loadError: boolean
+  onRetryLoad: () => void
   busy: boolean
   error: boolean
+  saved: boolean
   onSave: (items: NotificationPreferenceDto[]) => void
+  onRetrySave: () => void
 }) {
-  const [values, setValues] = useState(items)
-  if (!items.length) return null
+  const [edits, setEdits] = useState<
+    Partial<Record<NotificationType, boolean>>
+  >({})
+  const [hasAttemptedSave, setHasAttemptedSave] = useState(false)
+  const values = items.map((item) => ({
+    ...item,
+    enabled: edits[item.notificationType] ?? item.enabled,
+  }))
   const change = (type: NotificationType, enabled: boolean) => {
-    const next = values.map((x) =>
-      x.notificationType === type ? { ...x, enabled } : x,
+    if (!items.length || busy || type === 'CANDIDATE_COMMUNICATION_FAILED')
+      return
+    const next = values.map((item) =>
+      item.notificationType === type ? { ...item, enabled } : item,
     )
-    setValues(next)
+    setEdits((current) => ({ ...current, [type]: enabled }))
+    setHasAttemptedSave(true)
     onSave(next)
   }
   return (
@@ -152,47 +182,84 @@ function PreferenceSection({
         Choose which informational updates you receive. Missing preferences are
         enabled.
       </p>
-      <div className="mt-4 grid gap-3">
-        {items.map((item) => {
-          const info = labels[item.notificationType]
-          const mandatory =
-            item.notificationType === 'CANDIDATE_COMMUNICATION_FAILED'
-          return (
-            <label
-              key={item.notificationType}
-              className="flex items-start gap-3 rounded-control border border-border p-3"
-            >
-              <input
-                type="checkbox"
-                checked={
-                  values.find(
-                    (x) => x.notificationType === item.notificationType,
-                  )?.enabled ?? true
-                }
-                disabled={mandatory || busy}
-                onChange={(e) =>
-                  change(item.notificationType, e.target.checked)
-                }
-                className="mt-1 h-4 w-4"
-              />
-              <span>
-                <strong className="block">
-                  {info.title}
-                  {mandatory ? ' (always enabled)' : ''}
-                </strong>
-                <span className="text-sm text-text-secondary">
-                  {info.description}
-                </span>
-              </span>
-            </label>
-          )
-        })}
-      </div>
-      {error ? (
-        <p role="alert" className="mt-3 text-sm text-error">
-          We could not update preferences. Your previous settings are still in
-          effect.
+      {loading ? (
+        <p role="status" className="mt-4 text-sm text-text-secondary">
+          Loading preferences…
         </p>
+      ) : null}
+      {loadError ? (
+        <div className="mt-4" role="alert">
+          <p className="text-sm text-error">
+            We could not load your notification preferences.
+          </p>
+          <Button className="mt-2" variant="secondary" onClick={onRetryLoad}>
+            Try again
+          </Button>
+        </div>
+      ) : null}
+      {!loading && !loadError && !items.length ? (
+        <p className="mt-4 text-sm text-text-secondary">
+          No notification preferences are available.
+        </p>
+      ) : null}
+      {items.length ? (
+        <div className="mt-4 grid gap-3">
+          {items.map((item) => {
+            const info = labels[item.notificationType]
+            const mandatory =
+              item.notificationType === 'CANDIDATE_COMMUNICATION_FAILED'
+            return (
+              <label
+                key={item.notificationType}
+                className="flex items-start gap-3 rounded-control border border-border p-3"
+              >
+                <input
+                  type="checkbox"
+                  checked={edits[item.notificationType] ?? item.enabled}
+                  disabled={mandatory || busy || loading}
+                  onChange={(e) =>
+                    change(item.notificationType, e.target.checked)
+                  }
+                  className="mt-1 h-4 w-4"
+                />
+                <span>
+                  <strong className="block">
+                    {info.title}
+                    {mandatory ? ' (always enabled)' : ''}
+                  </strong>
+                  <span className="text-sm text-text-secondary">
+                    {info.description}
+                  </span>
+                </span>
+              </label>
+            )
+          })}
+        </div>
+      ) : null}
+      {hasAttemptedSave && busy ? (
+        <p role="status" className="mt-3 text-sm text-text-secondary">
+          Saving preferences…
+        </p>
+      ) : null}
+      {hasAttemptedSave && saved && !busy ? (
+        <p role="status" className="mt-3 text-sm text-success">
+          Preferences saved.
+        </p>
+      ) : null}
+      {hasAttemptedSave && error ? (
+        <div className="mt-3" role="alert">
+          <p className="text-sm text-error">
+            Your preference change was not saved. Try again.
+          </p>
+          <Button
+            className="mt-2"
+            variant="secondary"
+            disabled={busy || !items.length}
+            onClick={onRetrySave}
+          >
+            Retry save
+          </Button>
+        </div>
       ) : null}
     </section>
   )

@@ -9,6 +9,7 @@ import {
 export const apiOrigin = 'http://127.0.0.1:4700'
 export const runId = process.env.E2E_RUN_ID!
 export const password = 'Synthetic-E2E-Password-2026!'
+export const lifecycleAdminEmail = `lifecycle-admin-${runId}@${runId}.e2e.test`
 export const email = (label: string) =>
   `${label}-${randomUUID().slice(0, 8)}@${runId}.e2e.test`
 export const orgName = (label: string) => `E2E ${runId} ${label}`

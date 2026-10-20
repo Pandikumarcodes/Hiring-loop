@@ -8,6 +8,7 @@ import {
   DialogTitle,
   Field,
   Input,
+  PageContainer,
   PageHeader,
   Textarea,
 } from '../../../shared/components/ui'
@@ -20,6 +21,7 @@ import { useOrganization } from '../../organizations/hooks/queries'
 import { usePools } from '../hooks/queries'
 import { useTalentPoolActions } from '../hooks/mutations'
 import type { TalentPoolDto } from '../types/talent-pools.types'
+import { isApiError } from '../../../shared/lib/apiErrors'
 export function TalentPoolsPage() {
   const { organizationId = '' } = useParams()
   const org = useOrganization(organizationId, !!organizationId)
@@ -31,14 +33,34 @@ export function TalentPoolsPage() {
     [editing, setEditing] = useState<TalentPoolDto | null | undefined>()
   const pools = usePools(organizationId, page, search, allowed)
   if (org.isPending) return <LoadingState label="Checking talent pool access" />
+  if (org.isError) {
+    const denied = isApiError(org.error) && org.error.status === 403
+    return (
+      <PageContainer width="standard">
+        <ErrorState
+          title={
+            denied
+              ? 'Talent pool access unavailable'
+              : 'Talent pools unavailable'
+          }
+          description={
+            denied
+              ? 'You do not have permission to view talent pools in this workspace.'
+              : 'We could not load this workspace. Please try again.'
+          }
+          onRetry={denied ? undefined : () => void org.refetch()}
+        />
+      </PageContainer>
+    )
+  }
   if (!allowed)
     return (
-      <main className="mx-auto max-w-6xl px-4 py-10">
+      <PageContainer width="standard">
         <ErrorState title="Talent pool access unavailable" />
-      </main>
+      </PageContainer>
     )
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10">
+    <PageContainer width="standard">
       <PageHeader
         title="Talent pools"
         description="Organize candidates for future opportunities."
@@ -122,7 +144,7 @@ export function TalentPoolsPage() {
           onClose={() => setEditing(undefined)}
         />
       ) : null}
-    </main>
+    </PageContainer>
   )
 }
 export function PoolForm({

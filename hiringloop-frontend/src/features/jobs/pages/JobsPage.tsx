@@ -3,7 +3,11 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import {
   Button,
+  DataTableShell,
+  FilterToolbar,
   Input,
+  ListPagination,
+  PageContainer,
   PageHeader,
   Select,
 } from '../../../shared/components/ui'
@@ -71,6 +75,7 @@ export function JobsPage() {
     filters,
     Boolean(organizationId && mayList),
   )
+  const results = query.isPlaceholderData ? undefined : query.data
   const [pending, setPending] = useState<{
     id: string
     title: string
@@ -99,43 +104,43 @@ export function JobsPage() {
   )
   if (organization.isPending)
     return (
-      <Page>
+      <PageContainer>
         <JobSkeleton />
-      </Page>
+      </PageContainer>
     )
   if (organization.isError || !mayList)
     return (
-      <Page>
+      <PageContainer>
         <ErrorState
           title="Jobs access unavailable"
           description="You do not have permission to view jobs in this workspace."
         />
-      </Page>
+      </PageContainer>
     )
   if (query.isError && isApiError(query.error) && query.error.status === 403)
     return (
-      <Page>
+      <PageContainer>
         <ErrorState
           title="Jobs access unavailable"
           description="You do not have permission to view jobs in this workspace."
         />
-      </Page>
+      </PageContainer>
     )
   if (query.isError)
     return (
-      <Page>
+      <PageContainer>
         <ErrorState
           description={jobError(query.error, 'We could not load jobs.')}
           onRetry={() => void query.refetch()}
         />
-      </Page>
+      </PageContainer>
     )
   return (
-    <Page>
+    <PageContainer>
       <PageHeader
         title="Jobs"
         description="Manage open roles and draft positions."
-        actions={
+        primaryAction={
           can(organization.data.permissions, 'job:create') ? (
             <Button onClick={() => navigate(jobRoutes.create(organizationId))}>
               New job
@@ -143,7 +148,19 @@ export function JobsPage() {
           ) : null
         }
       />
-      <div className="mb-6 grid gap-3 rounded-card border border-border bg-surface p-4 shadow-sm lg:grid-cols-[minmax(14rem,1fr)_repeat(4,minmax(9rem,auto))_auto]">
+      <FilterToolbar
+        className="xl:grid-cols-[minmax(14rem,1.5fr)_repeat(4,minmax(8rem,1fr))]"
+        resultsSummary={
+          results
+            ? `${results.pagination.totalItems.toLocaleString()} jobs`
+            : null
+        }
+        clearAction={
+          <Button variant="ghost" onClick={clear} disabled={!params.toString()}>
+            Clear filters
+          </Button>
+        }
+      >
         <label className="relative">
           <span className="sr-only">Search jobs</span>
           <Search className="absolute left-3 top-3.5 h-4 w-4 text-text-secondary" />
@@ -197,13 +214,10 @@ export function JobsPage() {
             ['openedAt:desc', 'Recently opened'],
           ]}
         />
-        <Button variant="ghost" onClick={clear} disabled={!params.toString()}>
-          Clear filters
-        </Button>
-      </div>
-      {query.isPending ? (
+      </FilterToolbar>
+      {query.isPending || query.isPlaceholderData || !results ? (
         <JobSkeleton />
-      ) : query.data.jobs.length === 0 ? (
+      ) : results.jobs.length === 0 ? (
         filtered ? (
           <NoResultsState
             title="No jobs match your filters."
@@ -231,83 +245,81 @@ export function JobsPage() {
         )
       ) : (
         <>
-          <div className="hidden overflow-x-auto rounded-card border border-border bg-surface shadow-sm md:block">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-text-secondary">
-                <tr>
-                  {[
-                    'Job title',
-                    'Status',
-                    'Department',
-                    'Employment type',
-                    'Workplace',
-                    'Openings',
-                    'Updated',
-                    'Actions',
-                  ].map((h) => (
-                    <th key={h} className="px-4 py-3 font-semibold">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {query.data.jobs.map((j) => (
-                  <tr key={j.id} className="border-t border-border">
-                    <td className="px-4 py-4 font-bold">
-                      <Link
-                        className="text-primary-dark hover:underline"
-                        to={jobRoutes.detail(organizationId, j.id)}
-                      >
-                        {jobTitle(j.title)}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-4">
-                      <JobStatusBadge status={j.status} />
-                    </td>
-                    <td className="px-4 py-4">{j.department ?? '—'}</td>
-                    <td className="px-4 py-4">
-                      {employmentLabel(j.employmentType)}
-                    </td>
-                    <td className="px-4 py-4">
-                      {workplaceLabel(j.workplaceType)}
-                    </td>
-                    <td className="px-4 py-4">{j.openings}</td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      {formatJobDate(j.updatedAt)}
-                    </td>
-                    <td className="px-4 py-2">
-                      <JobActions
-                        job={j}
-                        onEdit={() =>
-                          navigate(jobRoutes.edit(organizationId, j.id))
-                        }
-                        onAction={(action) =>
-                          setPending({
-                            id: j.id,
-                            title: jobTitle(j.title),
-                            action,
-                            version: j.version,
-                          })
-                        }
-                        permissions={organization.data.permissions}
-                      />
-                    </td>
-                  </tr>
+          <DataTableShell caption="Jobs" tableClassName="min-w-[64rem]">
+            <thead className="bg-slate-50 text-text-secondary">
+              <tr>
+                {[
+                  'Job title',
+                  'Status',
+                  'Department',
+                  'Employment type',
+                  'Workplace',
+                  'Openings',
+                  'Updated',
+                  'Actions',
+                ].map((h) => (
+                  <th key={h} scope="col" className="px-4 py-3 font-semibold">
+                    {h}
+                  </th>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </tr>
+            </thead>
+            <tbody>
+              {results.jobs.map((j) => (
+                <tr key={j.id} className="border-t border-border">
+                  <td className="px-4 py-4 font-bold">
+                    <Link
+                      className="text-primary-dark hover:underline"
+                      to={jobRoutes.detail(organizationId, j.id)}
+                    >
+                      {jobTitle(j.title)}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-4">
+                    <JobStatusBadge status={j.status} />
+                  </td>
+                  <td className="px-4 py-4">{j.department ?? '—'}</td>
+                  <td className="px-4 py-4">
+                    {employmentLabel(j.employmentType)}
+                  </td>
+                  <td className="px-4 py-4">
+                    {workplaceLabel(j.workplaceType)}
+                  </td>
+                  <td className="px-4 py-4">{j.openings}</td>
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    {formatJobDate(j.updatedAt)}
+                  </td>
+                  <td className="px-4 py-2">
+                    <JobActions
+                      job={j}
+                      onEdit={() =>
+                        navigate(jobRoutes.edit(organizationId, j.id))
+                      }
+                      onAction={(action) =>
+                        setPending({
+                          id: j.id,
+                          title: jobTitle(j.title),
+                          action,
+                          version: j.version,
+                        })
+                      }
+                      permissions={organization.data.permissions}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </DataTableShell>
           <div className="grid gap-3 md:hidden">
-            {query.data.jobs.map((j) => (
+            {results?.jobs.map((j) => (
               <article
                 key={j.id}
-                className="rounded-card border border-border bg-surface p-4 shadow-sm"
+                className="min-w-0 rounded-card border border-border bg-surface p-4 shadow-surface"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <Link
-                      className="font-bold text-primary-dark"
+                      className="break-words font-bold text-primary-dark hover:underline focus-visible:outline-3 focus-visible:outline-primary-dark"
                       to={jobRoutes.detail(organizationId, j.id)}
                     >
                       {jobTitle(j.title)}
@@ -342,26 +354,16 @@ export function JobsPage() {
               </article>
             ))}
           </div>
-          <div className="mt-6 flex items-center justify-between">
-            <Button
-              variant="secondary"
-              disabled={filters.page <= 1}
-              onClick={() => update('page', String(filters.page - 1))}
-            >
-              Previous
-            </Button>
-            <span className="text-sm text-text-secondary">
-              Page {query.data.pagination.page} of{' '}
-              {Math.max(1, query.data.pagination.totalPages)}
-            </span>
-            <Button
-              variant="secondary"
-              disabled={filters.page >= query.data.pagination.totalPages}
-              onClick={() => update('page', String(filters.page + 1))}
-            >
-              Next
-            </Button>
-          </div>
+          {results ? (
+            <ListPagination
+              page={results.pagination.page}
+              pageSize={results.pagination.limit}
+              totalItems={results.pagination.totalItems}
+              totalPages={results.pagination.totalPages}
+              loading={query.isFetching}
+              onPageChange={(page) => update('page', String(page))}
+            />
+          ) : null}
         </>
       )}
       {transition.isError ? (
@@ -407,7 +409,7 @@ export function JobsPage() {
           }
         />
       ) : null}
-    </Page>
+    </PageContainer>
   )
 }
 function parseFilters(p: URLSearchParams): JobFilters {
@@ -433,11 +435,6 @@ function setOrDelete(p: URLSearchParams, k: string, v: string) {
   if (v) p.set(k, v)
   else p.delete(k)
 }
-const Page = ({ children }: { children: React.ReactNode }) => (
-  <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
-    {children}
-  </section>
-)
 function Filter({
   label,
   value,

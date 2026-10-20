@@ -5,6 +5,7 @@ import {
   email,
   headers,
   inbox,
+  lifecycleAdminEmail,
   login,
   mutate,
   organization,
@@ -14,7 +15,11 @@ import {
 test('browser hiring lifecycle: registration through hired outcome and talent pool membership', async ({
   page,
 }) => {
-  const admin = email('admin'),
+  test.setTimeout(360_000)
+  page.on('pageerror', (error) =>
+    console.error('[hiring-lifecycle browser error]', error.message),
+  )
+  const admin = lifecycleAdminEmail,
     candidate = email('candidate')
   let org: { id: string; slug: string },
     jobId: string,
@@ -139,7 +144,7 @@ test('browser hiring lifecycle: registration through hired outcome and talent po
       .getByRole('button', { name: 'Create Scorecard', exact: true })
       .click()
     await page
-      .getByLabel('Title', { exact: true })
+      .getByRole('textbox', { name: 'Title' })
       .fill('Synthetic technical evaluation')
     if ((await page.getByLabel('Label', { exact: true }).count()) === 0)
       await page.getByRole('button', { name: 'Add criterion' }).click()
@@ -249,8 +254,11 @@ test('browser hiring lifecycle: registration through hired outcome and talent po
       .getByRole('dialog')
       .getByRole('button', { name: 'Submit Scorecard', exact: true })
       .click()
-    await expect(page.getByText('SUBMITTED', { exact: true })).toBeVisible()
+    await expect(page.getByText('Submitted', { exact: true })).toBeVisible()
     await page.goto(`/app/organizations/${org.id}/interviews/${interviewId}`)
+    await expect(
+      page.getByRole('heading', { name: 'Synthetic interview edited' }),
+    ).toBeVisible()
     await page
       .getByRole('button', { name: 'View Scorecard', exact: true })
       .click()

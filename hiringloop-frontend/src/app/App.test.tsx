@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
@@ -76,10 +76,13 @@ describe('application routes', () => {
     const user = userEvent.setup()
     renderRoutes('/app')
     await user.click(screen.getByRole('button', { name: /Open account menu/ }))
-    expect(screen.getByRole('menu')).toBeVisible()
-    expect(screen.getByRole('menuitem', { name: 'Sign out' })).toBeVisible()
-    expect(screen.getByText('test@example.test')).toBeVisible()
-    expect(screen.getByText('Signed in account')).toBeVisible()
+    const menu = screen.getByRole('menu')
+    expect(menu).toBeVisible()
+    expect(
+      within(menu).getByRole('menuitem', { name: 'Sign out' }),
+    ).toBeVisible()
+    expect(within(menu).getByText('test@example.test')).toBeVisible()
+    expect(within(menu).getByText('Signed in account')).toBeVisible()
     expect(
       screen.queryByRole('button', { name: 'Sign out' }),
     ).not.toBeInTheDocument()

@@ -1,5 +1,6 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, render, screen, within } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { ApiError } from '../../../shared/lib/apiErrors'
 import { ScorecardTemplatePage } from './ScorecardTemplatePage'
@@ -11,8 +12,12 @@ const updateMutate = vi.fn()
 const publishMutate = vi.fn()
 let templateConflict = false
 
-vi.mock('react-router-dom', () => ({
+vi.mock('react-router-dom', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('react-router-dom')>()),
   useParams: () => ({ organizationId: 'org', jobId: 'job' }),
+}))
+vi.mock('../../jobs/hooks/queries', () => ({
+  useJob: () => ({ data: { title: 'Engineer' }, isPending: false }),
 }))
 vi.mock('../../organizations/hooks/queries', () => ({
   useOrganization: () => organizationQuery(),
@@ -21,10 +26,15 @@ vi.mock('../hooks/queries', () => ({
   useScorecardTemplate: () => templateQuery(),
 }))
 vi.mock('../hooks/mutations', () => ({
-  useCreateDraft: () => ({ mutate: createMutate, isPending: false }),
+  useCreateDraft: () => ({
+    mutate: createMutate,
+    isPending: false,
+    isError: false,
+  }),
   useUpdateDraft: () => ({
     mutate: updateMutate,
     isPending: false,
+    reset: vi.fn(),
     error: templateConflict
       ? new ApiError({
           kind: 'response',
@@ -37,6 +47,7 @@ vi.mock('../hooks/mutations', () => ({
   usePublishDraft: () => ({
     mutate: publishMutate,
     isPending: false,
+    reset: vi.fn(),
     error: null,
   }),
 }))
@@ -83,6 +94,12 @@ function ready(data: unknown) {
     isPending: false,
   })
 }
+const renderPage = () =>
+  render(
+    <MemoryRouter>
+      <ScorecardTemplatePage />
+    </MemoryRouter>,
+  )
 
 describe('ScorecardTemplatePage', () => {
   afterEach(cleanup)
@@ -93,7 +110,7 @@ describe('ScorecardTemplatePage', () => {
 
   test('shows no-template state and lets a manager create a draft', async () => {
     ready(null)
-    render(<ScorecardTemplatePage />)
+    renderPage()
     expect(screen.getByText('No scorecard configured')).toBeInTheDocument()
     await userEvent
       .setup()
@@ -107,7 +124,7 @@ describe('ScorecardTemplatePage', () => {
       data: { permissions: ['scorecard-template:view'] },
       isPending: false,
     })
-    render(<ScorecardTemplatePage />)
+    renderPage()
     expect(screen.getByText('Published v1')).toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: /create new draft/i }),
@@ -120,7 +137,7 @@ describe('ScorecardTemplatePage', () => {
   test('edits criteria, exposes accessible reorder controls, and confirms publish', async () => {
     ready({ activeVersion: null, draft })
     const user = userEvent.setup()
-    render(<ScorecardTemplatePage />)
+    renderPage()
     await user.click(screen.getByRole('button', { name: 'Add criterion' }))
     expect(screen.getAllByRole('button', { name: 'Delete' })).toHaveLength(3)
     await user.click(screen.getAllByRole('button', { name: 'Move down' })[0])
@@ -132,7 +149,14 @@ describe('ScorecardTemplatePage', () => {
           expect.objectContaining({ label: 'Two', position: 1 }),
         ]),
       }),
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
     )
+  })
+
+  test('confirms publishing an unchanged draft with its revision', async () => {
+    ready({ activeVersion: null, draft })
+    const user = userEvent.setup()
+    renderPage()
     await user.click(screen.getByRole('button', { name: 'Publish' }))
     expect(screen.getByRole('dialog')).toHaveTextContent('Publish scorecard?')
     await user.click(screen.getByRole('button', { name: 'Publish' }))
@@ -145,10 +169,96 @@ describe('ScorecardTemplatePage', () => {
   test('requires an explicit reload after a template conflict', () => {
     ready({ activeVersion: null, draft })
     templateConflict = true
-    render(<ScorecardTemplatePage />)
+    renderPage()
     expect(screen.getByRole('alert')).toHaveTextContent('updated elsewhere')
     expect(
       screen.getByRole('button', { name: 'Reload latest version' }),
     ).toBeInTheDocument()
+  })
+
+  test('retains local criteria edits through a background refetch and blocks a stale write', async () => {
+    ready({ activeVersion: null, draft })
+    const user = userEvent.setup()
+    const view = renderPage()
+    await user.type(screen.getByRole('textbox', { name: 'Title' }), ' revised')
+    templateQuery.mockReturnValue({
+      data: { activeVersion: null, draft: { ...draft, revision: 4 } },
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    })
+    view.rerender(
+      <MemoryRouter>
+        <ScorecardTemplatePage />
+      </MemoryRouter>,
+    )
+    expect(screen.getByRole('textbox', { name: 'Title' })).toHaveValue(
+      'Interview revised',
+    )
+    expect(screen.getByRole('alert')).toHaveTextContent('newer draft')
+    expect(screen.getByRole('button', { name: 'Save Draft' })).toBeDisabled()
+    expect(updateMutate).not.toHaveBeenCalled()
+  })
+
+  test('accepts the saved server revision before a subsequent edit', async () => {
+    ready({ activeVersion: null, draft })
+    const user = userEvent.setup()
+    const view = renderPage()
+    await user.type(screen.getByRole('textbox', { name: 'Title' }), ' revised')
+    await user.click(screen.getByRole('button', { name: 'Save Draft' }))
+    const savedDraft = { ...draft, title: 'Interview revised', revision: 4 }
+    templateQuery.mockReturnValue({
+      data: { activeVersion: null, draft: savedDraft },
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    })
+    await act(async () => {
+      updateMutate.mock.calls[0][1].onSuccess({ draft: savedDraft })
+    })
+    view.rerender(
+      <MemoryRouter>
+        <ScorecardTemplatePage />
+      </MemoryRouter>,
+    )
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Scorecard draft saved',
+    )
+    expect(screen.getByRole('button', { name: 'Publish' })).toBeEnabled()
+    await user.type(screen.getByRole('textbox', { name: 'Title' }), ' again')
+    await user.click(screen.getByRole('button', { name: 'Save Draft' }))
+    expect(updateMutate.mock.calls[1][0]).toEqual(
+      expect.objectContaining({
+        expectedRevision: 4,
+        title: 'Interview revised again',
+      }),
+    )
+  })
+
+  test('keeps the confirmed publish revision if the query refetches while confirmation is open', async () => {
+    ready({ activeVersion: null, draft })
+    const user = userEvent.setup()
+    const view = renderPage()
+    await user.click(screen.getByRole('button', { name: 'Publish' }))
+    templateQuery.mockReturnValue({
+      data: { activeVersion: null, draft: { ...draft, revision: 4 } },
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    })
+    view.rerender(
+      <MemoryRouter>
+        <ScorecardTemplatePage />
+      </MemoryRouter>,
+    )
+    await user.click(
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: 'Publish',
+      }),
+    )
+    expect(publishMutate).toHaveBeenCalledWith(
+      { expectedRevision: 3 },
+      expect.any(Object),
+    )
   })
 })

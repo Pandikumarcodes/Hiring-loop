@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
+  Badge,
   Button,
   Dialog,
   DialogContent,
@@ -60,7 +61,11 @@ function SubmittedScorecardDialog({
             <p className="text-sm text-text-secondary">
               Participant ID: {query.data.participant.id}
             </p>
-            <p className="text-sm text-text-secondary">Submitted</p>
+            {query.data.submittedAt ? (
+              <p className="mt-1 text-sm text-text-secondary">
+                Submitted {new Date(query.data.submittedAt).toLocaleString()}
+              </p>
+            ) : null}
             <p className="text-sm text-text-secondary">
               Template v{query.data.templateVersion.versionNumber}:{' '}
               {query.data.templateVersion.title}
@@ -103,8 +108,14 @@ export function InterviewFeedback({
           <p className="mt-3 text-sm">Loading scorecard…</p>
         ) : mine.data ? (
           <>
-            <p className="mt-3 text-sm text-text-secondary">
-              {mine.data.status.replace('_', ' ')}
+            <p className="mt-3">
+              <Badge
+                variant={
+                  mine.data.status === 'SUBMITTED' ? 'success' : 'neutral'
+                }
+              >
+                {mine.data.status.replace('_', ' ')}
+              </Badge>
             </p>
             <Link
               className="mt-3 inline-block font-bold text-primary-dark underline"
@@ -149,10 +160,21 @@ export function InterviewFeedback({
             key={participant.participant.id}
             className="rounded-control border border-border p-3"
           >
-            <p className="font-semibold">Interviewer</p>
-            <p className="text-sm text-text-secondary">
-              {participant.status.replace('_', ' ')}
-            </p>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="font-semibold">Interviewer</p>
+              <Badge
+                variant={
+                  participant.status === 'SUBMITTED' ? 'success' : 'neutral'
+                }
+              >
+                {participant.status.replace('_', ' ')}
+              </Badge>
+            </div>
+            {participant.submittedAt ? (
+              <p className="mt-1 text-sm text-text-secondary">
+                Submitted {new Date(participant.submittedAt).toLocaleString()}
+              </p>
+            ) : null}
             {participant.status === 'SUBMITTED' ? (
               <>
                 <p className="mt-1 text-sm">
@@ -242,6 +264,14 @@ export function ApplicationFeedback({
                   participant.scorecard!.overallRecommendation,
                 )}
               </p>
+              {participant.scorecard!.submittedAt ? (
+                <p className="mt-1 text-sm text-text-secondary">
+                  Submitted{' '}
+                  {new Date(
+                    participant.scorecard!.submittedAt,
+                  ).toLocaleString()}
+                </p>
+              ) : null}
               <Button
                 className="mt-2"
                 variant="secondary"

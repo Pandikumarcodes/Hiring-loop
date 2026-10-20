@@ -13,11 +13,14 @@ import {
   DialogDescription,
   DialogTitle,
   Input,
+  ListPagination,
+  PageContainer,
   PageHeader,
   Select,
 } from '../../../shared/components/ui'
 import { useOrganization } from '../../organizations/hooks/queries'
 import { can } from '../../jobs/utils/job-utils'
+import { isApiError } from '../../../shared/lib/apiErrors'
 import { useAuditEvent, useAuditEvents } from '../hooks/queries'
 import type { AuditFilters, AuditEvent } from '../types/audit.types'
 import {
@@ -100,7 +103,24 @@ export function AuditPage() {
   }
 
   if (organization.isPending) return <LoadingState label="Loading audit log" />
-  if (organization.isError || !allowed)
+  if (organization.isError) {
+    const denied =
+      isApiError(organization.error) && organization.error.status === 403
+    return (
+      <Page>
+        <ErrorState
+          title={denied ? 'Audit access unavailable' : 'Audit log unavailable'}
+          description={
+            denied
+              ? 'You do not have permission to view the audit log in this workspace.'
+              : 'We could not load this workspace. Please try again.'
+          }
+          onRetry={denied ? undefined : () => void organization.refetch()}
+        />
+      </Page>
+    )
+  }
+  if (!allowed)
     return (
       <Page>
         <ErrorState
@@ -144,7 +164,12 @@ export function AuditPage() {
           />
         ) : list.data ? (
           <>
-            <div className="overflow-x-auto rounded-card border border-border bg-surface shadow-sm">
+            <div
+              className="overflow-x-auto rounded-card border border-border bg-surface shadow-sm"
+              role="region"
+              aria-label="Workspace audit events table"
+              tabIndex={0}
+            >
               <table className="w-full min-w-[48rem] text-left text-sm">
                 <caption className="sr-only">Workspace audit events</caption>
                 <thead className="bg-slate-50 text-text-secondary">
@@ -177,10 +202,13 @@ export function AuditPage() {
                 </tbody>
               </table>
             </div>
-            <Pagination
+            <ListPagination
               page={list.data.pagination.page}
+              pageSize={list.data.pagination.pageSize}
+              totalItems={list.data.pagination.totalItems}
               totalPages={Math.max(1, list.data.pagination.totalPages)}
               onPageChange={(value) => update('page', String(value))}
+              loading={list.isFetching}
             />
           </>
         ) : null}
@@ -193,11 +221,7 @@ export function AuditPage() {
 }
 
 function Page({ children }: { children: React.ReactNode }) {
-  return (
-    <section className="mx-auto w-full max-w-7xl min-w-0 px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
-      {children}
-    </section>
-  )
+  return <PageContainer className="py-10 lg:py-14">{children}</PageContainer>
 }
 
 function AuditFilterBar({
@@ -304,40 +328,6 @@ function AuditRow({
         </Button>
       </td>
     </tr>
-  )
-}
-
-function Pagination({
-  page,
-  totalPages,
-  onPageChange,
-}: {
-  page: number
-  totalPages: number
-  onPageChange: (page: number) => void
-}) {
-  return (
-    <div className="mt-4 flex items-center justify-between gap-3">
-      <Button
-        variant="secondary"
-        disabled={page <= 1}
-        onClick={() => onPageChange(page - 1)}
-        aria-label="Previous audit page"
-      >
-        Previous
-      </Button>
-      <span className="text-sm text-text-secondary">
-        Page {page} of {totalPages}
-      </span>
-      <Button
-        variant="secondary"
-        disabled={page >= totalPages}
-        onClick={() => onPageChange(page + 1)}
-        aria-label="Next audit page"
-      >
-        Next
-      </Button>
-    </div>
   )
 }
 

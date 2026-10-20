@@ -5,7 +5,13 @@ import {
   EmptyState,
   LoadingState,
 } from '../../../shared/components/feedback'
-import { Badge, Button, PageHeader } from '../../../shared/components/ui'
+import {
+  Badge,
+  Button,
+  Card,
+  PageContainer,
+  PageHeader,
+} from '../../../shared/components/ui'
 import { isApiError } from '../../../shared/lib/apiErrors'
 import { useOrganization } from '../../organizations/hooks/queries'
 import { useDocumentAccess } from '../hooks/mutations'
@@ -149,46 +155,119 @@ function ApplicationContent({
   return (
     <Wrap>
       <PageHeader
+        breadcrumbs={
+          <Link
+            className="font-semibold text-text-secondary hover:text-primary-dark hover:underline"
+            to={`/app/organizations/${organizationId}/candidates/${application.candidate.id}`}
+          >
+            Candidate profile
+          </Link>
+        }
         title={application.job.title}
-        description={`Application submitted ${formatCandidateDate(application.submittedAt)}`}
+        description={`Application for ${application.candidate.name} · submitted ${formatCandidateDate(application.submittedAt)}`}
       />
-      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(18rem,0.7fr)]">
+      <Card className="mb-6 grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4 sm:p-6">
+        <Meta label="Candidate" value={application.candidate.name} />
+        <Meta label="Job" value={application.job.title} />
+        <div className="min-w-0">
+          <dt className="text-sm text-text-secondary">Current stage</dt>
+          <dd className="mt-1">
+            <Badge variant="success">
+              {application.currentStage?.name ?? 'Stage unavailable'}
+            </Badge>
+          </dd>
+        </div>
+        <Meta
+          label="Submitted"
+          value={formatCandidateDate(application.submittedAt)}
+        />
+      </Card>
+      <nav
+        aria-label="Application sections"
+        className="sticky top-2 z-10 mb-6 -mx-1 overflow-x-auto rounded-card border border-border bg-surface-raised/95 p-2 shadow-surface backdrop-blur"
+      >
+        <ul className="flex min-w-max items-center gap-1">
+          {[
+            ['interviews', 'Interviews'],
+            ['feedback', 'Scorecards'],
+            ['notes', 'Notes'],
+            ...(canCommunicate ? [['communications', 'Communications']] : []),
+            ['offer', 'Offer'],
+            ['outcome', 'Outcome'],
+            ['candidate', 'Candidate'],
+            ['job', 'Job'],
+            ['answers', 'Answers'],
+            ['documents', 'Documents'],
+            ['history', 'Stage history'],
+          ].map(([id, label]) => (
+            <li key={id}>
+              <a
+                className="inline-flex min-h-10 items-center rounded-control px-3 text-sm font-semibold text-text-secondary transition-colors hover:bg-background hover:text-text-primary focus-visible:outline-3 focus-visible:outline-primary-dark focus-visible:outline-offset-2"
+                href={`#application-${id}`}
+              >
+                {label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(18rem,0.7fr)]">
         <div className="grid gap-6">
-          <ApplicationInterviews
-            organizationId={organizationId}
-            applicationId={application.id}
-            canSchedule={canSchedule}
-          />
-          <ApplicationFeedback
-            organizationId={organizationId}
-            applicationId={application.id}
-            enabled={canViewFeedback}
-          />
-          <InternalNotes
-            organizationId={organizationId}
-            applicationId={application.id}
-            enabled={canManageNotes}
-            isAdmin={isAdmin}
-          />
-          {canCommunicate ? (
-            <CommunicationSection
+          <div
+            id="application-interviews"
+            className="scroll-mt-24"
+            tabIndex={-1}
+          >
+            <ApplicationInterviews
               organizationId={organizationId}
               applicationId={application.id}
-              candidateEmail={application.candidate.email}
-              enabled
+              canSchedule={canSchedule}
             />
+          </div>
+          <div id="application-feedback" className="scroll-mt-24" tabIndex={-1}>
+            <ApplicationFeedback
+              organizationId={organizationId}
+              applicationId={application.id}
+              enabled={canViewFeedback}
+            />
+          </div>
+          <div id="application-notes" className="scroll-mt-24" tabIndex={-1}>
+            <InternalNotes
+              organizationId={organizationId}
+              applicationId={application.id}
+              enabled={canManageNotes}
+              isAdmin={isAdmin}
+            />
+          </div>
+          {canCommunicate ? (
+            <div
+              id="application-communications"
+              className="scroll-mt-24"
+              tabIndex={-1}
+            >
+              <CommunicationSection
+                organizationId={organizationId}
+                applicationId={application.id}
+                candidateEmail={application.candidate.email}
+                enabled
+              />
+            </div>
           ) : null}
-          <OfferSection
-            organizationId={organizationId}
-            applicationId={application.id}
-            permissions={permissions}
-          />
-          <ApplicationOutcomeSection
-            organizationId={organizationId}
-            application={application}
-            permissions={permissions}
-          />
-          <Section title="Candidate">
+          <div id="application-offer" className="scroll-mt-24">
+            <OfferSection
+              organizationId={organizationId}
+              applicationId={application.id}
+              permissions={permissions}
+            />
+          </div>
+          <div id="application-outcome" className="scroll-mt-24">
+            <ApplicationOutcomeSection
+              organizationId={organizationId}
+              application={application}
+              permissions={permissions}
+            />
+          </div>
+          <Section id="application-candidate" title="Candidate">
             <dl className="grid gap-5 sm:grid-cols-2">
               <Meta label="Name" value={application.candidate.name} />
               <Meta label="Email" value={application.candidate.email} />
@@ -204,7 +283,7 @@ function ApplicationContent({
               View candidate profile
             </Link>
           </Section>
-          <Section title="Job">
+          <Section id="application-job" title="Job">
             <Link
               className="font-bold text-primary-dark hover:underline"
               to={`/app/organizations/${organizationId}/jobs/${application.job.id}`}
@@ -212,7 +291,10 @@ function ApplicationContent({
               {application.job.title}
             </Link>
           </Section>
-          <Section title="Submitted application answers">
+          <Section
+            id="application-answers"
+            title="Submitted application answers"
+          >
             {application.answers.length ? (
               <div className="grid gap-5">
                 {application.answers.map((answer) => (
@@ -227,12 +309,7 @@ function ApplicationContent({
           </Section>
         </div>
         <div className="grid content-start gap-6">
-          <Section title="Current stage">
-            <Badge variant="success">
-              {application.currentStage?.name ?? 'Stage unavailable'}
-            </Badge>
-          </Section>
-          <Section title="Resume and documents">
+          <Section id="application-documents" title="Resume and documents">
             {documentAccess.isError ? (
               <p
                 className="mb-4 rounded-control border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
@@ -259,7 +336,7 @@ function ApplicationContent({
               />
             )}
           </Section>
-          <Section title="Stage history">
+          <Section id="application-history" title="Stage history">
             {application.stageHistory.length ? (
               <ol className="grid gap-4">
                 {application.stageHistory.map((entry) => (
@@ -359,14 +436,20 @@ function formatEvent(event: string) {
 }
 
 function Section({
+  id,
   title,
   children,
 }: {
+  id?: string
   title: string
   children: React.ReactNode
 }) {
   return (
-    <section className="rounded-card border border-border bg-surface p-5 shadow-sm sm:p-6">
+    <section
+      id={id}
+      tabIndex={id ? -1 : undefined}
+      className="scroll-mt-24 rounded-card border border-border bg-surface p-5 shadow-sm sm:p-6"
+    >
       <h2 className="mb-5 text-lg font-bold">{title}</h2>
       {children}
     </section>
@@ -384,8 +467,8 @@ function Meta({ label, value }: { label: string; value: string }) {
 
 function Wrap({ children }: { children: React.ReactNode }) {
   return (
-    <section className="mx-auto w-full max-w-6xl min-w-0 px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+    <PageContainer width="wide" className="py-8 lg:py-10">
       {children}
-    </section>
+    </PageContainer>
   )
 }

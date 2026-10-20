@@ -12,7 +12,7 @@ export function DropdownMenuContent({
         sideOffset={8}
         collisionPadding={12}
         className={cn(
-          'z-50 min-w-56 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-card border border-border bg-surface p-1.5 shadow-xl outline-none',
+          'z-50 min-w-56 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-card border border-border bg-surface-raised p-1.5 shadow-popover outline-none',
           className,
         )}
         {...props}
@@ -27,7 +27,7 @@ export function DropdownMenuItem({
   return (
     <DropdownMenuPrimitive.Item
       className={cn(
-        'flex min-h-11 cursor-pointer items-center rounded-control px-3 py-2 text-sm outline-none focus:bg-primary-soft data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+        'flex min-h-11 cursor-pointer items-center rounded-control px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:bg-primary-soft focus:text-primary-dark data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
         className,
       )}
       {...props}

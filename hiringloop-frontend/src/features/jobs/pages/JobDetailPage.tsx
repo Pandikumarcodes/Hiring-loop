@@ -1,7 +1,10 @@
 import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { PageHeader } from '../../../shared/components/ui'
-import { Button } from '../../../shared/components/ui'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import {
+  Button,
+  PageContainer,
+  PageHeader,
+} from '../../../shared/components/ui'
 import { ErrorState, LoadingState } from '../../../shared/components/feedback'
 import { JobActions } from '../components/JobActions'
 import { JobStatusBadge } from '../components/JobStatusBadge'
@@ -61,6 +64,14 @@ export function JobDetailPage() {
   return (
     <Wrap>
       <PageHeader
+        breadcrumbs={
+          <Link
+            className="font-semibold text-text-secondary hover:text-primary-dark hover:underline"
+            to={`/app/organizations/${organizationId}/jobs`}
+          >
+            Jobs
+          </Link>
+        }
         title={jobTitle(j.title)}
         description={
           <span className="inline-flex items-center gap-2">
@@ -140,7 +151,7 @@ export function JobDetailPage() {
           ) : null}
         </div>
       ) : null}
-      <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+      <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
         <div className="grid gap-6">
           <Section title="Overview">
             <dl className="grid gap-5 sm:grid-cols-2">
@@ -202,9 +213,9 @@ export function JobDetailPage() {
   )
 }
 const Wrap = ({ children }: { children: React.ReactNode }) => (
-  <section className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+  <PageContainer width="standard" className="py-8 lg:py-10">
     {children}
-  </section>
+  </PageContainer>
 )
 const Section = ({
   title,

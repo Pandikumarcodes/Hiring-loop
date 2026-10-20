@@ -8,6 +8,8 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/tests/setup.ts'],
+    // Keep jsdom test files isolated without exhausting memory on developer machines.
+    maxWorkers: 1,
     testTimeout: 15_000,
     exclude: ['e2e/**', 'node_modules/**', 'dist/**'],
   },

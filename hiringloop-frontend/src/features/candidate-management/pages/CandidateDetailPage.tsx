@@ -4,7 +4,7 @@ import {
   EmptyState,
   LoadingState,
 } from '../../../shared/components/feedback'
-import { Badge, PageHeader } from '../../../shared/components/ui'
+import { Badge, PageContainer, PageHeader } from '../../../shared/components/ui'
 import { isApiError } from '../../../shared/lib/apiErrors'
 import { useOrganization } from '../../organizations/hooks/queries'
 import { useCandidate } from '../hooks/queries'
@@ -85,10 +85,18 @@ function CandidateContent({
   return (
     <Wrap>
       <PageHeader
+        breadcrumbs={
+          <Link
+            className="font-semibold text-text-secondary hover:text-primary-dark hover:underline"
+            to={`/app/organizations/${organizationId}/candidates`}
+          >
+            Candidates
+          </Link>
+        }
         title={candidate.name}
         description="Candidate profile and submitted applications."
       />
-      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.7fr)]">
+      <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,0.7fr)]">
         <Section title="Profile">
           <dl className="grid gap-5 sm:grid-cols-2">
             <Meta label="Name" value={candidate.name} />
@@ -194,8 +202,8 @@ function Meta({ label, value }: { label: string; value: string }) {
 
 function Wrap({ children }: { children: React.ReactNode }) {
   return (
-    <section className="mx-auto w-full max-w-6xl min-w-0 px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+    <PageContainer width="standard" className="py-8 lg:py-10">
       {children}
-    </section>
+    </PageContainer>
   )
 }

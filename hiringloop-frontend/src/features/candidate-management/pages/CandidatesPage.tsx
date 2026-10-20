@@ -7,8 +7,13 @@ import {
   NoResultsState,
 } from '../../../shared/components/feedback'
 import {
+  Badge,
   Button,
+  DataTableShell,
+  FilterToolbar,
   Input,
+  ListPagination,
+  PageContainer,
   PageHeader,
   Select,
 } from '../../../shared/components/ui'
@@ -79,6 +84,9 @@ export function CandidatesPage() {
     filters,
     Boolean(organizationId && mayList),
   )
+  const visibleJobs = jobs.isPlaceholderData ? undefined : jobs.data
+  const visiblePipeline = pipeline.isPlaceholderData ? undefined : pipeline.data
+  const data = candidates.isPlaceholderData ? undefined : candidates.data
 
   const update = (key: string, value: string) => {
     const next = new URLSearchParams(params)
@@ -97,22 +105,22 @@ export function CandidatesPage() {
 
   if (organization.isPending)
     return (
-      <Page>
+      <PageContainer>
         <ListSkeleton />
-      </Page>
+      </PageContainer>
     )
   if (organization.isError || !mayList)
     return (
-      <Page>
+      <PageContainer>
         <ErrorState
           title="Candidate access unavailable"
           description="You do not have permission to view candidates in this workspace."
         />
-      </Page>
+      </PageContainer>
     )
   if (candidates.isError)
     return (
-      <Page>
+      <PageContainer>
         <ErrorState
           title={
             isApiError(candidates.error) && candidates.error.status === 403
@@ -125,17 +133,28 @@ export function CandidatesPage() {
           )}
           onRetry={() => void candidates.refetch()}
         />
-      </Page>
+      </PageContainer>
     )
 
-  const data = candidates.data
   return (
-    <Page>
+    <PageContainer>
       <PageHeader
         title="Candidates"
         description="Review candidates and their submitted applications."
       />
-      <div className="mb-6 grid min-w-0 gap-3 rounded-card border border-border bg-surface p-4 shadow-sm lg:grid-cols-[minmax(14rem,1fr)_repeat(3,minmax(10rem,auto))_auto]">
+      <FilterToolbar
+        className="xl:grid-cols-[minmax(14rem,1.5fr)_repeat(3,minmax(10rem,1fr))]"
+        resultsSummary={
+          data
+            ? `${data.pagination.totalItems.toLocaleString()} candidates`
+            : null
+        }
+        clearAction={
+          <Button variant="ghost" onClick={clear} disabled={!params.toString()}>
+            Clear filters
+          </Button>
+        }
+      >
         <label className="relative min-w-0">
           <span className="sr-only">Search candidates by name or email</span>
           <Search
@@ -156,7 +175,7 @@ export function CandidatesPage() {
           onChange={(value) => update('jobId', value)}
         >
           <option value="">All jobs</option>
-          {jobs.data?.jobs.map((job) => (
+          {visibleJobs?.jobs.map((job) => (
             <option key={job.id} value={job.id}>
               {job.title || 'Untitled job'}
             </option>
@@ -166,10 +185,15 @@ export function CandidatesPage() {
           label="Pipeline stage"
           value={params.get('stageId') ?? ''}
           onChange={(value) => update('stageId', value)}
-          disabled={!selectedJobId || pipeline.isPending || pipeline.isError}
+          disabled={
+            !selectedJobId ||
+            pipeline.isPending ||
+            pipeline.isPlaceholderData ||
+            pipeline.isError
+          }
         >
           <option value="">All stages</option>
-          {pipeline.data?.stages.map((stage) => (
+          {visiblePipeline?.stages.map((stage) => (
             <option key={stage.id} value={stage.id}>
               {stage.name}
             </option>
@@ -186,11 +210,8 @@ export function CandidatesPage() {
             </option>
           ))}
         </Filter>
-        <Button variant="ghost" onClick={clear} disabled={!params.toString()}>
-          Clear filters
-        </Button>
-      </div>
-      {candidates.isPending ? (
+      </FilterToolbar>
+      {candidates.isPending || candidates.isPlaceholderData || !data ? (
         <ListSkeleton />
       ) : data?.candidates.length === 0 ? (
         hasFilters ? (
@@ -211,39 +232,36 @@ export function CandidatesPage() {
         )
       ) : (
         <>
-          <div className="hidden overflow-x-auto rounded-card border border-border bg-surface shadow-sm md:block">
-            <table className="w-full min-w-[760px] text-left text-sm">
-              <caption className="sr-only">Candidates</caption>
-              <thead className="bg-slate-50 text-text-secondary">
-                <tr>
-                  {[
-                    'Candidate',
-                    'Latest job',
-                    'Current stage',
-                    'Applications',
-                    'Latest submitted',
-                  ].map((heading) => (
-                    <th
-                      key={heading}
-                      scope="col"
-                      className="px-4 py-3 font-semibold"
-                    >
-                      {heading}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {data?.candidates.map((candidate) => (
-                  <CandidateRow
-                    key={candidate.id}
-                    candidate={candidate}
-                    organizationId={organizationId}
-                  />
+          <DataTableShell caption="Candidates" tableClassName="min-w-[48rem]">
+            <thead className="bg-slate-50 text-text-secondary">
+              <tr>
+                {[
+                  'Candidate',
+                  'Latest job',
+                  'Current stage',
+                  'Applications',
+                  'Latest submitted',
+                ].map((heading) => (
+                  <th
+                    key={heading}
+                    scope="col"
+                    className="px-4 py-3 font-semibold"
+                  >
+                    {heading}
+                  </th>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </tr>
+            </thead>
+            <tbody>
+              {data?.candidates.map((candidate) => (
+                <CandidateRow
+                  key={candidate.id}
+                  candidate={candidate}
+                  organizationId={organizationId}
+                />
+              ))}
+            </tbody>
+          </DataTableShell>
           <div className="grid gap-3 md:hidden">
             {data?.candidates.map((candidate) => (
               <CandidateCard
@@ -253,29 +271,17 @@ export function CandidatesPage() {
               />
             ))}
           </div>
-          <div className="mt-6 flex items-center justify-between gap-3">
-            <Button
-              variant="secondary"
-              disabled={filters.page <= 1}
-              onClick={() => update('page', String(filters.page - 1))}
-            >
-              Previous
-            </Button>
-            <span className="text-center text-sm text-text-secondary">
-              Page {data?.pagination.page ?? filters.page} of{' '}
-              {Math.max(1, data?.pagination.totalPages ?? 1)}
-            </span>
-            <Button
-              variant="secondary"
-              disabled={filters.page >= (data?.pagination.totalPages ?? 1)}
-              onClick={() => update('page', String(filters.page + 1))}
-            >
-              Next
-            </Button>
-          </div>
+          <ListPagination
+            page={data.pagination.page}
+            pageSize={data.pagination.limit}
+            totalItems={data.pagination.totalItems}
+            totalPages={data.pagination.totalPages}
+            loading={candidates.isFetching}
+            onPageChange={(page) => update('page', String(page))}
+          />
         </>
       )}
-    </Page>
+    </PageContainer>
   )
 }
 
@@ -312,7 +318,11 @@ function CandidateRow({
         </span>
       </td>
       <td className="px-4 py-4">
-        {latest?.currentStage?.name ?? 'Not available'}
+        {latest?.currentStage ? (
+          <Badge variant="info">{latest.currentStage.name}</Badge>
+        ) : (
+          'Not available'
+        )}
       </td>
       <td className="px-4 py-4">{candidate.applicationCount}</td>
       <td className="whitespace-nowrap px-4 py-4">
@@ -333,7 +343,7 @@ function CandidateCard({
 }) {
   const latest = candidate.latestApplication
   return (
-    <article className="min-w-0 rounded-card border border-border bg-surface p-4 shadow-sm">
+    <article className="min-w-0 rounded-card border border-border bg-surface p-4 shadow-surface">
       <Link
         className="block truncate font-bold text-primary-dark hover:underline"
         to={`/app/organizations/${organizationId}/candidates/${candidate.id}`}
@@ -408,18 +418,14 @@ function Meta({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
       <dt className="text-text-secondary">{label}</dt>
-      <dd className="truncate font-medium" title={value}>
-        {value}
+      <dd className="min-w-0 truncate font-medium" title={value}>
+        {label === 'Current stage' && value !== 'Not available' ? (
+          <Badge variant="info">{value}</Badge>
+        ) : (
+          value
+        )}
       </dd>
     </div>
-  )
-}
-
-function Page({ children }: { children: React.ReactNode }) {
-  return (
-    <section className="mx-auto w-full max-w-7xl min-w-0 px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
-      {children}
-    </section>
   )
 }
 

@@ -126,4 +126,49 @@ describe('AuditPage', () => {
       screen.getByRole('heading', { name: 'Audit access unavailable' }),
     ).toBeVisible()
   })
+
+  test('keeps server pagination and retries a transient workspace lookup error', () => {
+    setup()
+    useAuditEventsMock.mockReturnValue({
+      isPending: false,
+      isFetching: false,
+      isError: false,
+      data: {
+        auditEvents: [event],
+        pagination: { page: 1, pageSize: 25, totalItems: 26, totalPages: 2 },
+      },
+    })
+    render(
+      <MemoryRouter initialEntries={['/app/organizations/org-1/audit']}>
+        <AuditPage />
+      </MemoryRouter>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+    expect(useAuditEventsMock).toHaveBeenLastCalledWith(
+      expect.any(String),
+      expect.any(Object),
+      2,
+      25,
+      true,
+    )
+    cleanup()
+
+    const refetch = vi.fn()
+    useOrganizationMock.mockReturnValue({
+      isPending: false,
+      isError: true,
+      error: new Error('temporary failure'),
+      refetch,
+    })
+    render(
+      <MemoryRouter>
+        <AuditPage />
+      </MemoryRouter>,
+    )
+    expect(
+      screen.getByRole('heading', { name: 'Audit log unavailable' }),
+    ).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    expect(refetch).toHaveBeenCalledOnce()
+  })
 })

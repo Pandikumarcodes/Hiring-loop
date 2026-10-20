@@ -1,6 +1,11 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Button, Input, PageHeader } from '../../../shared/components/ui'
+import {
+  Button,
+  Input,
+  PageContainer,
+  PageHeader,
+} from '../../../shared/components/ui'
 import {
   ErrorState,
   LoadingState,
@@ -10,6 +15,7 @@ import { useOrganization } from '../../organizations/hooks/queries'
 import { usePoolMembers, usePools } from '../hooks/queries'
 import { useTalentPoolActions } from '../hooks/mutations'
 import { PoolForm } from './TalentPoolsPage'
+import { isApiError } from '../../../shared/lib/apiErrors'
 export function TalentPoolDetailPage() {
   const { organizationId = '', talentPoolId = '' } = useParams()
   const org = useOrganization(organizationId, !!organizationId)
@@ -32,20 +38,50 @@ export function TalentPoolDetailPage() {
   const actions = useTalentPoolActions(organizationId)
   if (org.isPending || pools.isPending)
     return <LoadingState label="Loading talent pool" />
+  if (org.isError) {
+    const denied = isApiError(org.error) && org.error.status === 403
+    return (
+      <PageContainer width="standard">
+        <ErrorState
+          title={
+            denied
+              ? 'Talent pool access unavailable'
+              : 'Talent pools unavailable'
+          }
+          description={
+            denied
+              ? 'You do not have permission to view talent pools in this workspace.'
+              : 'We could not load this workspace. Please try again.'
+          }
+          onRetry={denied ? undefined : () => void org.refetch()}
+        />
+      </PageContainer>
+    )
+  }
   if (!allowed)
     return (
-      <main className="mx-auto max-w-6xl px-4 py-10">
+      <PageContainer width="standard">
         <ErrorState title="Talent pool access unavailable" />
-      </main>
+      </PageContainer>
+    )
+  if (pools.isError)
+    return (
+      <PageContainer width="standard">
+        <ErrorState
+          title="Talent pool unavailable"
+          description="We could not load this talent pool. Please try again."
+          onRetry={() => void pools.refetch()}
+        />
+      </PageContainer>
     )
   if (!pool)
     return (
-      <main className="mx-auto max-w-6xl px-4 py-10">
+      <PageContainer width="standard">
         <ErrorState title="Talent pool not found" />
-      </main>
+      </PageContainer>
     )
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10">
+    <PageContainer width="standard">
       <PageHeader
         title={pool.name}
         description={pool.description ?? 'Talent pool members.'}
@@ -141,6 +177,6 @@ export function TalentPoolDetailPage() {
           onClose={() => setEdit(false)}
         />
       ) : null}
-    </main>
+    </PageContainer>
   )
 }

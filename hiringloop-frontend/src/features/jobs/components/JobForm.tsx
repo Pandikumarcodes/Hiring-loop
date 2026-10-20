@@ -39,14 +39,20 @@ export function JobForm({
     <form
       className="grid gap-6"
       noValidate
+      aria-busy={busy}
       onSubmit={(e: FormEvent) => {
         e.preventDefault()
-        onSubmit()
+        if (!busy) onSubmit()
       }}
     >
       <FormSection title="Basic information">
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field id="job-title" label="Job title" error={errors.title}>
+          <Field
+            id="job-title"
+            label="Job title"
+            helperText="Required before opening; optional for a draft."
+            error={errors.title}
+          >
             {(p) => (
               <Input
                 id="job-title"
@@ -206,13 +212,15 @@ export function JobForm({
           <Button
             type="button"
             variant="secondary"
-            loading={busy}
-            onClick={onSecondary}
+            disabled={busy}
+            onClick={() => {
+              if (!busy) onSecondary()
+            }}
           >
             {secondaryLabel}
           </Button>
         ) : null}
-        <Button type="submit" loading={busy}>
+        <Button type="submit" loading={busy} disabled={busy}>
           {submitLabel}
         </Button>
       </div>

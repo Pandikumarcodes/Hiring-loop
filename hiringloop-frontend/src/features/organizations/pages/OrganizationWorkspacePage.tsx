@@ -2,14 +2,9 @@ import { Link, useParams } from 'react-router-dom'
 import type { ReactNode } from 'react'
 
 import { LoadingState } from '../../../shared/components/feedback'
-import { PageHeader } from '../../../shared/components/ui'
 import { useOrganization, useOrganizations } from '../hooks/queries'
 import { isOrganizationId } from '../utils/organization-utils'
-import { JobsNavigationLink } from '../../jobs'
-import { CandidatesNavigationLink } from '../../candidate-management'
-import { TalentPoolsNavigationLink } from '../../talent-pools'
-import { AnalyticsNavigationLink } from '../../analytics'
-import { AuditNavigationLink } from '../../audit'
+import { WorkspaceDashboard } from '../components/WorkspaceDashboard'
 
 export function OrganizationWorkspacePage() {
   const { organizationId } = useParams()
@@ -41,34 +36,10 @@ export function OrganizationWorkspacePage() {
     )
 
   return (
-    <section className="mx-auto w-full max-w-6xl min-w-0 px-4 py-10 sm:px-8 lg:px-12 lg:py-14">
-      <p className="eyebrow">Workspace</p>
-      <PageHeader
-        title={organization.data.name}
-        description="Your HiringLoop workspace is ready."
-      />
-      <div className="mt-8 w-full max-w-2xl rounded-card border border-border bg-surface p-5 shadow-sm sm:p-6">
-        <p className="organization-workspace__card-eyebrow">Getting started</p>
-        <h2 className="text-xl font-bold">Everything starts here</h2>
-        <p className="mt-3 leading-6 text-text-secondary">
-          Your team-management and recruiting workflows will appear here as your
-          workspace grows.
-        </p>
-        <Link
-          className="mt-2 inline-block font-bold text-primary-dark hover:underline"
-          to="team"
-        >
-          Team
-        </Link>
-        <JobsNavigationLink permissions={organization.data.permissions} />
-        <CandidatesNavigationLink permissions={organization.data.permissions} />
-        <TalentPoolsNavigationLink
-          permissions={organization.data.permissions}
-        />
-        <AnalyticsNavigationLink permissions={organization.data.permissions} />
-        <AuditNavigationLink permissions={organization.data.permissions} />
-      </div>
-    </section>
+    <WorkspaceDashboard
+      key={organization.data.id}
+      organization={organization.data}
+    />
   )
 }
 

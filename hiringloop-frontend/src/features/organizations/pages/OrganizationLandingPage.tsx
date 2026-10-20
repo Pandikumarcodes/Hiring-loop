@@ -2,7 +2,11 @@ import { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { ErrorState, LoadingState } from '../../../shared/components/feedback'
-import { Button } from '../../../shared/components/ui'
+import {
+  Button,
+  PageContainer,
+  PageHeader,
+} from '../../../shared/components/ui'
 import { useOrganizations } from '../hooks/queries'
 
 export function OrganizationLandingPage() {
@@ -36,10 +40,11 @@ export function OrganizationLandingPage() {
   if (!organizations.data?.length)
     return <LoadingState label="Opening organization setup" />
   return (
-    <section className="mx-auto w-full max-w-3xl min-w-0 px-4 py-10 sm:px-8 lg:px-12 lg:py-14">
-      <p className="eyebrow">Your workspaces</p>
-      <h1>Choose an organization</h1>
-      <p>Select a workspace to continue.</p>
+    <PageContainer width="standard">
+      <PageHeader
+        title="Choose an organization"
+        description="Select a workspace to continue."
+      />
       <div className="my-6 grid gap-3">
         {organizations.data.map((organization) => (
           <Link
@@ -58,6 +63,6 @@ export function OrganizationLandingPage() {
       >
         Create another organization
       </Button>
-    </section>
+    </PageContainer>
   )
 }

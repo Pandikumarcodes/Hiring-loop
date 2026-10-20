@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { PageHeader } from '../../../shared/components/ui'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { PageContainer, PageHeader } from '../../../shared/components/ui'
 import { JobForm } from '../components/JobForm'
 import { useCreateJob, useTransitionJob } from '../hooks/mutations'
 import type { JobInput } from '../types/job.types'
@@ -26,6 +26,7 @@ export function CreateJobPage() {
   const opening = useTransitionJob(organizationId, '')
   const organization = useOrganization(organizationId, Boolean(organizationId))
   async function save(open: boolean) {
+    if (create.isPending || opening.isPending) return
     const next = validateJob(value, open)
     setErrors(next)
     setFormError('')
@@ -62,18 +63,36 @@ export function CreateJobPage() {
   }
   if (organization.isPending)
     return <LoadingState label="Checking job access" />
-  if (organization.isError || !can(organization.data.permissions, 'job:create'))
+  if (organization.isError)
     return (
-      <section className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 lg:py-14">
+      <PageContainer width="standard">
+        <ErrorState
+          title="Workspace unavailable"
+          description="We could not check job access."
+          onRetry={() => void organization.refetch()}
+        />
+      </PageContainer>
+    )
+  if (!can(organization.data.permissions, 'job:create'))
+    return (
+      <PageContainer width="standard">
         <ErrorState
           title="Jobs access unavailable"
           description="You do not have permission to create jobs in this workspace."
         />
-      </section>
+      </PageContainer>
     )
   return (
-    <section className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 lg:py-14">
+    <PageContainer width="standard">
       <PageHeader
+        breadcrumbs={
+          <Link
+            className="font-semibold text-text-secondary hover:text-primary-dark hover:underline"
+            to={jobRoutes.list(organizationId)}
+          >
+            Jobs
+          </Link>
+        }
         title="Create job"
         description="Create a new role and save it as a draft or open it when ready."
       />
@@ -96,6 +115,6 @@ export function CreateJobPage() {
         onSecondary={() => void save(true)}
         onCancel={() => navigate(jobRoutes.list(organizationId))}
       />
-    </section>
+    </PageContainer>
   )
 }

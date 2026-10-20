@@ -10,6 +10,7 @@ import {
   Button,
   Field,
   Input,
+  PageContainer,
   PageHeader,
   Select,
 } from '../../../shared/components/ui'
@@ -79,16 +80,16 @@ export function TeamPage() {
     members.error.status === 403
   )
     return (
-      <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <PageContainer className="py-10 lg:py-14">
         <ErrorState
           title="Team access unavailable"
           description="You do not have permission to view this workspace team."
         />
-      </section>
+      </PageContainer>
     )
   if (members.isError)
     return (
-      <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <PageContainer className="py-10 lg:py-14">
         <ErrorState
           description={teamErrorMessage(
             members.error,
@@ -96,16 +97,16 @@ export function TeamPage() {
           )}
           onRetry={() => void members.refetch()}
         />
-      </section>
+      </PageContainer>
     )
   if (!allowed)
     return (
-      <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <PageContainer className="py-10 lg:py-14">
         <ErrorState
           title="Team access unavailable"
           description="You do not have permission to view this workspace team."
         />
-      </section>
+      </PageContainer>
     )
   const mutationError = invite.isError
     ? teamErrorMessage(invite.error, 'We could not send the invitation.')
@@ -120,7 +121,7 @@ export function TeamPage() {
             )
           : ''
   return (
-    <section className="mx-auto w-full max-w-7xl min-w-0 px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+    <PageContainer className="py-10 lg:py-14">
       <PageHeader
         title="Team"
         description="Manage people and workspace access"
@@ -415,7 +416,7 @@ export function TeamPage() {
           }}
         />
       ) : null}
-    </section>
+    </PageContainer>
   )
 }
 function TeamSection({

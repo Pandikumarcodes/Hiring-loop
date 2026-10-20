@@ -1,16 +1,11 @@
 import { useState, type FormEvent } from 'react'
-import {
-  ArrowLeft,
-  ArrowDown,
-  ArrowUp,
-  Pencil,
-  Plus,
-  Trash2,
-} from 'lucide-react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Link, useParams } from 'react-router-dom'
 import { ErrorState, LoadingState } from '../../../shared/components/feedback'
 import {
   Button,
+  Badge,
+  Card,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -18,12 +13,15 @@ import {
   Field,
   Input,
   PageHeader,
+  PageContainer,
   Select,
   Textarea,
 } from '../../../shared/components/ui'
 import { ConfirmDialog } from '../../team/components/ConfirmDialog'
 import { useOrganization } from '../../organizations/hooks/queries'
 import { jobRoutes } from '../../jobs/utils/job-routes'
+import { useJob } from '../../jobs/hooks/queries'
+import { jobTitle } from '../../jobs/utils/job-utils'
 import {
   useAddQuestion,
   useCreateDraft,
@@ -67,9 +65,18 @@ type Editor = {
 
 export function ApplicationFormBuilderPage() {
   const { organizationId = '', jobId = '' } = useParams()
-  const navigate = useNavigate()
   const organization = useOrganization(organizationId, Boolean(organizationId))
   const mayView = canViewApplicationForm(organization.data?.permissions)
+  const job = useJob(
+    organizationId,
+    jobId,
+    Boolean(
+      organizationId &&
+        jobId &&
+        mayView &&
+        organization.data?.permissions?.includes('job:read'),
+    ),
+  )
   const form = useApplicationForm(
     organizationId,
     jobId,
@@ -85,12 +92,14 @@ export function ApplicationFormBuilderPage() {
   const [editor, setEditor] = useState<{
     question?: ApplicationFormQuestionDto
     value: Editor
+    baseRevision: number
   } | null>(null)
   const [deleting, setDeleting] = useState<ApplicationFormQuestionDto | null>(
     null,
   )
   const [confirm, setConfirm] = useState<'publish' | 'discard' | null>(null)
   const [notice, setNotice] = useState('')
+  const [saved, setSaved] = useState(false)
   const conflict = [
     create,
     add,
@@ -103,9 +112,19 @@ export function ApplicationFormBuilderPage() {
     (m) =>
       (m.error as { code?: string } | null)?.code === 'FORM_VERSION_CONFLICT',
   )
-  if (organization.isPending || form.isPending)
+  if (organization.isPending)
     return <LoadingState label="Loading application form" />
-  if (organization.isError || !mayView)
+  if (organization.isError)
+    return (
+      <Wrap>
+        <ErrorState
+          title="Workspace unavailable"
+          description="We could not check application form access."
+          onRetry={() => void organization.refetch()}
+        />
+      </Wrap>
+    )
+  if (!mayView)
     return (
       <Wrap>
         <ErrorState
@@ -114,6 +133,7 @@ export function ApplicationFormBuilderPage() {
         />
       </Wrap>
     )
+  if (form.isPending) return <LoadingState label="Loading application form" />
   if (form.isError || !form.data)
     return (
       <Wrap>
@@ -142,15 +162,18 @@ export function ApplicationFormBuilderPage() {
     publish.isPending ||
     discard.isPending
   async function execute(action: () => Promise<unknown>) {
+    if (busy) return
     setNotice('')
+    setSaved(false)
     try {
       await action()
+      setSaved(true)
     } catch (error) {
       setNotice(applicationFormError(error))
     }
   }
   function move(question: ApplicationFormQuestionDto, direction: -1 | 1) {
-    if (!draft) return
+    if (!draft || busy) return
     const index = questions.findIndex((q) => q.id === question.id)
     const target = index + direction
     if (target < 0 || target >= questions.length) return
@@ -165,14 +188,15 @@ export function ApplicationFormBuilderPage() {
   }
   return (
     <Wrap>
-      <button
-        type="button"
-        onClick={() => navigate(jobRoutes.detail(organizationId, jobId))}
-        className="mb-5 inline-flex min-h-11 items-center gap-2 rounded-control px-2 text-sm font-bold text-primary-dark hover:bg-primary-soft"
-      >
-        <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Back to job
-      </button>
       <PageHeader
+        breadcrumbs={
+          <Link
+            className="font-semibold text-text-secondary hover:text-primary-dark hover:underline"
+            to={jobRoutes.detail(organizationId, jobId)}
+          >
+            {job.data ? jobTitle(job.data.title) : 'Job detail'}
+          </Link>
+        }
         title="Application form"
         description={
           <span>
@@ -186,17 +210,19 @@ export function ApplicationFormBuilderPage() {
               {draft ? (
                 <>
                   <Button
+                    disabled={busy}
                     variant="secondary"
                     onClick={() => setConfirm('discard')}
                   >
                     Discard draft
                   </Button>
-                  <Button onClick={() => setConfirm('publish')}>
+                  <Button disabled={busy} onClick={() => setConfirm('publish')}>
                     Publish draft
                   </Button>
                 </>
               ) : (
                 <Button
+                  disabled={busy}
                   onClick={() =>
                     void execute(() => create.mutateAsync(undefined))
                   }
@@ -220,16 +246,21 @@ export function ApplicationFormBuilderPage() {
               <Button
                 variant="secondary"
                 onClick={() => {
-                  void form.refetch()
-                  ;[
-                    create,
-                    add,
-                    update,
-                    remove,
-                    reorder,
-                    publish,
-                    discard,
-                  ].forEach((m) => m.reset())
+                  void form.refetch().then((result) => {
+                    if (!result.isSuccess) return
+                    setEditor(null)
+                    setNotice('')
+                    setSaved(false)
+                    ;[
+                      create,
+                      add,
+                      update,
+                      remove,
+                      reorder,
+                      publish,
+                      discard,
+                    ].forEach((m) => m.reset())
+                  })
                 }}
               >
                 Reload latest version
@@ -238,6 +269,11 @@ export function ApplicationFormBuilderPage() {
           ) : null}
         </div>
       ) : null}
+      {saved && !conflict ? (
+        <p role="status" className="mb-5 text-sm text-success">
+          Application form updated.
+        </p>
+      ) : null}
       {!editable ? (
         <div className="mb-5 rounded-control border border-border bg-background p-4 text-sm text-text-secondary">
           You have view-only access to this application form.
@@ -245,7 +281,7 @@ export function ApplicationFormBuilderPage() {
       ) : null}
       <div className="grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
         <div className="grid gap-6">
-          <section className="rounded-card border border-border bg-surface shadow-sm">
+          <Card className="overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4 sm:px-6">
               <div>
                 <h2 className="text-lg font-bold">Custom questions</h2>
@@ -257,7 +293,12 @@ export function ApplicationFormBuilderPage() {
                 <div className="grid gap-1 justify-items-end">
                   <Button
                     disabled={questions.length >= 100 || busy}
-                    onClick={() => setEditor({ value: emptyEditor() })}
+                    onClick={() =>
+                      setEditor({
+                        value: emptyEditor(),
+                        baseRevision: draft.revision,
+                      })
+                    }
                   >
                     <Plus className="h-4 w-4" aria-hidden="true" /> Add question
                   </Button>
@@ -283,6 +324,7 @@ export function ApplicationFormBuilderPage() {
                     onEdit={() =>
                       setEditor({
                         question: q,
+                        baseRevision: draft!.revision,
                         value: {
                           type: q.type,
                           label: q.label,
@@ -308,7 +350,7 @@ export function ApplicationFormBuilderPage() {
                   : ''}
               </div>
             )}
-          </section>
+          </Card>
         </div>
         <Preview questions={questions} />
       </div>
@@ -317,12 +359,13 @@ export function ApplicationFormBuilderPage() {
           initial={editor.value}
           title={editor.question ? 'Edit question' : 'Add question'}
           busy={add.isPending || update.isPending}
+          actionError={notice}
           onCancel={() => setEditor(null)}
           onSubmit={(input) =>
             void execute(async () => {
               const payload: QuestionInput = {
                 ...input,
-                expectedRevision: draft.revision,
+                expectedRevision: editor.baseRevision,
               }
               if (editor.question)
                 await update.mutateAsync({
@@ -411,12 +454,10 @@ function QuestionCard({
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <h3 className="break-words font-bold">{question.label}</h3>
-          <span className="rounded-full bg-primary-soft px-2 py-1 text-xs font-bold text-primary-dark">
-            {questionTypeLabels[question.type]}
-          </span>
-          <span className="text-xs font-semibold text-text-secondary">
+          <Badge variant="info">{questionTypeLabels[question.type]}</Badge>
+          <Badge variant={question.required ? 'warning' : 'neutral'}>
             {question.required ? 'Required' : 'Optional'}
-          </span>
+          </Badge>
         </div>
         {question.description ? (
           <p className="mt-1 whitespace-pre-wrap text-sm text-text-secondary">
@@ -424,7 +465,7 @@ function QuestionCard({
           </p>
         ) : null}
         {question.options.length ? (
-          <p className="mt-2 text-sm text-text-secondary">
+          <p className="mt-2 break-words text-sm text-text-secondary">
             Options: {question.options.map((o) => o.label).join(', ')}
           </p>
         ) : null}
@@ -449,11 +490,21 @@ function QuestionCard({
           >
             <ArrowDown className="h-4 w-4" aria-hidden="true" />
           </Button>
-          <Button variant="secondary" className="px-3" onClick={onEdit}>
+          <Button
+            variant="secondary"
+            className="px-3"
+            disabled={busy}
+            onClick={onEdit}
+          >
             <Pencil className="h-4 w-4" aria-hidden="true" />
             <span className="sr-only">Edit {question.label}</span>
           </Button>
-          <Button variant="danger" className="px-3" onClick={onDelete}>
+          <Button
+            variant="danger"
+            className="px-3"
+            disabled={busy}
+            onClick={onDelete}
+          >
             <Trash2 className="h-4 w-4" aria-hidden="true" />
             <span className="sr-only">Delete {question.label}</span>
           </Button>
@@ -467,12 +518,14 @@ function QuestionDialog({
   initial,
   title,
   busy,
+  actionError,
   onCancel,
   onSubmit,
 }: {
   initial: Editor
   title: string
   busy: boolean
+  actionError?: string
   onCancel: () => void
   onSubmit: (value: Omit<QuestionInput, 'expectedRevision'>) => void
 }) {
@@ -481,6 +534,7 @@ function QuestionDialog({
   const choice = isChoice(value.type)
   function submit(e: FormEvent) {
     e.preventDefault()
+    if (busy) return
     if (!value.label.trim()) return setError('Enter a question label.')
     if (
       choice &&
@@ -516,7 +570,12 @@ function QuestionDialog({
         >
           Configure a custom question for the draft.
         </DialogDescription>
-        <form className="mt-5 grid gap-4" onSubmit={submit}>
+        {actionError ? (
+          <p role="alert" className="mt-3 text-sm text-error">
+            {actionError}
+          </p>
+        ) : null}
+        <form className="mt-5 grid gap-5" aria-busy={busy} onSubmit={submit}>
           <Field id="question-type" label="Question type">
             {(p) => (
               <Select
@@ -591,92 +650,100 @@ function QuestionDialog({
             Required question
           </label>
           {choice ? (
-            <div className="grid gap-2">
-              <p className="text-sm font-semibold">Options</p>
-              {value.options.map((option, index) => (
-                <div
-                  key={index}
-                  className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto_auto]"
-                >
-                  <Input
-                    aria-label={`Option ${index + 1} label`}
-                    value={option.label}
-                    placeholder="Label"
-                    onChange={(e) =>
-                      setValue((v) => ({
-                        ...v,
-                        options: v.options.map((o, i) =>
-                          i === index ? { ...o, label: e.target.value } : o,
-                        ),
-                      }))
-                    }
-                  />
-                  <Input
-                    aria-label={`Option ${index + 1} value`}
-                    value={option.value}
-                    placeholder="Value"
-                    onChange={(e) =>
-                      setValue((v) => ({
-                        ...v,
-                        options: v.options.map((o, i) =>
-                          i === index ? { ...o, value: e.target.value } : o,
-                        ),
-                      }))
-                    }
-                  />
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={value.options.length <= 2}
-                    onClick={() =>
-                      setValue((v) => ({
-                        ...v,
-                        options: v.options.filter((_, i) => i !== index),
-                      }))
-                    }
+            <fieldset className="min-w-0 rounded-control border border-border p-4">
+              <legend className="px-1 text-sm font-semibold">Options</legend>
+              <p className="mb-3 text-sm text-text-secondary">
+                Set the candidate-facing label and stored value for each choice.
+              </p>
+              <div className="grid gap-3">
+                {value.options.map((option, index) => (
+                  <div
+                    key={index}
+                    className="grid min-w-0 grid-cols-1 gap-2 rounded-control border border-border p-3 sm:grid-cols-2"
                   >
-                    Remove
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={index === 0}
-                    aria-label={`Move ${option.label || `option ${index + 1}`} up`}
-                    onClick={() =>
-                      setValue((v) => {
-                        const options = [...v.options]
-                        ;[options[index - 1], options[index]] = [
-                          options[index],
-                          options[index - 1],
-                        ]
-                        return { ...v, options }
-                      })
-                    }
-                  >
-                    <ArrowUp className="h-4 w-4" aria-hidden="true" />
-                    <span className="sr-only">Move up</span>
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={index === value.options.length - 1}
-                    aria-label={`Move ${option.label || `option ${index + 1}`} down`}
-                    onClick={() =>
-                      setValue((v) => {
-                        const options = [...v.options]
-                        ;[options[index], options[index + 1]] = [
-                          options[index + 1],
-                          options[index],
-                        ]
-                        return { ...v, options }
-                      })
-                    }
-                  >
-                    <ArrowDown className="h-4 w-4" aria-hidden="true" />
-                    <span className="sr-only">Move down</span>
-                  </Button>
-                </div>
-              ))}
+                    <p className="text-sm font-semibold sm:col-span-2">
+                      Choice {index + 1}
+                    </p>
+                    <Input
+                      aria-label={`Option ${index + 1} label`}
+                      value={option.label}
+                      placeholder="Label"
+                      onChange={(e) =>
+                        setValue((v) => ({
+                          ...v,
+                          options: v.options.map((o, i) =>
+                            i === index ? { ...o, label: e.target.value } : o,
+                          ),
+                        }))
+                      }
+                    />
+                    <Input
+                      aria-label={`Option ${index + 1} value`}
+                      value={option.value}
+                      placeholder="Value"
+                      onChange={(e) =>
+                        setValue((v) => ({
+                          ...v,
+                          options: v.options.map((o, i) =>
+                            i === index ? { ...o, value: e.target.value } : o,
+                          ),
+                        }))
+                      }
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={value.options.length <= 2}
+                      onClick={() =>
+                        setValue((v) => ({
+                          ...v,
+                          options: v.options.filter((_, i) => i !== index),
+                        }))
+                      }
+                    >
+                      Remove
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={index === 0}
+                      aria-label={`Move ${option.label || `option ${index + 1}`} up`}
+                      onClick={() =>
+                        setValue((v) => {
+                          const options = [...v.options]
+                          ;[options[index - 1], options[index]] = [
+                            options[index],
+                            options[index - 1],
+                          ]
+                          return { ...v, options }
+                        })
+                      }
+                    >
+                      <ArrowUp className="h-4 w-4" aria-hidden="true" />
+                      <span className="sr-only">Move up</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={index === value.options.length - 1}
+                      aria-label={`Move ${option.label || `option ${index + 1}`} down`}
+                      onClick={() =>
+                        setValue((v) => {
+                          const options = [...v.options]
+                          ;[options[index], options[index + 1]] = [
+                            options[index + 1],
+                            options[index],
+                          ]
+                          return { ...v, options }
+                        })
+                      }
+                    >
+                      <ArrowDown className="h-4 w-4" aria-hidden="true" />
+                      <span className="sr-only">Move down</span>
+                    </Button>
+                  </div>
+                ))}
+              </div>
               <Button
                 type="button"
                 variant="secondary"
@@ -696,7 +763,7 @@ function QuestionDialog({
                   another.
                 </p>
               ) : null}
-            </div>
+            </fieldset>
           ) : null}
           <div className="mt-2 grid gap-2 sm:flex sm:justify-end">
             <Button
@@ -707,7 +774,7 @@ function QuestionDialog({
             >
               Cancel
             </Button>
-            <Button loading={busy} type="submit">
+            <Button loading={busy} disabled={busy} type="submit">
               Save question
             </Button>
           </div>
@@ -723,7 +790,7 @@ function Preview({
   questions: readonly ApplicationFormQuestionDto[]
 }) {
   return (
-    <aside className="rounded-card border border-border bg-surface p-5 shadow-sm sm:p-6">
+    <aside className="min-w-0 rounded-card border border-border bg-surface-raised p-5 shadow-surface sm:p-6">
       <h2 className="text-lg font-bold">Form preview</h2>
       <p className="mt-1 text-sm text-text-secondary">
         Visual preview only — candidate submission is not available.
@@ -804,7 +871,5 @@ function PreviewQuestion({
   )
 }
 const Wrap = ({ children }: { children: React.ReactNode }) => (
-  <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
-    {children}
-  </section>
+  <PageContainer width="wide">{children}</PageContainer>
 )

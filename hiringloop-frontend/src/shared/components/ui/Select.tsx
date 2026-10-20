@@ -10,7 +10,7 @@ export const Select = forwardRef<
       {...props}
       ref={ref}
       className={cn(
-        'ui-select h-11 min-w-0 w-full rounded-control border border-border bg-surface px-3 text-sm text-text-primary shadow-sm outline-none focus:border-primary-dark focus:ring-2 focus:ring-primary/25 disabled:cursor-not-allowed disabled:opacity-60',
+        'ui-select h-11 min-w-0 w-full rounded-control border border-border-strong bg-surface px-3 text-sm text-text-primary shadow-sm transition-colors focus-visible:border-primary-dark focus-visible:ring-2 focus-visible:ring-primary/25 disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-text-secondary aria-[invalid=true]:border-error aria-[invalid=true]:focus-visible:ring-error/20',
         className,
       )}
     />
