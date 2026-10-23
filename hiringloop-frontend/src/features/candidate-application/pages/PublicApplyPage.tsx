@@ -254,7 +254,7 @@ export function PublicApplyPage() {
             ref={successHeadingRef}
             id="application-success-heading"
             tabIndex={-1}
-            className="text-3xl font-bold tracking-tight"
+            className="text-2xl font-bold tracking-tight sm:text-3xl"
           >
             Application submitted
           </h1>
@@ -264,7 +264,7 @@ export function PublicApplyPage() {
           </p>
           <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
             <Link
-              className="inline-flex min-h-11 items-center justify-center rounded-control bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary-dark focus-visible:outline-3 focus-visible:outline-primary-dark focus-visible:outline-offset-2"
+              className="inline-flex min-h-11 items-center justify-center rounded-control bg-primary-dark px-4 py-2.5 text-sm font-bold text-white hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-primary-dark focus-visible:outline-offset-2"
               to={`/careers/${encodeURIComponent(organizationSlug)}/jobs/${encodeURIComponent(jobId)}`}
             >
               Back to job
@@ -294,7 +294,7 @@ export function PublicApplyPage() {
         <p className="mt-7 text-sm font-bold uppercase tracking-wider text-primary-dark">
           {organization?.name}
         </p>
-        <h1 className="mt-2 break-words text-3xl font-bold tracking-tight sm:text-4xl">
+        <h1 className="mt-2 break-words text-2xl font-bold tracking-tight sm:text-3xl">
           Apply for {job.title}
         </h1>
         <p className="mt-3 max-w-2xl leading-7 text-text-secondary">

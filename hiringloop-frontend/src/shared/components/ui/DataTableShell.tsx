@@ -16,13 +16,19 @@ export function DataTableShell({
 }: DataTableShellProps) {
   return (
     <div
+      role="region"
+      aria-label={caption}
+      tabIndex={0}
       className={cn(
-        'hidden min-w-0 overflow-x-auto rounded-card border border-border bg-surface shadow-surface md:block',
+        'ui-table-scroll relative hidden min-w-0 overflow-x-auto rounded-card border border-border bg-surface shadow-surface xl:block',
         className,
       )}
     >
       <table
-        className={cn('w-full min-w-[48rem] text-left text-sm', tableClassName)}
+        className={cn(
+          'ui-data-table w-full min-w-[48rem] text-left text-sm',
+          tableClassName,
+        )}
       >
         <caption className="sr-only">{caption}</caption>
         {children}

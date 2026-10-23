@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Button,
+  Select,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -25,9 +26,9 @@ export function CandidateTalentPools({
   const [knownPoolIds, setKnownPoolIds] = useState<readonly string[]>([])
   if (!view) return null
   return (
-    <section className="mt-6 rounded-card border border-border bg-surface p-5 shadow-sm sm:p-6">
-      <div className="flex justify-between gap-3">
-        <div>
+    <section className="mt-6 rounded-card border border-border bg-surface p-4 shadow-sm sm:p-5">
+      <div className="flex min-w-0 flex-col items-start justify-between gap-3 sm:flex-row">
+        <div className="min-w-0 flex-1">
           <h2 className="text-lg font-bold">Talent pools</h2>
           <p className="mt-1 text-sm text-text-secondary">
             Add this candidate to a pool. Complete membership management is
@@ -35,7 +36,9 @@ export function CandidateTalentPools({
           </p>
         </div>
         {manage ? (
-          <Button onClick={() => setAdding(true)}>Add to pool</Button>
+          <Button className="shrink-0" onClick={() => setAdding(true)}>
+            Add to pool
+          </Button>
         ) : null}
       </div>
       {pools.isPending ? (
@@ -143,8 +146,8 @@ function AddDialog({
         <DialogDescription id="add-pool-description">
           Choose a pool. Existing membership is retained safely.
         </DialogDescription>
-        <select
-          className="mt-4 h-11 w-full rounded-control border border-border bg-surface px-3"
+        <Select
+          className="mt-4"
           aria-label="Talent pool"
           value={poolId}
           onChange={(e) => setPoolId(e.target.value)}
@@ -155,7 +158,7 @@ function AddDialog({
               {p.name}
             </option>
           ))}
-        </select>
+        </Select>
         {actions.add.isError ? (
           <p role="alert" className="mt-3 text-sm text-error">
             We could not add this candidate.

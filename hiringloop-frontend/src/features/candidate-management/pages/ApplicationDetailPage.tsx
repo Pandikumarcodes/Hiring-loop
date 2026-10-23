@@ -184,7 +184,7 @@ function ApplicationContent({
       </Card>
       <nav
         aria-label="Application sections"
-        className="sticky top-2 z-10 mb-6 -mx-1 overflow-x-auto rounded-card border border-border bg-surface-raised/95 p-2 shadow-surface backdrop-blur"
+        className="sticky top-18 z-10 mb-6 -mx-1 overflow-x-auto rounded-card border border-border bg-surface-raised/95 p-2 shadow-surface backdrop-blur"
       >
         <ul className="flex min-w-max items-center gap-1">
           {[
@@ -202,7 +202,7 @@ function ApplicationContent({
           ].map(([id, label]) => (
             <li key={id}>
               <a
-                className="inline-flex min-h-10 items-center rounded-control px-3 text-sm font-semibold text-text-secondary transition-colors hover:bg-background hover:text-text-primary focus-visible:outline-3 focus-visible:outline-primary-dark focus-visible:outline-offset-2"
+                className="inline-flex min-h-11 items-center rounded-control px-3 text-sm font-semibold text-text-secondary transition-colors hover:bg-background hover:text-text-primary focus-visible:outline-3 focus-visible:outline-primary-dark focus-visible:outline-offset-2"
                 href={`#application-${id}`}
               >
                 {label}
@@ -215,7 +215,7 @@ function ApplicationContent({
         <div className="grid gap-6">
           <div
             id="application-interviews"
-            className="scroll-mt-24"
+            className="scroll-mt-40"
             tabIndex={-1}
           >
             <ApplicationInterviews
@@ -224,14 +224,14 @@ function ApplicationContent({
               canSchedule={canSchedule}
             />
           </div>
-          <div id="application-feedback" className="scroll-mt-24" tabIndex={-1}>
+          <div id="application-feedback" className="scroll-mt-40" tabIndex={-1}>
             <ApplicationFeedback
               organizationId={organizationId}
               applicationId={application.id}
               enabled={canViewFeedback}
             />
           </div>
-          <div id="application-notes" className="scroll-mt-24" tabIndex={-1}>
+          <div id="application-notes" className="scroll-mt-40" tabIndex={-1}>
             <InternalNotes
               organizationId={organizationId}
               applicationId={application.id}
@@ -242,7 +242,7 @@ function ApplicationContent({
           {canCommunicate ? (
             <div
               id="application-communications"
-              className="scroll-mt-24"
+              className="scroll-mt-40"
               tabIndex={-1}
             >
               <CommunicationSection
@@ -253,14 +253,14 @@ function ApplicationContent({
               />
             </div>
           ) : null}
-          <div id="application-offer" className="scroll-mt-24">
+          <div id="application-offer" className="scroll-mt-40">
             <OfferSection
               organizationId={organizationId}
               applicationId={application.id}
               permissions={permissions}
             />
           </div>
-          <div id="application-outcome" className="scroll-mt-24">
+          <div id="application-outcome" className="scroll-mt-40">
             <ApplicationOutcomeSection
               organizationId={organizationId}
               application={application}
@@ -448,7 +448,7 @@ function Section({
     <section
       id={id}
       tabIndex={id ? -1 : undefined}
-      className="scroll-mt-24 rounded-card border border-border bg-surface p-5 shadow-sm sm:p-6"
+      className="scroll-mt-40 rounded-card border border-border bg-surface p-4 shadow-sm sm:p-5"
     >
       <h2 className="mb-5 text-lg font-bold">{title}</h2>
       {children}
@@ -466,9 +466,5 @@ function Meta({ label, value }: { label: string; value: string }) {
 }
 
 function Wrap({ children }: { children: React.ReactNode }) {
-  return (
-    <PageContainer width="wide" className="py-8 lg:py-10">
-      {children}
-    </PageContainer>
-  )
+  return <PageContainer width="wide">{children}</PageContainer>
 }

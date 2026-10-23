@@ -5,7 +5,15 @@ import { Button } from '../../../shared/components/ui'
 import { useCurrentUser } from '../../auth/hooks/queries'
 import { useAcceptInvitation } from '../hooks/mutations'
 import { isApiError } from '../../../shared/lib/apiErrors'
+import { AuthLayout } from '../../../layouts/AuthLayout'
 export function InvitationAcceptancePage() {
+  return (
+    <AuthLayout>
+      <InvitationAcceptanceContent />
+    </AuthLayout>
+  )
+}
+function InvitationAcceptanceContent() {
   const location = useLocation()
   const navigate = useNavigate()
   const user = useCurrentUser()

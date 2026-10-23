@@ -86,11 +86,7 @@ export function LoginPage() {
         </AuthAlert>
       ) : null}
       {loginError ? <AuthAlert>{loginError}</AuthAlert> : null}
-      <form
-        className="grid min-w-0 gap-[1.125rem]"
-        onSubmit={submit}
-        noValidate
-      >
+      <form className="grid min-w-0 gap-5" onSubmit={submit} noValidate>
         <Field error={errors.email} id="login-email" label="Email" required>
           {({ describedBy, invalid }) => (
             <Input

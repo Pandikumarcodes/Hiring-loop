@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { ChevronDown, ChevronRight, Menu } from 'lucide-react'
+import { ChevronRight, Menu } from 'lucide-react'
 
 import { AuthAlert } from '../features/auth/components'
 import { useLogout } from '../features/auth/hooks/mutations'
@@ -8,20 +8,13 @@ import { useCurrentUser } from '../features/auth/hooks/queries'
 import { genericMutationError } from '../features/auth/utils/ui-utils'
 import { useOrganization } from '../features/organizations/hooks/queries'
 import { organizationIdFromPath } from '../features/organizations/utils/organization-utils'
-import { NotificationBell } from '../features/notifications'
+import { NotificationBell } from '../features/notifications/components/NotificationBell'
 import {
-  Avatar,
-  AvatarFallback,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogTitle,
   DialogTrigger,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
 } from '../shared/components/ui'
 import { AppSidebar } from './AppSidebar'
 import { currentNavigationLabel, workspacePath } from './app-navigation'
@@ -43,7 +36,6 @@ export function AppLayout() {
   const logout = useLogout()
   const currentUser = useCurrentUser()
   const email = currentUser.user?.email ?? 'Account'
-  const initial = email[0]?.toUpperCase() ?? 'P'
   const section =
     organizationId && organization
       ? currentNavigationLabel(
@@ -125,44 +117,6 @@ export function AppLayout() {
                   organization?.permissions?.includes('notification:view-own'),
                 )}
               />
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-control p-1 text-text-primary hover:bg-primary-soft focus-visible:outline-3 focus-visible:outline-primary-dark focus-visible:outline-offset-2"
-                    aria-label={`Open account menu for ${email}`}
-                  >
-                    <Avatar>
-                      <AvatarFallback>{initial}</AvatarFallback>
-                    </Avatar>
-                    <ChevronDown
-                      className="h-4 w-4 text-text-secondary"
-                      aria-hidden="true"
-                    />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" aria-label="Account menu">
-                  <div className="flex min-w-0 items-center gap-3 px-3 py-3">
-                    <Avatar>
-                      <AvatarFallback>{initial}</AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
-                      <strong className="block truncate text-sm" title={email}>
-                        {email}
-                      </strong>
-                      <span className="text-xs text-text-secondary">
-                        Signed in account
-                      </span>
-                    </div>
-                  </div>
-                  <DropdownMenuSeparator className="my-1 bg-border" />
-                  <DropdownMenuItem
-                    disabled={logout.isPending}
-                    onSelect={() => void handleLogout()}
-                  >
-                    {logout.isPending ? 'Signing out…' : 'Sign out'}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
           </div>
         </header>

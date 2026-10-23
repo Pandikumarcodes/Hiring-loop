@@ -20,19 +20,19 @@ export function FilterToolbar({
     <div
       role="group"
       aria-label="List filters"
-      className="mb-6 min-w-0 rounded-card border border-border bg-surface p-4 shadow-surface"
+      className="mb-5 min-w-0 rounded-card border border-border bg-surface p-3 shadow-surface sm:p-4"
       {...props}
     >
       <div
         className={cn(
-          'grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3',
+          'grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3',
           className,
         )}
       >
         {children}
       </div>
       {resultsSummary || clearAction || secondaryActions ? (
-        <div className="mt-3 flex min-w-0 flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+        <div className="mt-3 flex min-w-0 flex-wrap items-center justify-between gap-2 border-t border-border pt-2">
           <div
             className="min-w-0 text-sm text-text-secondary"
             aria-live="polite"

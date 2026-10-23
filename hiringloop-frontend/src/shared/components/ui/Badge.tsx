@@ -18,7 +18,7 @@ export function Badge({
       className={cn(
         'ui-badge ui-badge--' +
           variant +
-          ' inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold leading-4',
+          ' inline-flex min-w-0 max-w-full items-center rounded-full border px-2.5 py-1 text-xs font-semibold leading-4 [overflow-wrap:anywhere]',
         {
           'border-neutral-border bg-neutral-soft text-neutral':
             variant === 'neutral',

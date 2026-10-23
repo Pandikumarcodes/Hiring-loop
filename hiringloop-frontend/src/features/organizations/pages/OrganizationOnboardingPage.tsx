@@ -57,17 +57,20 @@ export function OrganizationOnboardingPage({
 
   return (
     <section
-      className="mx-auto grid w-full max-w-7xl min-w-0 gap-8 px-4 py-10 sm:px-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(16rem,0.8fr)] lg:gap-16 lg:px-12 lg:py-14"
+      className="mx-auto grid w-full max-w-7xl min-w-0 gap-8 px-4 py-6 [overflow-wrap:anywhere] sm:px-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(16rem,0.8fr)] lg:gap-8 lg:px-6 lg:py-8 xl:gap-16"
       aria-labelledby="organization-onboarding-title"
     >
       <div className="min-w-0 max-w-2xl">
         <p className="eyebrow">Get started</p>
-        <h1 id="organization-onboarding-title">
+        <h1
+          id="organization-onboarding-title"
+          className="text-2xl font-bold leading-tight tracking-tight sm:text-3xl"
+        >
           {organizationCount
             ? 'Create a new organization'
             : 'Create your first organization'}
         </h1>
-        <p className="mt-3 mb-8 max-w-2xl text-lg leading-7 text-text-secondary">
+        <p className="mt-2 mb-6 max-w-2xl text-sm leading-6 text-text-secondary">
           Set up the workspace where your hiring team will stay aligned.
         </p>
         {createOrganization.isError ? (

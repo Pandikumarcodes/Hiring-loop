@@ -13,6 +13,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "seed:qa": "node --env-file=.env scripts/seed-phase14-qa.js",
+    "db:seed:demo": "node --env-file=.env scripts/seed-demo.js",
     "prisma:validate": "prisma validate --schema prisma/schema.prisma",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
     "prisma:migrate:test": "node --env-file=.env scripts/migrate-test-database.js",

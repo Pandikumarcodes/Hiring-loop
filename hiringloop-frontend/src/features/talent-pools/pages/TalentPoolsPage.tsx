@@ -92,9 +92,9 @@ export function TalentPoolsPage() {
           {pools.data.pools.map((p) => (
             <article
               key={p.id}
-              className="flex flex-wrap justify-between gap-3 rounded-card border border-border bg-surface p-5"
+              className="flex min-w-0 flex-wrap justify-between gap-3 rounded-card border border-border bg-surface p-5"
             >
-              <div>
+              <div className="min-w-0 flex-1 basis-48 [overflow-wrap:anywhere]">
                 <Link
                   className="font-bold text-primary-dark hover:underline"
                   to={`/app/organizations/${organizationId}/talent-pools/${p.id}`}
@@ -121,7 +121,7 @@ export function TalentPoolsPage() {
           />
         </div>
       )}
-      <div className="mt-5 flex justify-end gap-2">
+      <div className="mt-5 flex flex-wrap justify-end gap-2">
         <Button
           variant="secondary"
           disabled={page === 1}

@@ -20,11 +20,11 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: var(--space-6);
+  padding: var(--space-5);
   min-width: 0;
 }
 .feedback-state h2 {
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   margin: 0;
 }
 .feedback-state p {

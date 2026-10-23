@@ -37,7 +37,7 @@ export function JobForm({
     onChange({ ...value, [key]: next })
   return (
     <form
-      className="grid gap-6"
+      className="grid min-w-0 gap-5"
       noValidate
       aria-busy={busy}
       onSubmit={(e: FormEvent) => {
@@ -46,7 +46,7 @@ export function JobForm({
       }}
     >
       <FormSection title="Basic information">
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid min-w-0 items-start gap-4 sm:grid-cols-2">
           <Field
             id="job-title"
             label="Job title"
@@ -102,7 +102,7 @@ export function JobForm({
         </div>
       </FormSection>
       <FormSection title="Employment">
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid min-w-0 items-start gap-4 sm:grid-cols-2">
           <Field
             id="job-employment"
             label="Employment type"
@@ -189,7 +189,7 @@ export function JobForm({
           {(p) => (
             <Textarea
               id="job-description"
-              className="min-h-56"
+              className="min-h-48"
               maxLength={50000}
               value={value.description ?? ''}
               onChange={(e) => field('description', e.target.value || null)}
@@ -232,8 +232,8 @@ function FormSection({
   children,
 }: React.PropsWithChildren<{ title: string }>) {
   return (
-    <section className="rounded-card border border-border bg-surface p-5 shadow-sm sm:p-6">
-      <h2 className="mb-5 text-lg font-bold">{title}</h2>
+    <section className="rounded-card border border-border bg-surface p-4 shadow-sm sm:p-5">
+      <h2 className="mb-4 text-lg font-semibold">{title}</h2>
       {children}
     </section>
   )

@@ -15,7 +15,7 @@ import { isApiError } from '../../../shared/lib/apiErrors'
 import { useOffer } from '../hooks/queries'
 import { useOfferActions } from '../hooks/mutations'
 import type { OfferDto, OfferTermsInput } from '../types/offers.types'
-const card = 'rounded-card border border-border bg-surface p-5 shadow-sm sm:p-6'
+const card = 'rounded-card border border-border bg-surface p-4 shadow-sm sm:p-5'
 const blank: OfferTermsInput = {
   jobTitle: '',
   currency: 'USD',

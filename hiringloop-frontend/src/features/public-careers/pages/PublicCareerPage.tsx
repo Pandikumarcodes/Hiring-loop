@@ -64,7 +64,7 @@ export function PublicCareerPage() {
         <p className="mb-3 text-sm font-bold uppercase tracking-wider text-primary-dark">
           HiringLoop careers
         </p>
-        <h1 className="break-words text-3xl font-bold tracking-tight text-text-primary sm:text-4xl">
+        <h1 className="break-words text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
           Careers at {organization.name}
         </h1>
         {organization.description ? (
@@ -138,7 +138,7 @@ export function PublicCareerPage() {
       </section>
       {pagination.totalPages > 1 ? (
         <nav
-          className="mt-8 flex items-center justify-between gap-4"
+          className="mt-8 flex flex-wrap items-center justify-between gap-4"
           aria-label="Open positions pages"
         >
           <Button
@@ -164,7 +164,7 @@ export function PublicCareerPage() {
   )
 }
 const CareerWrap = ({ children }: { children: React.ReactNode }) => (
-  <div className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+  <div className="mx-auto w-full max-w-4xl [overflow-wrap:anywhere] px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
     {children}
   </div>
 )

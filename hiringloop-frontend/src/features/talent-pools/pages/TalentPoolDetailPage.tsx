@@ -115,9 +115,9 @@ export function TalentPoolDetailPage() {
           {members.data.members.map((m) => (
             <article
               key={m.id}
-              className="flex flex-wrap justify-between gap-3 rounded-card border border-border bg-surface p-4"
+              className="flex min-w-0 flex-wrap items-start justify-between gap-3 rounded-card border border-border bg-surface p-4"
             >
-              <div>
+              <div className="min-w-0 flex-1 basis-48 [overflow-wrap:anywhere]">
                 <Link
                   className="font-bold text-primary-dark hover:underline"
                   to={`/app/organizations/${organizationId}/candidates/${m.candidate.id}`}
@@ -154,7 +154,7 @@ export function TalentPoolDetailPage() {
           />
         </div>
       )}
-      <div className="mt-5 flex justify-end gap-2">
+      <div className="mt-5 flex flex-wrap justify-end gap-2">
         <Button
           variant="secondary"
           disabled={page === 1}

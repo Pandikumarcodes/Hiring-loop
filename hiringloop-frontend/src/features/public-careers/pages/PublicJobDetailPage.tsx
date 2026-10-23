@@ -69,7 +69,7 @@ export function PublicJobDetailPage() {
         <p className="text-sm font-bold uppercase tracking-wider text-primary-dark">
           {organization.name}
         </p>
-        <h1 className="mt-2 break-words text-3xl font-bold tracking-tight sm:text-4xl">
+        <h1 className="mt-2 break-words text-2xl font-bold tracking-tight sm:text-3xl">
           {job.title}
         </h1>
         <dl className="mt-6 grid grid-cols-1 gap-4 text-text-secondary sm:grid-cols-2 lg:grid-cols-4">
@@ -135,7 +135,7 @@ export function PublicJobDetailPage() {
         </section>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
           <Link
-            className="inline-flex min-h-11 items-center justify-center rounded-control bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-dark focus-visible:outline-3 focus-visible:outline-primary-dark focus-visible:outline-offset-2"
+            className="inline-flex min-h-11 items-center justify-center rounded-control bg-primary-dark px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-primary-dark focus-visible:outline-offset-2"
             to={`/careers/${encodeURIComponent(organizationSlug)}/jobs/${encodeURIComponent(jobId)}/apply`}
           >
             Apply for this role
@@ -146,7 +146,7 @@ export function PublicJobDetailPage() {
   )
 }
 const Wrap = ({ children }: { children: React.ReactNode }) => (
-  <div className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+  <div className="mx-auto w-full max-w-4xl [overflow-wrap:anywhere] px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
     {children}
   </div>
 )

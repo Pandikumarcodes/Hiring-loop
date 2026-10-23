@@ -425,7 +425,7 @@ function StageDialog({
       }}
     >
       <DialogContent aria-describedby="stage-dialog-description">
-        <DialogTitle className="pr-8 text-lg font-bold">{title}</DialogTitle>
+        <DialogTitle>{title}</DialogTitle>
         <DialogDescription
           id="stage-dialog-description"
           className="mt-2 text-sm text-text-secondary"

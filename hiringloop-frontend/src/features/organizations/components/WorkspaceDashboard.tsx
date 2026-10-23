@@ -122,7 +122,7 @@ export function WorkspaceDashboard({
   const interviewLink = `${root}/interviews${assignedOnly ? '?mine=true' : ''}`
 
   return (
-    <section className="mx-auto w-full max-w-7xl min-w-0 px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+    <section className="mx-auto w-full max-w-7xl min-w-0 px-4 py-8 [overflow-wrap:anywhere] sm:px-6 lg:px-8 lg:py-10">
       <p className="eyebrow mb-2">{organization.name}</p>
       <PageHeader
         title="Dashboard"
@@ -425,8 +425,8 @@ function MetricCard({
   hint: string
 }) {
   return (
-    <Card className="p-4 sm:p-5">
-      <div className="flex items-start justify-between gap-2">
+    <Card className="flex h-full flex-col p-4 sm:p-5">
+      <div className="flex min-h-10 items-start justify-between gap-2">
         <p className="text-sm font-semibold text-text-secondary">{label}</p>
         <Icon
           className="h-5 w-5 shrink-0 text-primary-dark"
@@ -434,7 +434,7 @@ function MetricCard({
         />
       </div>
       {loading ? (
-        <p role="status" className="mt-4 text-sm text-text-secondary">
+        <p role="status" className="mt-3 min-h-9 text-sm text-text-secondary">
           Loading {label.toLowerCase()}…
         </p>
       ) : error || value === undefined ? (
@@ -453,10 +453,10 @@ function MetricCard({
           {value.toLocaleString()}
         </p>
       )}
-      <p className="mt-2 text-xs text-text-secondary">{hint}</p>
+      <p className="mt-2 mb-3 text-xs text-text-secondary">{hint}</p>
       {to ? (
         <Link
-          className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-primary-dark hover:underline focus-visible:outline-3 focus-visible:outline-primary-dark"
+          className="mt-auto inline-flex min-h-11 items-center text-sm font-semibold text-primary-dark hover:underline focus-visible:outline-3 focus-visible:outline-primary-dark"
           to={to}
         >
           View {label.toLowerCase()}

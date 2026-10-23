@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import {
   Button,
+  Select,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -16,7 +17,7 @@ import { useCommunicationTemplates, useCommunications } from '../hooks/queries'
 import { useSendCommunication, useTemplateMutations } from '../hooks/mutations'
 import type { CommunicationTemplateDto } from '../types/communications.types'
 
-const card = 'rounded-card border border-border bg-surface p-5 shadow-sm sm:p-6'
+const card = 'rounded-card border border-border bg-surface p-4 shadow-sm sm:p-5'
 const uuid = () => crypto.randomUUID()
 
 export function CommunicationSection({
@@ -257,9 +258,8 @@ function SendEmailDialog({
           {templates.length ? (
             <Field id="email-template" label="Use template">
               {() => (
-                <select
+                <Select
                   id="email-template"
-                  className="h-11 rounded-control border border-border bg-surface px-3"
                   value={templateId}
                   onChange={(e) => {
                     const t = templates.find((x) => x.id === e.target.value)
@@ -276,7 +276,7 @@ function SendEmailDialog({
                       {t.name}
                     </option>
                   ))}
-                </select>
+                </Select>
               )}
             </Field>
           ) : null}

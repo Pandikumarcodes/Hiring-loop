@@ -124,6 +124,128 @@ beforeEach(() => {
 afterEach(() => cleanup())
 
 describe('authenticated application shell', () => {
+  test('disables the existing sign-out action while logout is pending', async () => {
+    const logout = vi.fn()
+    mocks.useLogout.mockReturnValue({
+      isPending: true,
+      isError: false,
+      mutateAsync: logout,
+    })
+    renderShell()
+    await userEvent.click(
+      screen.getByRole('button', { name: /Open account menu/ }),
+    )
+    const action = screen.getByRole('menuitem', { name: /Signing out/ })
+    expect(action).toHaveAttribute('aria-disabled', 'true')
+    await userEvent.click(action)
+    expect(logout).not.toHaveBeenCalled()
+  })
+  test('has one compact account entry in the sidebar and none in the header', () => {
+    renderShell()
+    expect(
+      screen.getAllByRole('button', { name: /Open account menu/ }),
+    ).toHaveLength(1)
+    expect(
+      within(screen.getByRole('banner')).queryByRole('button', {
+        name: /Open account menu/,
+      }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /Sign out/ }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('link', { name: 'Create workspace' }),
+    ).not.toBeInTheDocument()
+  })
+
+  test('account menu exposes the full long email and restores keyboard focus', async () => {
+    const user = userEvent.setup()
+    const email = `${'long.account.'.repeat(12)}@example.test`
+    mocks.useCurrentUser.mockReturnValue({ user: { id: 'user-1', email } })
+    renderShell()
+    const trigger = screen.getByRole('button', {
+      name: `Open account menu for ${email}`,
+    })
+    trigger.focus()
+    await user.keyboard('{Enter}')
+    const menu = screen.getByRole('menu', { name: 'Account menu' })
+    expect(within(menu).getByText(email)).toBeVisible()
+    expect(within(menu).getByText(email)).not.toHaveClass('truncate')
+    expect(within(menu).getAllByRole('menuitem')).toHaveLength(1)
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    expect(trigger).toHaveFocus()
+  })
+
+  test('workspace menu supports keyboard opening, Escape and outside dismissal', async () => {
+    const user = userEvent.setup()
+    renderShell(`/app/organizations/${firstId}/jobs/job-1/pipeline`)
+    const trigger = screen.getByRole('button', { name: /Switch workspace:/ })
+    trigger.focus()
+    await user.keyboard('{Enter}')
+    expect(
+      screen.getByRole('menuitem', { name: /Acme Hiring/ }),
+    ).toHaveAttribute('aria-current', 'true')
+    await user.keyboard('{Escape}')
+    expect(trigger).toHaveFocus()
+    await user.click(trigger)
+    await user.pointer({ target: document.body, keys: '[MouseLeft]' })
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+  })
+
+  test('workspace creation is reachable by keyboard from a nested page', async () => {
+    const user = userEvent.setup()
+    renderShell(`/app/organizations/${firstId}/jobs/job-1/pipeline`)
+    screen.getByRole('button', { name: /Switch workspace:/ }).focus()
+    await user.keyboard('{Enter}{End}{Enter}')
+    expect(screen.getByTestId('current-path')).toHaveTextContent(
+      '/app/organizations/new',
+    )
+  })
+
+  test('account menu inside the mobile drawer dismisses before the drawer and signs out', async () => {
+    const user = userEvent.setup()
+    const logout = vi.fn().mockResolvedValue(undefined)
+    mocks.useLogout.mockReturnValue({
+      isPending: false,
+      isError: false,
+      mutateAsync: logout,
+    })
+    renderShell()
+    await user.click(screen.getByRole('button', { name: 'Open navigation' }))
+    const drawer = screen.getByRole('dialog')
+    const trigger = within(drawer).getByRole('button', {
+      name: /Open account menu/,
+    })
+    expect(
+      screen.getAllByRole('button', { name: /Open account menu/ }),
+    ).toHaveLength(1)
+    await user.click(trigger)
+    await user.keyboard('{Escape}')
+    expect(drawer).toBeVisible()
+    expect(trigger).toHaveFocus()
+    await user.click(trigger)
+    await user.click(screen.getByRole('menuitem', { name: 'Sign out' }))
+    expect(logout).toHaveBeenCalledOnce()
+    expect(screen.getByTestId('current-path')).toHaveTextContent('/login')
+  })
+
+  test('failed sign out keeps the shell and exposes the existing retry feedback', async () => {
+    const user = userEvent.setup()
+    mocks.useLogout.mockReturnValue({
+      isPending: false,
+      isError: true,
+      error: new Error('Failed'),
+      mutateAsync: vi.fn().mockRejectedValue(new Error('Failed')),
+    })
+    renderShell()
+    await user.click(screen.getByRole('button', { name: /Open account menu/ }))
+    await user.click(screen.getByRole('menuitem', { name: 'Sign out' }))
+    expect(screen.getByTestId('current-path')).not.toHaveTextContent('/login')
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Please try signing out again',
+    )
+  })
   test('renders ordered workspace navigation with scoped links and active dashboard', () => {
     renderShell()
     const nav = desktopNavigation()
@@ -221,10 +343,10 @@ describe('authenticated application shell', () => {
     const sidebar = screen.getByRole('complementary', {
       name: 'Workspace sidebar',
     })
-    await user.selectOptions(
-      within(sidebar).getByRole('combobox', { name: 'Switch organization' }),
-      secondId,
+    await user.click(
+      within(sidebar).getByRole('button', { name: /Switch workspace:/ }),
     )
+    await user.click(screen.getByRole('menuitem', { name: 'Second Workspace' }))
     expect(screen.getByTestId('current-path')).toHaveTextContent(
       `/app/organizations/${secondId}`,
     )
@@ -263,12 +385,12 @@ describe('authenticated application shell', () => {
       `/app/organizations/${firstId}/jobs`,
     )
     await user.click(screen.getByRole('button', { name: 'Open navigation' }))
-    await user.selectOptions(
-      within(screen.getByRole('dialog')).getByRole('combobox', {
-        name: 'Switch organization',
+    await user.click(
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: /Switch workspace:/,
       }),
-      secondId,
     )
+    await user.click(screen.getByRole('menuitem', { name: 'Second Workspace' }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(screen.getByTestId('current-path')).toHaveTextContent(
       `/app/organizations/${secondId}`,

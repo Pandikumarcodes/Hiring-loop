@@ -35,12 +35,17 @@ export function VerifyEmailPage() {
   if (!token) {
     return (
       <AuthLayout>
-        <div className="grid min-w-0 justify-items-start gap-6">
+        <div className="grid min-w-0 justify-items-start gap-5 sm:gap-6">
           <AuthPageHeader
             title="Invalid verification link"
             description="This verification link is missing required information."
           />
-          <Link to="/login">Back to sign in</Link>
+          <Link
+            className="text-sm font-semibold text-primary-dark underline-offset-4 hover:underline"
+            to="/login"
+          >
+            Back to sign in
+          </Link>
           <ResendVerificationForm />
         </div>
       </AuthLayout>
@@ -51,9 +56,9 @@ export function VerifyEmailPage() {
     const returnTo = getSafeReturnTo(location.state && location.state.from)
     return (
       <AuthLayout>
-        <div className="grid min-w-0 justify-items-start gap-6">
+        <div className="grid min-w-0 justify-items-start gap-5 sm:gap-6">
           <span
-            className="grid h-12 w-12 place-items-center rounded-full bg-emerald-100 text-xl font-extrabold text-success"
+            className="grid h-12 w-12 place-items-center rounded-full bg-success-soft text-success"
             aria-hidden="true"
           >
             ✓
@@ -64,14 +69,14 @@ export function VerifyEmailPage() {
           />
           {location.state && location.state.from ? (
             <Link
-              className="inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary-dark"
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary-dark px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-primary-dark focus-visible:outline-offset-2"
               to={returnTo}
             >
               Continue
             </Link>
           ) : (
             <Link
-              className="inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary-dark"
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary-dark px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-primary-dark focus-visible:outline-offset-2"
               to="/login"
             >
               Sign in
@@ -85,12 +90,18 @@ export function VerifyEmailPage() {
   if (verify.isError && isInvalidAuthToken(verify.error)) {
     return (
       <AuthLayout>
-        <div className="grid min-w-0 justify-items-start gap-6">
+        <div className="grid min-w-0 justify-items-start gap-5 sm:gap-6">
           <AuthPageHeader
             title="Verification link unavailable"
             description="This verification link is invalid or has expired."
           />
           <ResendVerificationForm />
+          <Link
+            className="text-sm font-semibold text-primary-dark underline-offset-4 hover:underline"
+            to="/login"
+          >
+            Back to sign in
+          </Link>
         </div>
       </AuthLayout>
     )
@@ -119,7 +130,7 @@ export function VerifyEmailPage() {
       >
         {verify.isPending ? 'Verifying…' : 'Verify email'}
       </Button>
-      <p className="mt-6 text-center text-[0.9375rem] leading-6 text-text-secondary [overflow-wrap:anywhere]">
+      <p className="mt-5 text-center text-[0.9375rem] leading-6 text-text-secondary [overflow-wrap:anywhere] sm:mt-6">
         <Link to="/login">Back to sign in</Link>
       </p>
     </AuthLayout>

@@ -5,11 +5,11 @@ interface AuthPageHeaderProps {
 
 export function AuthPageHeader({ description, title }: AuthPageHeaderProps) {
   return (
-    <header className="mb-6 min-w-0 sm:mb-8">
-      <h1 className="text-[clamp(1.75rem,5vw,2.25rem)] font-bold leading-tight tracking-tight text-text-primary">
+    <header className="mb-6 min-w-0">
+      <h1 className="text-2xl font-bold leading-tight tracking-tight text-text-primary [overflow-wrap:anywhere] sm:text-3xl">
         {title}
       </h1>
-      <p className="mt-3 max-w-xl text-base leading-6 text-text-secondary">
+      <p className="mt-2 max-w-lg text-sm leading-6 text-text-secondary">
         {description}
       </p>
     </header>

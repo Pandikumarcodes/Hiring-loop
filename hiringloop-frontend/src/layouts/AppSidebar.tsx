@@ -1,9 +1,9 @@
 import { Link, useLocation } from 'react-router-dom'
 
 import { BrandMark } from '../features/auth/components/BrandMark'
-import { OrganizationSwitcher } from '../features/organizations'
+import { OrganizationSwitcher } from '../features/organizations/components/OrganizationSwitcher'
 import type { OrganizationDto } from '../features/organizations/types/organization.types'
-import { Avatar, AvatarFallback } from '../shared/components/ui'
+import { AccountMenu } from './AccountMenu'
 import {
   isNavigationActive,
   navigationPath,
@@ -37,7 +37,6 @@ export function AppSidebar({
   const location = useLocation()
   const home =
     organizationId && organization ? workspacePath(organizationId) : '/app'
-  const initial = email[0]?.toUpperCase() ?? 'P'
   const groups =
     organizationId && organization
       ? visibleNavigationGroups(organization.permissions)
@@ -45,7 +44,7 @@ export function AppSidebar({
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-surface">
-      <div className="border-b border-border px-4 pb-4 pt-5">
+      <div className="shrink-0 border-b border-border px-3 pb-3 pt-3">
         <Link
           className="inline-flex min-h-11 items-center text-primary-dark"
           to={home}
@@ -54,14 +53,14 @@ export function AppSidebar({
         >
           <BrandMark />
         </Link>
-        <div className="mt-5 rounded-card border border-border bg-background p-3">
+        <div className="mt-2">
           <OrganizationSwitcher compact onNavigate={onNavigate} />
         </div>
       </div>
 
       <nav
         aria-label="Application shell navigation"
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-5"
+        className="ui-sidebar-nav min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3"
       >
         {organizationId && organizationPending ? (
           <p role="status" className="px-3 text-sm text-text-secondary">
@@ -78,11 +77,11 @@ export function AppSidebar({
         ) : null}
         {organizationId && organization
           ? groups.map((group) => (
-              <div key={group.label} className="mb-5 last:mb-0">
+              <div key={group.label} className="mb-3 last:mb-0">
                 <p className="px-3 text-[0.7rem] font-bold uppercase tracking-[0.12em] text-text-secondary">
                   {group.label}
                 </p>
-                <div className="mt-2 grid gap-1">
+                <div className="mt-1 grid gap-0.5">
                   {group.items.map((item) => {
                     const href = navigationPath(organizationId, item.segment)
                     const active = isNavigationActive(
@@ -120,26 +119,12 @@ export function AppSidebar({
           : null}
       </nav>
 
-      <div className="border-t border-border p-4">
-        <div className="flex min-w-0 items-center gap-3">
-          <Avatar>
-            <AvatarFallback>{initial}</AvatarFallback>
-          </Avatar>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold" title={email}>
-              {email}
-            </p>
-            <p className="text-xs text-text-secondary">Signed in account</p>
-          </div>
-        </div>
-        <button
-          type="button"
-          className="mt-3 inline-flex min-h-11 w-full items-center rounded-control px-3 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-muted hover:text-text-primary focus-visible:outline-3 focus-visible:outline-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={logoutPending}
-          onClick={onLogout}
-        >
-          {logoutPending ? 'Signing out…' : 'Sign out of HiringLoop'}
-        </button>
+      <div className="shrink-0 border-t border-border p-2">
+        <AccountMenu
+          email={email}
+          pending={logoutPending}
+          onLogout={onLogout}
+        />
       </div>
     </div>
   )

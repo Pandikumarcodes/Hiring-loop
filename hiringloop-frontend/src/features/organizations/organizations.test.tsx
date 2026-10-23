@@ -50,6 +50,38 @@ function CurrentPath() {
 }
 
 describe('organization experience', () => {
+  test('single-workspace menu reveals the full long name and creation action', async () => {
+    const user = userEvent.setup()
+    const name = 'International recruiting and platform engineering '.repeat(6)
+    useOrganizationsMock.mockReturnValue(successList([{ ...one, name }]))
+    useOrganizationMock.mockReturnValue({
+      isSuccess: true,
+      data: { ...one, name },
+    })
+    render(
+      <MemoryRouter initialEntries={[`/app/organizations/${one.id}`]}>
+        <OrganizationSwitcher compact />
+        <CurrentPath />
+      </MemoryRouter>,
+    )
+    const trigger = screen.getByRole('button', {
+      name: `Switch workspace: ${name.trim()}`,
+    })
+    expect(screen.queryByRole('menuitem')).not.toBeInTheDocument()
+    trigger.focus()
+    await user.keyboard('{Enter}')
+    const item = screen.getByRole('menuitem', {
+      name: /International recruiting/,
+    })
+    expect(item).toHaveAttribute('aria-current', 'true')
+    expect(
+      screen.getByText(name.trim(), { selector: '[role="menuitem"] span' }),
+    ).not.toHaveClass('truncate')
+    await user.click(screen.getByRole('menuitem', { name: 'Create workspace' }))
+    expect(screen.getByTestId('current-path')).toHaveTextContent(
+      '/app/organizations/new',
+    )
+  })
   test('routes an empty organization list to onboarding', async () => {
     useOrganizationsMock.mockReturnValue(successList([]))
     useCreateOrganizationMock.mockReturnValue({
@@ -150,15 +182,17 @@ describe('organization experience', () => {
         <CurrentPath />
       </MemoryRouter>,
     )
-    const select = screen.getByRole('combobox', {
-      name: 'Switch organization',
+    const trigger = screen.getByRole('button', {
+      name: 'Switch workspace: Acme Hiring',
     })
-    expect(select).toHaveValue(one.id)
-    expect(screen.getByRole('link', { name: 'New workspace' })).toHaveAttribute(
-      'href',
-      '/app/organizations/new',
-    )
-    await user.selectOptions(select, two.id)
+    await user.click(trigger)
+    expect(
+      screen.getByRole('menuitem', { name: /Acme Hiring/ }),
+    ).toHaveAttribute('aria-current', 'true')
+    expect(
+      screen.getByRole('menuitem', { name: 'Create workspace' }),
+    ).toHaveAttribute('href', '/app/organizations/new')
+    await user.click(screen.getByRole('menuitem', { name: 'Second Workspace' }))
     expect(screen.getByTestId('current-path')).toHaveTextContent(
       `/app/organizations/${two.id}`,
     )
@@ -220,6 +254,10 @@ describe('organization experience', () => {
 
     expect(screen.getByText('Organization unavailable')).toBeVisible()
     expect(screen.queryByTitle(one.name)).not.toBeInTheDocument()
-    expect(screen.getByRole('combobox')).toHaveValue('')
+    expect(
+      screen.getByRole('button', {
+        name: 'Switch workspace: Choose a workspace',
+      }),
+    ).toBeVisible()
   })
 })

@@ -209,6 +209,34 @@ function renderAt(element: React.ReactNode, path: string) {
 }
 
 describe('candidate list', () => {
+  test('both responsive views expose full long identities from the same scoped list', () => {
+    const name = 'InternationalCandidateIdentity'.repeat(5)
+    const email = `${'recruiting.contact.'.repeat(8)}@example.test`
+    useCandidatesMock.mockReturnValue({
+      data: { ...page, candidates: [{ ...candidate, name, email }] },
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    })
+    renderAt(<CandidatesPage />, '/app/organizations/org-1/candidates')
+    const links = screen.getAllByRole('link', { name })
+    expect(links).toHaveLength(2)
+    for (const link of links) {
+      expect(link).toHaveAttribute(
+        'href',
+        '/app/organizations/org-1/candidates/candidate-1',
+      )
+      expect(link).not.toHaveClass('truncate')
+    }
+    const emails = screen.getAllByText(email)
+    expect(emails).toHaveLength(2)
+    for (const value of emails) expect(value).not.toHaveClass('truncate')
+    expect(useCandidatesMock).toHaveBeenCalledWith(
+      'org-1',
+      expect.any(Object),
+      true,
+    )
+  })
   test('shows navigation only with candidate list permission', () => {
     const { rerender } = render(
       <MemoryRouter>

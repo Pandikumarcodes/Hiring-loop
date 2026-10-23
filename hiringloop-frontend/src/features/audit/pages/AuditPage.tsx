@@ -165,13 +165,21 @@ export function AuditPage() {
         ) : list.data ? (
           <>
             <div
-              className="overflow-x-auto rounded-card border border-border bg-surface shadow-sm"
+              className="ui-table-scroll min-w-0 overflow-x-auto rounded-card border border-border bg-surface shadow-sm"
               role="region"
               aria-label="Workspace audit events table"
               tabIndex={0}
             >
-              <table className="w-full min-w-[48rem] text-left text-sm">
+              <p className="border-b border-border px-4 py-2 text-xs text-text-secondary xl:hidden">
+                Scroll horizontally to see all columns.
+              </p>
+              <table className="ui-data-table w-full min-w-[60rem] table-fixed text-left text-sm">
                 <caption className="sr-only">Workspace audit events</caption>
+                <colgroup>
+                  {[11, 18, 12, 10, 9].map((width, index) => (
+                    <col key={index} style={{ width: `${width}rem` }} />
+                  ))}
+                </colgroup>
                 <thead className="bg-slate-50 text-text-secondary">
                   <tr>
                     <th scope="col" className="px-4 py-3">
@@ -221,7 +229,7 @@ export function AuditPage() {
 }
 
 function Page({ children }: { children: React.ReactNode }) {
-  return <PageContainer className="py-10 lg:py-14">{children}</PageContainer>
+  return <PageContainer>{children}</PageContainer>
 }
 
 function AuditFilterBar({

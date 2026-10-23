@@ -1,6 +1,7 @@
-import { render, screen } from '@testing-library/react'
+import { useState } from 'react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
-import { describe, expect, test, vi } from 'vitest'
+import { afterEach, describe, expect, test, vi } from 'vitest'
 
 import { EmptyState, ErrorState, LoadingIndicator } from './feedback'
 import {
@@ -8,6 +9,11 @@ import {
   Badge,
   Button,
   DataTableShell,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
   Field,
   FilterToolbar,
   Input,
@@ -18,7 +24,68 @@ import {
   Textarea,
 } from './ui'
 
+afterEach(cleanup)
+
+test('native select keeps full controlled option labels available as selection changes', async () => {
+  const longLabel = 'International recruiting and platform engineering '
+    .repeat(4)
+    .trim()
+  const change = vi.fn()
+  const { rerender } = render(
+    <Select aria-label="Workspace role" value="long" onChange={change}>
+      <optgroup label="Available">
+        <option value="long">{longLabel}</option>
+        <option value="short">Recruiter</option>
+      </optgroup>
+    </Select>,
+  )
+  const select = screen.getByRole('combobox', { name: 'Workspace role' })
+  expect(select).toHaveValue('long')
+  expect(select).toHaveAttribute('title', longLabel)
+  await userEvent.selectOptions(select, 'short')
+  expect(change).toHaveBeenCalledOnce()
+  rerender(
+    <Select aria-label="Workspace role" value="short" onChange={change}>
+      <option value="long">{longLabel}</option>
+      <option value="short">Recruiter</option>
+    </Select>,
+  )
+  expect(select).toHaveAttribute('title', 'Recruiter')
+  expect(screen.getAllByRole('option')).toHaveLength(2)
+})
+
 describe('shared UI', () => {
+  test.each([false, true])(
+    'a conditionally mounted dialog restores focus to its opening button (autoFocus=%s)',
+    async (autoFocus) => {
+      const user = userEvent.setup()
+      function ControlledDetails() {
+        const [open, setOpen] = useState(false)
+        return (
+          <>
+            <Button onClick={() => setOpen(true)}>Edit interview</Button>
+            {open ? (
+              <Dialog open onOpenChange={setOpen}>
+                <DialogContent>
+                  <DialogTitle>Edit interview</DialogTitle>
+                  <DialogDescription>
+                    Update interview details.
+                  </DialogDescription>
+                  <Input aria-label="Title" autoFocus={autoFocus} />
+                </DialogContent>
+              </Dialog>
+            ) : null}
+          </>
+        )
+      }
+      render(<ControlledDetails />)
+      const trigger = screen.getByRole('button', { name: 'Edit interview' })
+      await user.click(trigger)
+      await user.keyboard('{Escape}')
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+      await waitFor(() => expect(trigger).toHaveFocus())
+    },
+  )
   test('Button preserves native semantics, click behavior, variants, and disabled state', async () => {
     const user = userEvent.setup()
     const onClick = vi.fn()
@@ -181,6 +248,33 @@ describe('shared UI', () => {
     expect(container.querySelector('caption')).toHaveTextContent(
       'Hiring positions',
     )
+    expect(
+      screen.getByRole('region', { name: 'Hiring positions' }),
+    ).toHaveAttribute('tabindex', '0')
+  })
+
+  test('dialog wrappers preserve names, descriptions, keyboard dismissal and trigger focus', async () => {
+    const user = userEvent.setup()
+    render(
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button>Open details</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogTitle>Interview details</DialogTitle>
+          <DialogDescription>Review the scheduled interview.</DialogDescription>
+          <Button>Review</Button>
+        </DialogContent>
+      </Dialog>,
+    )
+    const trigger = screen.getByRole('button', { name: 'Open details' })
+    await user.click(trigger)
+    expect(
+      screen.getByRole('dialog', { name: 'Interview details' }),
+    ).toHaveAccessibleDescription('Review the scheduled interview.')
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(trigger).toHaveFocus())
   })
 
   test('list pagination reports authoritative totals and disables boundary controls', async () => {

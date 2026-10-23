@@ -12,7 +12,7 @@ export function DropdownMenuContent({
         sideOffset={8}
         collisionPadding={12}
         className={cn(
-          'z-50 min-w-56 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-card border border-border bg-surface-raised p-1.5 shadow-popover outline-none',
+          'z-50 min-w-56 max-h-[var(--radix-dropdown-menu-content-available-height)] max-w-[calc(100vw-1.5rem)] overflow-y-auto overscroll-contain rounded-card border border-border bg-surface-raised p-1.5 shadow-popover outline-none [overflow-wrap:anywhere]',
           className,
         )}
         {...props}

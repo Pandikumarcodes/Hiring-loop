@@ -54,7 +54,7 @@ export function RegisterPage() {
       <AuthLayout>
         <div className="grid min-w-0 justify-items-start gap-6">
           <span
-            className="grid h-12 w-12 place-items-center rounded-full bg-emerald-100 text-xl font-extrabold text-success"
+            className="grid h-12 w-12 place-items-center rounded-full bg-success-soft text-xl font-extrabold text-success"
             aria-hidden="true"
           >
             ✓
@@ -68,7 +68,7 @@ export function RegisterPage() {
             already exists.
           </p>
           <Link
-            className="inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary-dark"
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary-dark px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-primary-dark focus-visible:outline-offset-2"
             to="/login"
           >
             Go to sign in
@@ -93,11 +93,7 @@ export function RegisterPage() {
               genericMutationError(register.error))}
         </AuthAlert>
       ) : null}
-      <form
-        className="grid min-w-0 gap-[1.125rem]"
-        onSubmit={submit}
-        noValidate
-      >
+      <form className="grid min-w-0 gap-5" onSubmit={submit} noValidate>
         <Field
           error={errors.email}
           id="register-email"

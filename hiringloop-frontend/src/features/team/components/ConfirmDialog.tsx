@@ -48,7 +48,7 @@ export function ConfirmDialog({
           previousRef.current?.focus()
         }}
       >
-        <DialogTitle className="pr-8 text-lg font-bold">{title}</DialogTitle>
+        <DialogTitle>{title}</DialogTitle>
         <DialogDescription
           id="team-dialog-description"
           className="mt-3 text-sm leading-6 text-text-secondary"

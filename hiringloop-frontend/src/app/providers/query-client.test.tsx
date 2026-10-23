@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import {
   QueryClientProvider,
   useQuery,
@@ -12,9 +12,11 @@ import { AppProviders } from './AppProviders'
 import {
   appQueryClient,
   clearSessionScopedQueries,
+  createAppQueryClient,
   queryRetryDelay,
   shouldRetryQuery,
 } from './query-client'
+import { authKeys } from '../../features/auth/hooks/query-keys'
 
 afterEach(() => {
   cleanup()
@@ -185,5 +187,177 @@ describe('test QueryClient isolation', () => {
 
     expect(queryClient.getQueryData(['organizations'])).toBeUndefined()
     expect(queryClient.getQueryData(['public-content'])).toBe('shared')
+  })
+})
+
+const user = {
+  id: 'user-1',
+  email: 'person@example.test',
+  emailVerified: true,
+}
+
+const expiredSession = () =>
+  new ApiError({
+    kind: 'http',
+    status: 401,
+    code: 'UNAUTHENTICATED',
+    message: 'Authentication required',
+  })
+
+describe('authoritative query session expiry', () => {
+  test('clears authenticated and tenant-scoped data after a protected GET 401', async () => {
+    const queryClient = createAppQueryClient()
+    queryClient.setQueryData(authKeys.currentUser(), user)
+    queryClient.setQueryData(authKeys.csrf(), 'csrf-token')
+    await queryClient.fetchQuery({
+      queryKey: ['organizations'],
+      queryFn: async () => ['organization-a'],
+      meta: { clearOnAuthChange: true },
+    })
+
+    await expect(
+      queryClient.fetchQuery({
+        queryKey: ['jobs', 'organization-a'],
+        queryFn: async () => {
+          throw expiredSession()
+        },
+        meta: { clearOnAuthChange: true },
+      }),
+    ).rejects.toMatchObject({ code: 'UNAUTHENTICATED', status: 401 })
+
+    await waitFor(() => {
+      expect(queryClient.getQueryData(authKeys.currentUser())).toBeNull()
+      expect(queryClient.getQueryData(authKeys.csrf())).toBeUndefined()
+      expect(queryClient.getQueryData(['organizations'])).toBeUndefined()
+      expect(
+        queryClient.getQueryData(['jobs', 'organization-a']),
+      ).toBeUndefined()
+    })
+  })
+
+  test('coalesces concurrent protected 401 responses into one cleanup', async () => {
+    const queryClient = createAppQueryClient()
+    queryClient.setQueryData(authKeys.currentUser(), user)
+    const cancel = vi.spyOn(queryClient, 'cancelQueries')
+
+    await Promise.all(
+      ['jobs', 'candidates'].map((feature) =>
+        queryClient
+          .fetchQuery({
+            queryKey: [feature, 'organization-a'],
+            queryFn: async () => {
+              throw expiredSession()
+            },
+            meta: { clearOnAuthChange: true },
+          })
+          .catch(() => undefined),
+      ),
+    )
+
+    await waitFor(() =>
+      expect(queryClient.getQueryData(authKeys.currentUser())).toBeNull(),
+    )
+    expect(cancel).toHaveBeenCalledTimes(1)
+  })
+
+  test('does not expire a session for public, forbidden, or server-error queries', async () => {
+    const queryClient = createAppQueryClient()
+    queryClient.setQueryData(authKeys.currentUser(), user)
+    await queryClient.fetchQuery({
+      queryKey: ['organizations'],
+      queryFn: async () => ['organization-a'],
+      meta: { clearOnAuthChange: true },
+    })
+    const errors = [
+      expiredSession(),
+      new ApiError({
+        kind: 'http',
+        status: 403,
+        code: 'FORBIDDEN',
+        message: 'Forbidden',
+      }),
+      new ApiError({
+        kind: 'http',
+        status: 500,
+        code: 'INTERNAL',
+        message: 'Unavailable',
+      }),
+    ]
+
+    for (const [index, error] of errors.entries()) {
+      await expect(
+        queryClient.fetchQuery({
+          queryKey: ['query', index],
+          queryFn: async () => {
+            throw error
+          },
+          meta: index === 0 ? undefined : { clearOnAuthChange: true },
+        }),
+      ).rejects.toBe(error)
+    }
+
+    expect(queryClient.getQueryData(authKeys.currentUser())).toEqual(user)
+    expect(queryClient.getQueryData(['organizations'])).toEqual([
+      'organization-a',
+    ])
+  })
+
+  test('keeps authenticated workspace data available through a successful switch', async () => {
+    const queryClient = createAppQueryClient()
+    queryClient.setQueryData(authKeys.currentUser(), user)
+
+    await queryClient.fetchQuery({
+      queryKey: ['organizations', 'organization-a'],
+      queryFn: async () => 'workspace a',
+      meta: { clearOnAuthChange: true },
+    })
+    await queryClient.fetchQuery({
+      queryKey: ['organizations', 'organization-b'],
+      queryFn: async () => 'workspace b',
+      meta: { clearOnAuthChange: true },
+    })
+
+    expect(queryClient.getQueryData(authKeys.currentUser())).toEqual(user)
+    expect(queryClient.getQueryData(['organizations', 'organization-a'])).toBe(
+      'workspace a',
+    )
+    expect(queryClient.getQueryData(['organizations', 'organization-b'])).toBe(
+      'workspace b',
+    )
+  })
+
+  test('cancels a late protected response so it cannot restore stale data', async () => {
+    const queryClient = createAppQueryClient()
+    queryClient.setQueryData(authKeys.currentUser(), user)
+    let resolveLate: ((value: string) => void) | undefined
+    const late = queryClient.fetchQuery({
+      queryKey: ['jobs', 'organization-a'],
+      queryFn: () =>
+        new Promise<string>((resolve) => {
+          resolveLate = resolve
+        }),
+      meta: { clearOnAuthChange: true },
+    })
+    const lateResult = late.catch((error: unknown) => error)
+
+    await waitFor(() => expect(resolveLate).toBeDefined())
+    await expect(
+      queryClient.fetchQuery({
+        queryKey: ['candidates', 'organization-a'],
+        queryFn: async () => {
+          throw expiredSession()
+        },
+        meta: { clearOnAuthChange: true },
+      }),
+    ).rejects.toMatchObject({ code: 'UNAUTHENTICATED' })
+    await waitFor(() =>
+      expect(queryClient.getQueryData(authKeys.currentUser())).toBeNull(),
+    )
+
+    resolveLate?.('stale tenant data')
+    await expect(lateResult).resolves.toMatchObject({
+      message: 'CancelledError',
+    })
+    expect(queryClient.getQueryData(['jobs', 'organization-a'])).toBeUndefined()
   })
 })

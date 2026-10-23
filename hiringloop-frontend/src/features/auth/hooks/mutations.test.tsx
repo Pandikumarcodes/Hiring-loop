@@ -34,6 +34,7 @@ import {
   useVerifyEmail,
 } from './mutations'
 import { authKeys } from './query-keys'
+import { expireAuthenticatedSession } from './session-expiry'
 
 const user = {
   id: 'user-1',
@@ -231,12 +232,41 @@ describe('session-ending mutations', () => {
     apiMocks.getCsrfToken.mockRejectedValue(error)
     const { queryClient, wrapper } = testContext()
     queryClient.setQueryData(authKeys.currentUser(), user)
+    await queryClient.fetchQuery({
+      queryKey: ['organizations'],
+      queryFn: async () => ['organization-a'],
+      meta: { clearOnAuthChange: true },
+    })
     const { result } = renderHook(() => useLogout(), { wrapper })
 
     await expect(act(() => result.current.mutateAsync())).rejects.toBe(error)
     expect(apiMocks.logout).not.toHaveBeenCalled()
     expect(queryClient.getQueryData(authKeys.currentUser())).toBeNull()
     expect(queryClient.getQueryData(authKeys.csrf())).toBeUndefined()
+    expect(queryClient.getQueryData(['organizations'])).toBeUndefined()
+  })
+
+  test('login establishes a clean new session after expiry', async () => {
+    apiMocks.login.mockResolvedValue({ user })
+    const { queryClient, wrapper } = testContext()
+    queryClient.setQueryData(authKeys.currentUser(), {
+      ...user,
+      id: 'expired-user',
+    })
+    await queryClient.fetchQuery({
+      queryKey: ['organizations'],
+      queryFn: async () => ['old-organization'],
+      meta: { clearOnAuthChange: true },
+    })
+
+    await expireAuthenticatedSession(queryClient)
+    const { result } = renderHook(() => useLogin(), { wrapper })
+    await act(() =>
+      result.current.mutateAsync({ email: user.email, password: 'password' }),
+    )
+
+    expect(queryClient.getQueryData(authKeys.currentUser())).toEqual(user)
+    expect(queryClient.getQueryData(['organizations'])).toBeUndefined()
   })
 })
 

@@ -5,7 +5,7 @@ import { BrandMark } from '../features/auth/components/BrandMark'
 
 export function AuthLayout({ children }: PropsWithChildren) {
   return (
-    <div className="auth-shell flex min-h-0 flex-col bg-surface text-text-primary lg:grid lg:min-h-dvh lg:grid-cols-[minmax(22rem,42%)_minmax(0,58%)]">
+    <div className="auth-shell flex min-h-dvh flex-col bg-surface text-text-primary lg:grid lg:grid-cols-[minmax(22rem,42%)_minmax(0,58%)]">
       <a
         className="skip-link absolute left-4 top-[-5rem] z-50 bg-surface px-4 py-3 focus:top-4"
         href="#auth-main"
@@ -99,7 +99,7 @@ export function AuthLayout({ children }: PropsWithChildren) {
         </div>
       </aside>
       <main
-        className="flex min-w-0 items-start justify-center px-4 py-8 outline-none sm:px-8 lg:items-center lg:px-16 lg:py-16"
+        className="flex min-w-0 flex-1 items-start justify-center px-4 py-8 outline-none sm:px-8 sm:py-10 lg:items-center lg:px-12 lg:py-16 xl:px-16"
         id="auth-main"
         tabIndex={-1}
       >

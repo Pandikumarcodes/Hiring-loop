@@ -38,8 +38,8 @@ export function ResendVerificationForm({
   }
 
   return (
-    <div className="w-full rounded-card border border-border bg-background p-4 shadow-sm sm:p-5">
-      <h2 className="mb-4 text-base font-bold">
+    <section className="w-full min-w-0 rounded-card border border-border bg-surface p-4 shadow-surface sm:p-5">
+      <h2 className="mb-4 text-base font-semibold leading-6 text-text-primary sm:text-lg">
         Send a new verification email
       </h2>
       {resend.isSuccess ? (
@@ -47,7 +47,7 @@ export function ResendVerificationForm({
           If the account is eligible, a verification email will be sent.
         </AuthAlert>
       ) : (
-        <form className="grid min-w-0 gap-3" onSubmit={submit} noValidate>
+        <form className="grid min-w-0 gap-4" onSubmit={submit} noValidate>
           {resend.isError ? (
             <AuthAlert>
               {rateLimitMessage(resend.error) ??
@@ -74,11 +74,16 @@ export function ResendVerificationForm({
               />
             )}
           </Field>
-          <Button loading={resend.isPending} type="submit" variant="secondary">
+          <Button
+            className="w-full sm:w-auto sm:justify-self-start"
+            loading={resend.isPending}
+            type="submit"
+            variant="secondary"
+          >
             {resend.isPending ? 'Sending…' : 'Resend verification email'}
           </Button>
         </form>
       )}
-    </div>
+    </section>
   )
 }

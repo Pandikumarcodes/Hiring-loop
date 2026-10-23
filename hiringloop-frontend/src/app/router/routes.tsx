@@ -13,43 +13,166 @@ import {
   ResetPasswordPage,
   VerifyEmailPage,
 } from '../../features/auth/pages'
-import {
-  OrganizationLandingPage,
-  OrganizationOnboardingPage,
-  OrganizationWorkspacePage,
-} from '../../features/organizations'
+import { OrganizationLandingPage } from '../../features/organizations/pages/OrganizationLandingPage'
 import { useOrganizations } from '../../features/organizations/hooks/queries'
-import { InvitationAcceptancePage, TeamPage } from '../../features/team'
-import {
-  CreateJobPage,
-  EditJobPage,
-  JobDetailPage,
-  JobsPage,
-} from '../../features/jobs'
-import { PipelineConfigurationPage } from '../../features/pipelines'
-import { ApplicationFormBuilderPage } from '../../features/application-form'
-import {
-  PublicCareerPage,
-  PublicJobDetailPage,
-} from '../../features/public-careers/pages'
-import { PublicApplyPage } from '../../features/candidate-application'
-import {
-  ApplicationDetailPage,
-  CandidateDetailPage,
-  CandidatesPage,
-} from '../../features/candidate-management'
-import { InterviewDetailPage, InterviewsPage } from '../../features/interviews'
-import { NotificationsPage } from '../../features/notifications'
-import {
-  TalentPoolDetailPage,
-  TalentPoolsPage,
-} from '../../features/talent-pools'
-import {
-  MyScorecardPage,
-  ScorecardTemplatePage,
-} from '../../features/scorecards'
-import { AnalyticsPage } from '../../features/analytics'
-import { AuditPage } from '../../features/audit'
+import { lazyRoute } from './LazyRoute'
+
+const OrganizationOnboardingPage = lazyRoute(async () => {
+  const module = await import(
+    '../../features/organizations/pages/OrganizationOnboardingPage'
+  )
+  return { default: module.OrganizationOnboardingPage }
+})
+
+const OrganizationWorkspacePage = lazyRoute(async () => {
+  const module = await import(
+    '../../features/organizations/pages/OrganizationWorkspacePage'
+  )
+  return { default: module.OrganizationWorkspacePage }
+})
+
+const InvitationAcceptancePage = lazyRoute(async () => {
+  const module = await import(
+    '../../features/team/pages/InvitationAcceptancePage'
+  )
+  return { default: module.InvitationAcceptancePage }
+})
+
+const TeamPage = lazyRoute(async () => {
+  const module = await import('../../features/team/pages/TeamPage')
+  return { default: module.TeamPage }
+})
+
+const CreateJobPage = lazyRoute(async () => {
+  const module = await import('../../features/jobs/pages/CreateJobPage')
+  return { default: module.CreateJobPage }
+})
+
+const EditJobPage = lazyRoute(async () => {
+  const module = await import('../../features/jobs/pages/EditJobPage')
+  return { default: module.EditJobPage }
+})
+
+const JobDetailPage = lazyRoute(async () => {
+  const module = await import('../../features/jobs/pages/JobDetailPage')
+  return { default: module.JobDetailPage }
+})
+
+const JobsPage = lazyRoute(async () => {
+  const module = await import('../../features/jobs/pages/JobsPage')
+  return { default: module.JobsPage }
+})
+
+const PipelineConfigurationPage = lazyRoute(async () => {
+  const module = await import(
+    '../../features/pipelines/pages/PipelineConfigurationPage'
+  )
+  return { default: module.PipelineConfigurationPage }
+})
+
+const ApplicationFormBuilderPage = lazyRoute(async () => {
+  const module = await import(
+    '../../features/application-form/pages/ApplicationFormBuilderPage'
+  )
+  return { default: module.ApplicationFormBuilderPage }
+})
+
+const PublicCareerPage = lazyRoute(async () => {
+  const module = await import(
+    '../../features/public-careers/pages/PublicCareerPage'
+  )
+  return { default: module.PublicCareerPage }
+})
+
+const PublicJobDetailPage = lazyRoute(async () => {
+  const module = await import(
+    '../../features/public-careers/pages/PublicJobDetailPage'
+  )
+  return { default: module.PublicJobDetailPage }
+})
+
+const PublicApplyPage = lazyRoute(async () => {
+  const module = await import(
+    '../../features/candidate-application/pages/PublicApplyPage'
+  )
+  return { default: module.PublicApplyPage }
+})
+
+const ApplicationDetailPage = lazyRoute(async () => {
+  const module = await import(
+    '../../features/candidate-management/pages/ApplicationDetailPage'
+  )
+  return { default: module.ApplicationDetailPage }
+})
+
+const CandidateDetailPage = lazyRoute(async () => {
+  const module = await import(
+    '../../features/candidate-management/pages/CandidateDetailPage'
+  )
+  return { default: module.CandidateDetailPage }
+})
+
+const CandidatesPage = lazyRoute(async () => {
+  const module = await import(
+    '../../features/candidate-management/pages/CandidatesPage'
+  )
+  return { default: module.CandidatesPage }
+})
+
+const InterviewDetailPage = lazyRoute(async () => {
+  const module = await import(
+    '../../features/interviews/pages/InterviewDetailPage'
+  )
+  return { default: module.InterviewDetailPage }
+})
+
+const InterviewsPage = lazyRoute(async () => {
+  const module = await import('../../features/interviews/pages/InterviewsPage')
+  return { default: module.InterviewsPage }
+})
+
+const NotificationsPage = lazyRoute(async () => {
+  const module = await import(
+    '../../features/notifications/pages/NotificationsPage'
+  )
+  return { default: module.NotificationsPage }
+})
+
+const TalentPoolDetailPage = lazyRoute(async () => {
+  const module = await import(
+    '../../features/talent-pools/pages/TalentPoolDetailPage'
+  )
+  return { default: module.TalentPoolDetailPage }
+})
+
+const TalentPoolsPage = lazyRoute(async () => {
+  const module = await import(
+    '../../features/talent-pools/pages/TalentPoolsPage'
+  )
+  return { default: module.TalentPoolsPage }
+})
+
+const MyScorecardPage = lazyRoute(async () => {
+  const module = await import('../../features/scorecards/pages/MyScorecardPage')
+  return { default: module.MyScorecardPage }
+})
+
+const ScorecardTemplatePage = lazyRoute(async () => {
+  const module = await import(
+    '../../features/scorecards/pages/ScorecardTemplatePage'
+  )
+  return { default: module.ScorecardTemplatePage }
+})
+
+const AnalyticsPage = lazyRoute(async () => {
+  const module = await import('../../features/analytics/pages/AnalyticsPage')
+  return { default: module.AnalyticsPage }
+})
+
+const AuditPage = lazyRoute(async () => {
+  const module = await import('../../features/audit/pages/AuditPage')
+  return { default: module.AuditPage }
+})
 
 function OrganizationOnboardingRoute() {
   const organizations = useOrganizations()
@@ -175,7 +298,7 @@ export function AppRoutes() {
             element={<AuditPage />}
           />
           <Route path="organizations" element={<OrganizationLandingPage />} />
-          <Route path="*" element={<NotFoundPage />} />
+          <Route path="*" element={<NotFoundPage context="application" />} />
         </Route>
       </Route>
     </Routes>

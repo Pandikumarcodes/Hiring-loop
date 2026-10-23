@@ -72,7 +72,7 @@ afterEach(() => {
 })
 
 describe('invitation acceptance route', () => {
-  test('renders for an authenticated verified user with zero organizations', () => {
+  test('renders for an authenticated verified user with zero organizations', async () => {
     useCurrentUserMock.mockReturnValue(
       state({ isAuthenticated: true, isUnauthenticated: false, user }),
     )
@@ -95,7 +95,7 @@ describe('invitation acceptance route', () => {
     )
 
     expect(
-      screen.getByRole('heading', { name: 'Accepting invitation' }),
+      await screen.findByRole('heading', { name: 'Accepting invitation' }),
     ).toBeVisible()
     expect(screen.queryByTestId('location-state')).not.toBeInTheDocument()
     expect(window.localStorage.length).toBe(0)

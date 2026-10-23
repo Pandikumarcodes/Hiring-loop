@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import {
   Link,
@@ -112,6 +112,158 @@ describe('notifications', () => {
 
   afterEach(() => cleanup())
 
+  test('renders a semantic inbox with read states, messages, timestamps and scoped links', () => {
+    mocks.list.mockReturnValue({
+      data: {
+        data: [
+          notification,
+          {
+            ...notification,
+            id: 'n2',
+            title: 'Interview updated',
+            type: 'INTERVIEW_RESCHEDULED',
+            applicationId: null,
+            interviewId: 'i1',
+            readAt: notification.createdAt,
+          },
+        ],
+        pagination: { page: 1, pageSize: 20 },
+      },
+    })
+    renderPage()
+    const inbox = screen.getByRole('list', { name: 'Notifications' })
+    const rows = within(inbox).getAllByRole('listitem')
+    expect(rows).toHaveLength(2)
+    expect(within(rows[0]).getByText('Unread')).toBeVisible()
+    expect(within(rows[1]).getByText('Read', { exact: true })).toBeVisible()
+    expect(within(rows[0]).getByText(notification.message)).toBeVisible()
+    expect(rows[0].querySelector('time')).toHaveAttribute(
+      'datetime',
+      notification.createdAt,
+    )
+    expect(
+      screen.getByRole('link', { name: notification.title }),
+    ).toHaveAttribute('href', '/app/organizations/org-1/applications/a1')
+    expect(
+      screen.getByRole('link', { name: 'Interview updated' }),
+    ).toHaveAttribute('href', '/app/organizations/org-1/interviews/i1')
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument()
+  })
+
+  test('notification links support keyboard activation and mark unread items read', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    screen.getByRole('link', { name: notification.title }).focus()
+    await user.keyboard('{Enter}')
+    expect(mocks.read).toHaveBeenCalledWith(notification.id)
+  })
+
+  test('read notifications navigate without another read mutation', async () => {
+    mocks.list.mockReturnValue({
+      data: {
+        data: [{ ...notification, readAt: notification.createdAt }],
+        pagination: { page: 1, pageSize: 20 },
+      },
+    })
+    renderPage()
+    expect(
+      screen.getByRole('button', { name: 'Mark all as read' }),
+    ).toBeDisabled()
+    await userEvent.click(
+      screen.getByRole('link', { name: notification.title }),
+    )
+    expect(mocks.read).not.toHaveBeenCalled()
+  })
+
+  test('items without a destination can be marked read without a fabricated link', async () => {
+    mocks.list.mockReturnValue({
+      data: {
+        data: [{ ...notification, applicationId: null }],
+        pagination: { page: 1, pageSize: 20 },
+      },
+    })
+    renderPage()
+    expect(
+      screen.queryByRole('link', { name: notification.title }),
+    ).not.toBeInTheDocument()
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: `Mark as read: ${notification.title}`,
+      }),
+    )
+    expect(mocks.read).toHaveBeenCalledWith(notification.id)
+  })
+
+  test('keeps the page header and preferences available while the inbox loads', () => {
+    mocks.list.mockReturnValue({ isPending: true })
+    renderPage()
+    expect(screen.getByRole('heading', { name: 'Notifications' })).toBeVisible()
+    expect(
+      screen.getByRole('status', { name: 'Loading notifications' }),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('checkbox', { name: /Interview scheduled/ }),
+    ).toBeEnabled()
+    expect(
+      screen.getByRole('button', { name: 'Mark all as read' }),
+    ).toBeDisabled()
+  })
+
+  test('offers a retry for inbox errors without hiding preferences', async () => {
+    const refetch = vi.fn()
+    mocks.list.mockReturnValue({ isError: true, refetch })
+    renderPage()
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Notifications unavailable',
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    expect(refetch).toHaveBeenCalledOnce()
+    expect(
+      screen.getByRole('group', { name: 'In-app notifications' }),
+    ).toBeVisible()
+  })
+
+  test('shows an empty inbox without enabling bulk actions or inventing totals', () => {
+    mocks.list.mockReturnValue({
+      data: { data: [], pagination: { page: 1, pageSize: 20 } },
+    })
+    renderPage()
+    expect(
+      screen.getByRole('heading', { name: 'You are all caught up' }),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('button', { name: 'Mark all as read' }),
+    ).toBeDisabled()
+    expect(
+      screen.queryByRole('navigation', { name: 'Notification pagination' }),
+    ).not.toBeInTheDocument()
+  })
+
+  test('uses server pages and lets users return from an empty final page', async () => {
+    mocks.list.mockImplementation((_org: string, page: number) => ({
+      data: {
+        data:
+          page === 1
+            ? Array.from({ length: 20 }, (_, i) => ({
+                ...notification,
+                id: `n${i}`,
+              }))
+            : [],
+        pagination: { page, pageSize: 20 },
+      },
+    }))
+    renderPage()
+    expect(screen.getByRole('button', { name: 'Previous' })).toBeDisabled()
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }))
+    expect(mocks.list).toHaveBeenLastCalledWith('org-1', 2)
+    expect(
+      screen.getByRole('heading', { name: 'No more notifications' }),
+    ).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
+    await userEvent.click(screen.getByRole('button', { name: 'Previous' }))
+    expect(mocks.list).toHaveBeenLastCalledWith('org-1', 1)
+  })
+
   test('renders notification actions and mandatory preference', async () => {
     const user = userEvent.setup()
     renderPage()
@@ -123,7 +275,7 @@ describe('notifications', () => {
     await user.click(screen.getByRole('button', { name: 'Mark all as read' }))
     expect(mocks.markAll).toHaveBeenCalledOnce()
     await user.click(
-      screen.getByRole('button', { name: /Candidate email failed/ }),
+      screen.getByRole('link', { name: /Candidate email failed/ }),
     )
     expect(mocks.read).toHaveBeenCalledWith('n1')
   })

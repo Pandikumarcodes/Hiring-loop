@@ -72,6 +72,7 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   margin: 0;
+  font-size: 0.875rem;
   background: var(--color-background);
 }
 
@@ -103,13 +104,15 @@ button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible,
-[tabindex='-1']:focus-visible {
+[tabindex]:focus-visible {
   outline: 3px solid var(--color-focus);
   outline-offset: 3px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ui-button__spinner {
+  .ui-button__spinner,
+  .animate-spin,
+  .animate-pulse {
     animation: none;
   }
 }

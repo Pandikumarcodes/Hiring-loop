@@ -1,30 +1,45 @@
+import { Link } from 'react-router-dom'
+import { useCurrentUser } from '../../features/auth/hooks/queries'
 import { Card, PageContainer, PageHeader } from '../../shared/components/ui'
+import { buttonVariants } from '../../shared/components/ui/button-variants'
 
-interface FoundationPageProps {
-  context?: 'public' | 'application'
-}
-
-export function FoundationPage({ context = 'public' }: FoundationPageProps) {
-  const isApplication = context === 'application'
+export function FoundationPage() {
+  const currentUser = useCurrentUser()
 
   return (
-    <PageContainer>
-      <Card className="max-w-3xl p-6 sm:p-8">
-        <p className="eyebrow">
-          {isApplication ? 'Application shell' : 'Foundation'}
-        </p>
+    <PageContainer className="py-10 lg:py-14">
+      <Card className="mx-auto max-w-3xl p-6 sm:p-8">
+        <p className="eyebrow">Applicant tracking system</p>
         <PageHeader
-          title={
-            isApplication
-              ? 'Neutral application layout'
-              : 'HiringLoop frontend foundation'
-          }
-          description={
-            isApplication
-              ? 'This route demonstrates the application layout seam without product navigation or feature behavior.'
-              : 'The frontend shell is ready for approved product work. No product workflows are implemented yet.'
-          }
+          title="HiringLoop"
+          description="Bring your recruiting work together, from open roles to hiring decisions."
         />
+        <p className="text-text-secondary">
+          Manage jobs, track candidates through application pipelines, and
+          coordinate interviews and scorecards with your team. Follow recruiting
+          progress with workspace analytics.
+        </p>
+        <nav aria-label="Get started" className="mt-6 flex flex-wrap gap-3">
+          {currentUser.isUnauthenticated ? (
+            <>
+              <Link className={buttonVariants()} to="/register">
+                Create an account
+              </Link>
+              <Link
+                className={buttonVariants({ variant: 'secondary' })}
+                to="/login"
+              >
+                Log in
+              </Link>
+            </>
+          ) : (
+            <Link className={buttonVariants()} to="/app">
+              {currentUser.isAuthenticated
+                ? 'Open workspace'
+                : 'Continue to HiringLoop'}
+            </Link>
+          )}
+        </nav>
       </Card>
     </PageContainer>
   )

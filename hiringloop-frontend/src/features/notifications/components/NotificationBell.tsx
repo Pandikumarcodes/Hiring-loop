@@ -141,7 +141,7 @@ export function NotificationRow({
 
   return (
     <article
-      className={`rounded-control p-3 ${item.readAt ? '' : 'bg-primary-soft'}`}
+      className={`min-w-0 rounded-control border p-3 [overflow-wrap:anywhere] ${item.readAt ? 'border-border bg-surface' : 'border-primary/30 bg-primary-soft'}`}
     >
       <button
         type="button"

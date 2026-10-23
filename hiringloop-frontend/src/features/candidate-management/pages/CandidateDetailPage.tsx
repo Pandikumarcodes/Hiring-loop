@@ -141,7 +141,7 @@ function CandidateContent({
               >
                 <div className="min-w-0">
                   <Link
-                    className="block truncate font-bold text-primary-dark hover:underline"
+                    className="block [overflow-wrap:anywhere] font-bold text-primary-dark hover:underline"
                     to={`/app/organizations/${organizationId}/applications/${application.id}`}
                     title={application.job.title}
                   >
@@ -151,7 +151,7 @@ function CandidateContent({
                     Submitted {formatCandidateDate(application.submittedAt)}
                   </p>
                 </div>
-                <div className="flex items-center justify-between gap-3 sm:justify-end">
+                <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 sm:justify-end">
                   <Badge variant="success">
                     {application.currentStage?.name ?? 'Stage unavailable'}
                   </Badge>
@@ -184,7 +184,7 @@ function Section({
   children: React.ReactNode
 }) {
   return (
-    <section className="rounded-card border border-border bg-surface p-5 shadow-sm sm:p-6">
+    <section className="rounded-card border border-border bg-surface p-4 shadow-sm sm:p-5">
       <h2 className="mb-5 text-lg font-bold">{title}</h2>
       {children}
     </section>
@@ -201,9 +201,5 @@ function Meta({ label, value }: { label: string; value: string }) {
 }
 
 function Wrap({ children }: { children: React.ReactNode }) {
-  return (
-    <PageContainer width="standard" className="py-8 lg:py-10">
-      {children}
-    </PageContainer>
-  )
+  return <PageContainer width="standard">{children}</PageContainer>
 }

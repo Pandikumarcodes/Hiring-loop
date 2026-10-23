@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { clearSessionScopedQueries } from '../../../app/providers/query-client'
 
 import {
   changePassword,
@@ -15,16 +14,15 @@ import {
 import { runAuthenticatedAuthMutation } from './authenticated-mutation'
 import { authKeys } from './query-keys'
 import type { AuthUserDto } from '../types/auth.types'
+import {
+  clearAuthenticatedSessionData,
+  expireAuthenticatedSession,
+} from './session-expiry'
 
 function useClearSessionState() {
   const queryClient = useQueryClient()
 
-  return async () => {
-    await queryClient.cancelQueries({ queryKey: authKeys.all })
-    queryClient.setQueryData<AuthUserDto | null>(authKeys.currentUser(), null)
-    queryClient.removeQueries({ queryKey: authKeys.csrf(), exact: true })
-    clearSessionScopedQueries(queryClient)
-  }
+  return () => expireAuthenticatedSession(queryClient)
 }
 
 export function useLogin() {
@@ -34,8 +32,7 @@ export function useLogin() {
     mutationFn: login,
     onSuccess: async ({ user }) => {
       await queryClient.cancelQueries({ queryKey: authKeys.all })
-      queryClient.removeQueries({ queryKey: authKeys.csrf(), exact: true })
-      clearSessionScopedQueries(queryClient)
+      clearAuthenticatedSessionData(queryClient)
       queryClient.setQueryData(authKeys.currentUser(), user)
     },
   })

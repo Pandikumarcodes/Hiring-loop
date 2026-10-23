@@ -1,6 +1,17 @@
-import { QueryClient, type DefaultOptions } from '@tanstack/react-query'
+import {
+  QueryCache,
+  QueryClient,
+  type DefaultOptions,
+} from '@tanstack/react-query'
 
+import { isSessionScopedQuery } from './session-query-cleanup'
+import {
+  expireAuthenticatedSession,
+  isAuthoritativeSessionExpiry,
+} from '../../features/auth/hooks/session-expiry'
 import { isApiError } from '../../shared/lib/apiErrors'
+
+export { clearSessionScopedQueries } from './session-query-cleanup'
 
 const MAX_QUERY_RETRIES = 2
 
@@ -49,18 +60,21 @@ const queryDefaults: DefaultOptions = {
   },
 }
 
-/** One in-memory QueryClient for the running application. */
-export const appQueryClient = new QueryClient({
-  defaultOptions: queryDefaults,
-})
-
-/**
- * Remove data whose authorization is tied to the authenticated identity.
- * Feature query options opt in through metadata so the auth feature does not
- * need to know product-specific query keys.
- */
-export function clearSessionScopedQueries(queryClient: QueryClient): void {
-  queryClient.removeQueries({
-    predicate: (query) => query.meta?.clearOnAuthChange === true,
+export function createAppQueryClient(): QueryClient {
+  let queryClient: QueryClient
+  const queryCache = new QueryCache({
+    onError: (error, query) => {
+      if (isSessionScopedQuery(query) && isAuthoritativeSessionExpiry(error)) {
+        void expireAuthenticatedSession(queryClient)
+      }
+    },
   })
+  queryClient = new QueryClient({
+    defaultOptions: queryDefaults,
+    queryCache,
+  })
+  return queryClient
 }
+
+/** One in-memory QueryClient for the running application. */
+export const appQueryClient = createAppQueryClient()

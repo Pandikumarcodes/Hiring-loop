@@ -4,7 +4,10 @@ import { ApiError, isApiError } from '../../../shared/lib/apiErrors'
 import { authKeys } from './query-keys'
 import { csrfQueryOptions } from './queries'
 import type { AuthUserDto } from '../types/auth.types'
-import { clearSessionScopedQueries } from '../../../app/providers/query-client'
+import {
+  expireAuthenticatedSession,
+  isAuthoritativeSessionExpiry,
+} from './session-expiry'
 
 export async function runAuthenticatedAuthMutation<TResult>(
   queryClient: QueryClient,
@@ -30,15 +33,8 @@ export async function runAuthenticatedAuthMutation<TResult>(
     if (isApiError(error) && error.code === 'CSRF_INVALID') {
       queryClient.removeQueries({ queryKey: authKeys.csrf(), exact: true })
     }
-    if (
-      isApiError(error) &&
-      error.status === 401 &&
-      error.code === 'UNAUTHENTICATED'
-    ) {
-      queryClient.setQueryData<AuthUserDto | null>(authKeys.currentUser(), null)
-      queryClient.removeQueries({ queryKey: authKeys.csrf(), exact: true })
-      clearSessionScopedQueries(queryClient)
-    }
+    if (isAuthoritativeSessionExpiry(error))
+      await expireAuthenticatedSession(queryClient)
 
     throw error
   }

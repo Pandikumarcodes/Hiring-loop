@@ -143,7 +143,7 @@ export function CandidatesPage() {
         description="Review candidates and their submitted applications."
       />
       <FilterToolbar
-        className="xl:grid-cols-[minmax(14rem,1.5fr)_repeat(3,minmax(10rem,1fr))]"
+        className="xl:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,1fr))]"
         resultsSummary={
           data
             ? `${data.pagination.totalItems.toLocaleString()} candidates`
@@ -232,7 +232,15 @@ export function CandidatesPage() {
         )
       ) : (
         <>
-          <DataTableShell caption="Candidates" tableClassName="min-w-[48rem]">
+          <DataTableShell
+            caption="Candidates"
+            tableClassName="min-w-[58rem] table-fixed"
+          >
+            <colgroup>
+              {[16, 12, 10, 8, 12].map((width, index) => (
+                <col key={index} style={{ width: `${width}rem` }} />
+              ))}
+            </colgroup>
             <thead className="bg-slate-50 text-text-secondary">
               <tr>
                 {[
@@ -245,7 +253,7 @@ export function CandidatesPage() {
                   <th
                     key={heading}
                     scope="col"
-                    className="px-4 py-3 font-semibold"
+                    className={`px-4 py-3 font-semibold ${heading === 'Applications' ? 'text-right' : ''}`}
                   >
                     {heading}
                   </th>
@@ -262,7 +270,7 @@ export function CandidatesPage() {
               ))}
             </tbody>
           </DataTableShell>
-          <div className="grid gap-3 md:hidden">
+          <div className="grid gap-3 xl:hidden">
             {data?.candidates.map((candidate) => (
               <CandidateCard
                 key={candidate.id}
@@ -299,21 +307,24 @@ function CandidateRow({
     <tr className="border-t border-border align-middle">
       <td className="max-w-[15rem] px-4 py-4">
         <Link
-          className="block truncate font-bold text-primary-dark hover:underline"
+          className="block [overflow-wrap:anywhere] font-bold text-primary-dark hover:underline"
           to={`/app/organizations/${organizationId}/candidates/${candidate.id}`}
           title={candidate.name}
         >
           {candidate.name}
         </Link>
         <span
-          className="block max-w-[15rem] truncate text-text-secondary"
+          className="block max-w-[15rem] [overflow-wrap:anywhere] text-text-secondary"
           title={candidate.email}
         >
           {candidate.email}
         </span>
       </td>
       <td className="max-w-[14rem] px-4 py-4">
-        <span className="block truncate" title={latest?.job.title}>
+        <span
+          className="block [overflow-wrap:anywhere]"
+          title={latest?.job.title}
+        >
           {latest?.job.title ?? 'Not available'}
         </span>
       </td>
@@ -324,7 +335,9 @@ function CandidateRow({
           'Not available'
         )}
       </td>
-      <td className="px-4 py-4">{candidate.applicationCount}</td>
+      <td className="px-4 py-4 text-right tabular-nums">
+        {candidate.applicationCount}
+      </td>
       <td className="whitespace-nowrap px-4 py-4">
         {formatCandidateDate(latest?.submittedAt)}
       </td>
@@ -345,14 +358,14 @@ function CandidateCard({
   return (
     <article className="min-w-0 rounded-card border border-border bg-surface p-4 shadow-surface">
       <Link
-        className="block truncate font-bold text-primary-dark hover:underline"
+        className="block [overflow-wrap:anywhere] font-bold text-primary-dark hover:underline"
         to={`/app/organizations/${organizationId}/candidates/${candidate.id}`}
         title={candidate.name}
       >
         {candidate.name}
       </Link>
       <p
-        className="mt-1 truncate text-sm text-text-secondary"
+        className="mt-1 [overflow-wrap:anywhere] text-sm text-text-secondary"
         title={candidate.email}
       >
         {candidate.email}
@@ -418,7 +431,10 @@ function Meta({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
       <dt className="text-text-secondary">{label}</dt>
-      <dd className="min-w-0 truncate font-medium" title={value}>
+      <dd
+        className="min-w-0 [overflow-wrap:anywhere] font-medium"
+        title={value}
+      >
         {label === 'Current stage' && value !== 'Not available' ? (
           <Badge variant="info">{value}</Badge>
         ) : (

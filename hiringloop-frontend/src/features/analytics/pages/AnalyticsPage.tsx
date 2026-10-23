@@ -10,6 +10,8 @@ import {
   Button,
   Card,
   Input,
+  Field,
+  FilterToolbar,
   PageContainer,
   PageHeader,
   Select,
@@ -166,10 +168,6 @@ export function AnalyticsPage() {
           Choose a valid date range with a start on or before the end date.
         </p>
       ) : null}
-      <p className="mb-6 text-sm text-text-secondary">
-        Showing {fromDate} through {toDate} (calendar dates, end date
-        inclusive).
-      </p>
       <OverviewSection query={overview} />
       <FunnelSection query={funnel} />
       <PipelineSection query={pipeline} />
@@ -187,7 +185,7 @@ export function AnalyticsPage() {
 }
 
 function Page({ children }: { children: React.ReactNode }) {
-  return <PageContainer className="py-10 lg:py-14">{children}</PageContainer>
+  return <PageContainer>{children}</PageContainer>
 }
 
 function FilterBar({
@@ -206,46 +204,60 @@ function FilterBar({
   onChange: (key: string, value: string) => void
 }) {
   return (
-    <div className="mb-3 grid gap-4 rounded-card border border-border bg-surface p-4 shadow-sm md:grid-cols-[repeat(2,minmax(10rem,1fr))_minmax(14rem,1.5fr)_auto]">
-      <label className="grid gap-1 text-sm font-bold">
-        <span>From</span>
-        <Input
-          type="date"
-          value={from}
-          onChange={(event) => onChange('from', event.target.value)}
-          aria-label="Analytics start date"
-        />
-      </label>
-      <label className="grid gap-1 text-sm font-bold">
-        <span>To</span>
-        <Input
-          type="date"
-          value={to}
-          onChange={(event) => onChange('to', event.target.value)}
-          aria-label="Analytics end date"
-        />
-      </label>
-      <label className="grid gap-1 text-sm font-bold">
-        <span>Job</span>
-        <Select
-          value={jobId}
-          onChange={(event) => onChange('jobId', event.target.value)}
-          aria-label="Analytics job"
-        >
-          <option value="">All jobs</option>
-          {jobs.map((job) => (
-            <option key={job.id} value={job.id}>
-              {job.title}
-            </option>
-          ))}
-        </Select>
-      </label>
-      <div className="flex items-end">
+    <FilterToolbar
+      aria-label="Analytics filters"
+      className="items-start xl:grid-cols-[minmax(10rem,1fr)_minmax(10rem,1fr)_minmax(0,1.5fr)_auto]"
+      resultsSummary={
+        <span className="text-xs leading-5">
+          Showing {from} through {to} (calendar dates, end date inclusive).
+        </span>
+      }
+    >
+      <Field id="analytics-from" label="From">
+        {() => (
+          <Input
+            id="analytics-from"
+            type="date"
+            value={from}
+            onChange={(event) => onChange('from', event.target.value)}
+            aria-label="Analytics start date"
+          />
+        )}
+      </Field>
+      <Field id="analytics-to" label="To">
+        {() => (
+          <Input
+            id="analytics-to"
+            type="date"
+            value={to}
+            onChange={(event) => onChange('to', event.target.value)}
+            aria-label="Analytics end date"
+          />
+        )}
+      </Field>
+      <Field id="analytics-job" label="Job">
+        {() => (
+          <Select
+            id="analytics-job"
+            value={jobId}
+            onChange={(event) => onChange('jobId', event.target.value)}
+            aria-label="Analytics job"
+          >
+            <option value="">All jobs</option>
+            {jobs.map((job) => (
+              <option key={job.id} value={job.id}>
+                {job.title}
+              </option>
+            ))}
+          </Select>
+        )}
+      </Field>
+      <div className="flex min-h-11 min-w-0 items-center self-end">
         <Badge variant={validRange ? 'neutral' : 'danger'}>
           {validRange ? 'Date range applied' : 'Invalid date range'}
         </Badge>
       </div>
-    </div>
+    </FilterToolbar>
   )
 }
 
@@ -372,15 +384,17 @@ function Kpi({
   hint: string
 }) {
   return (
-    <Card className="p-4">
-      <p className="text-sm text-text-secondary">{label}</p>
+    <Card className="flex h-full flex-col p-4">
+      <p className="min-h-10 text-sm font-semibold text-text-secondary">
+        {label}
+      </p>
       <p
-        className="mt-2 text-2xl font-bold"
+        className="mt-2 text-2xl font-bold tabular-nums"
         aria-label={`${label}: ${String(value)}`}
       >
         {value}
       </p>
-      <p className="mt-1 text-xs text-text-secondary">{hint}</p>
+      <p className="mt-auto pt-1 text-xs text-text-secondary">{hint}</p>
     </Card>
   )
 }
@@ -460,8 +474,16 @@ function PipelineSection({
         retry={() => void query.refetch()}
       >
         {data ? (
-          <Card className="overflow-x-auto">
-            <table className="w-full min-w-[28rem] text-left text-sm">
+          <Card
+            className="ui-table-scroll min-w-0 overflow-x-auto"
+            role="region"
+            aria-label="Pipeline stage counts"
+            tabIndex={0}
+          >
+            <p className="border-b border-border px-4 py-2 text-xs text-text-secondary xl:hidden">
+              Scroll horizontally to see all columns.
+            </p>
+            <table className="ui-data-table [&_td]:text-right [&_td]:tabular-nums [&_thead_th:not(:first-child)]:text-right w-full min-w-[28rem] text-left text-sm">
               <caption className="sr-only">
                 Current application distribution by pipeline stage
               </caption>
@@ -758,8 +780,16 @@ function JobComparison({
       >
         {data ? (
           <>
-            <div className="overflow-x-auto rounded-card border border-border bg-surface shadow-sm">
-              <table className="w-full min-w-[56rem] text-left text-sm">
+            <div
+              className="ui-table-scroll min-w-0 overflow-x-auto rounded-card border border-border bg-surface shadow-sm"
+              role="region"
+              aria-label="Job comparison"
+              tabIndex={0}
+            >
+              <p className="border-b border-border px-4 py-2 text-xs text-text-secondary xl:hidden">
+                Scroll horizontally to see all columns.
+              </p>
+              <table className="ui-data-table [&_td]:text-right [&_td]:tabular-nums [&_thead_th:not(:first-child)]:text-right w-full min-w-[56rem] text-left text-sm">
                 <caption className="sr-only">
                   Job performance comparison
                 </caption>
@@ -819,7 +849,7 @@ function Pagination({
   onPageChange: (page: number) => void
 }) {
   return (
-    <div className="mt-4 flex items-center justify-between gap-3">
+    <div className="mt-4 flex min-w-0 flex-wrap items-center justify-between gap-3">
       <Button
         variant="secondary"
         disabled={page <= 1}

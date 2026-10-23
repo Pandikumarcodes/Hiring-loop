@@ -57,7 +57,7 @@ function UnavailableOrganization({
     >
       <p className="eyebrow">Workspace</p>
       <h1
-        className="text-3xl font-bold tracking-tight"
+        className="text-2xl font-bold tracking-tight sm:text-3xl"
         id="organization-unavailable-title"
       >
         Organization unavailable
@@ -66,7 +66,7 @@ function UnavailableOrganization({
         You don&apos;t have access to this organization, or it may no longer be
         available.
       </p>
-      <div className="mt-8 flex flex-wrap items-center gap-3 [&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center [&_a]:rounded-control [&_a]:bg-primary [&_a]:px-4 [&_a]:py-2.5 [&_a]:font-bold [&_a]:text-white [&_a]:no-underline [&_a]:hover:bg-primary-dark [&_button]:min-h-11 [&_button]:rounded-control [&_button]:border [&_button]:border-border [&_button]:bg-surface [&_button]:px-4 [&_button]:py-2.5 [&_button]:font-bold [&_button]:text-primary-dark">
+      <div className="mt-8 flex flex-wrap items-center gap-3 [&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center [&_a]:rounded-control [&_a]:bg-primary-dark [&_a]:px-4 [&_a]:py-2.5 [&_a]:font-bold [&_a]:text-white [&_a]:no-underline [&_a]:hover:bg-primary-hover [&_button]:min-h-11 [&_button]:rounded-control [&_button]:border [&_button]:border-border [&_button]:bg-surface [&_button]:px-4 [&_button]:py-2.5 [&_button]:font-bold [&_button]:text-primary-dark">
         {action}
         {onRetry ? (
           <button type="button" onClick={onRetry}>

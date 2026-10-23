@@ -22,34 +22,39 @@ export function PageHeader({
   return (
     <>
       {breadcrumbs ? (
-        <nav aria-label="Breadcrumb" className="mb-3 min-w-0 text-sm">
+        <nav
+          aria-label="Breadcrumb"
+          className="mb-3 min-w-0 text-sm [overflow-wrap:anywhere]"
+        >
           {breadcrumbs}
         </nav>
       ) : null}
-      <header className="mb-8 flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 flex-1">
-          <h1 className="break-words text-3xl font-bold leading-tight tracking-tight text-text-primary sm:text-4xl">
+      <header className="mb-6 flex min-w-0 flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+        <div className="min-w-0 flex-1 sm:basis-72">
+          <h1 className="break-words text-2xl font-bold leading-tight tracking-tight text-text-primary sm:text-3xl">
             {title}
           </h1>
           {description ? (
-            <p className="mt-2 text-base leading-6 text-text-secondary">
+            <p className="mt-1.5 text-sm leading-6 text-text-secondary [overflow-wrap:anywhere]">
               {description}
             </p>
           ) : null}
           {children}
         </div>
         {actions || primaryAction || secondaryActions ? (
-          <div className="flex min-w-0 flex-wrap items-center gap-2 sm:shrink-0 sm:justify-end">
+          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2 sm:justify-end">
             {secondaryActions ? (
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
                 {secondaryActions}
               </div>
             ) : null}
             {actions ? (
-              <div className="flex flex-wrap items-center gap-2">{actions}</div>
+              <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
+                {actions}
+              </div>
             ) : null}
             {primaryAction ? (
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
                 {primaryAction}
               </div>
             ) : null}

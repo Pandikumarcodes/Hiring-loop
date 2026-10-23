@@ -12,7 +12,7 @@ export function Alert({ className, variant = 'info', ...props }: AlertProps) {
     <div
       role="alert"
       className={cn(
-        'rounded-control border px-4 py-3 text-sm leading-6',
+        'min-w-0 rounded-control border px-4 py-3 text-sm leading-6 [overflow-wrap:anywhere]',
         {
           'border-info-border bg-info-soft text-info': variant === 'info',
           'border-success-border bg-success-soft text-success':

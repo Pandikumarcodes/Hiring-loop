@@ -149,7 +149,7 @@ export function JobsPage() {
         }
       />
       <FilterToolbar
-        className="xl:grid-cols-[minmax(14rem,1.5fr)_repeat(4,minmax(8rem,1fr))]"
+        className="xl:grid-cols-3 2xl:grid-cols-[minmax(0,1.5fr)_repeat(4,minmax(0,1fr))]"
         resultsSummary={
           results
             ? `${results.pagination.totalItems.toLocaleString()} jobs`
@@ -245,7 +245,16 @@ export function JobsPage() {
         )
       ) : (
         <>
-          <DataTableShell caption="Jobs" tableClassName="min-w-[64rem]">
+          <DataTableShell
+            caption="Jobs"
+            tableClassName="min-w-[56rem] table-fixed"
+          >
+            <colgroup>
+              <col />
+              {[7, 8, 7, 6, 5, 9, 6].map((width, index) => (
+                <col key={index} style={{ width: `${width}rem` }} />
+              ))}
+            </colgroup>
             <thead className="bg-slate-50 text-text-secondary">
               <tr>
                 {[
@@ -258,7 +267,11 @@ export function JobsPage() {
                   'Updated',
                   'Actions',
                 ].map((h) => (
-                  <th key={h} scope="col" className="px-4 py-3 font-semibold">
+                  <th
+                    key={h}
+                    scope="col"
+                    className={`px-3 py-3 font-semibold ${h === 'Openings' ? 'text-right' : ''} ${h === 'Actions' ? 'sticky right-0 border-l border-border bg-surface-muted' : ''}`}
+                  >
                     {h}
                   </th>
                 ))}
@@ -267,29 +280,39 @@ export function JobsPage() {
             <tbody>
               {results.jobs.map((j) => (
                 <tr key={j.id} className="border-t border-border">
-                  <td className="px-4 py-4 font-bold">
+                  <td className="px-3 py-4 font-bold">
                     <Link
-                      className="text-primary-dark hover:underline"
+                      className="line-clamp-2 text-primary-dark hover:underline"
                       to={jobRoutes.detail(organizationId, j.id)}
+                      title={jobTitle(j.title)}
                     >
                       {jobTitle(j.title)}
                     </Link>
                   </td>
-                  <td className="px-4 py-4">
+                  <td className="px-3 py-4">
                     <JobStatusBadge status={j.status} />
                   </td>
-                  <td className="px-4 py-4">{j.department ?? '—'}</td>
-                  <td className="px-4 py-4">
+                  <td className="px-3 py-4">
+                    <span
+                      className="line-clamp-2"
+                      title={j.department ?? undefined}
+                    >
+                      {j.department ?? '—'}
+                    </span>
+                  </td>
+                  <td className="px-3 py-4">
                     {employmentLabel(j.employmentType)}
                   </td>
-                  <td className="px-4 py-4">
+                  <td className="px-3 py-4">
                     {workplaceLabel(j.workplaceType)}
                   </td>
-                  <td className="px-4 py-4">{j.openings}</td>
-                  <td className="px-4 py-4 whitespace-nowrap">
+                  <td className="px-3 py-4 text-right tabular-nums">
+                    {j.openings}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap">
                     {formatJobDate(j.updatedAt)}
                   </td>
-                  <td className="px-4 py-2">
+                  <td className="sticky right-0 whitespace-nowrap border-l border-border bg-surface px-3 py-2">
                     <JobActions
                       job={j}
                       onEdit={() =>
@@ -310,14 +333,14 @@ export function JobsPage() {
               ))}
             </tbody>
           </DataTableShell>
-          <div className="grid gap-3 md:hidden">
+          <div className="grid gap-3 xl:hidden">
             {results?.jobs.map((j) => (
               <article
                 key={j.id}
                 className="min-w-0 rounded-card border border-border bg-surface p-4 shadow-surface"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
+                <div className="flex min-w-0 items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
                     <Link
                       className="break-words font-bold text-primary-dark hover:underline focus-visible:outline-3 focus-visible:outline-primary-dark"
                       to={jobRoutes.detail(organizationId, j.id)}
@@ -447,7 +470,7 @@ function Filter({
   options: string[][]
 }) {
   return (
-    <label>
+    <label className="min-w-0">
       <span className="sr-only">{label}</span>
       <Select
         aria-label={label}
@@ -465,7 +488,7 @@ function Filter({
   )
 }
 const Meta = ({ k, v }: { k: string; v: string }) => (
-  <div>
+  <div className="min-w-0 [overflow-wrap:anywhere]">
     <dt className="text-text-secondary">{k}</dt>
     <dd className="mt-1 font-medium">{v}</dd>
   </div>

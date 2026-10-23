@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
@@ -134,11 +134,13 @@ describe('login UI', () => {
     resolveLogin({
       user: { id: 'u1', email: 'person@example.test', emailVerified: true },
     })
-    await waitFor(() =>
-      expect(
-        screen.getByRole('heading', { name: 'Create your first organization' }),
-      ).toBeVisible(),
-    )
+    expect(
+      await screen.findByRole(
+        'heading',
+        { name: 'Create your first organization' },
+        { timeout: 5000 },
+      ),
+    ).toBeVisible()
   })
 
   test.each([

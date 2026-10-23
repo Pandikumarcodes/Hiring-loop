@@ -107,7 +107,7 @@ export function ScorecardForm({
                   {[1, 2, 3, 4, 5].map((v) => (
                     <label
                       key={v}
-                      className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-2 rounded-control border border-border px-3 text-sm font-semibold transition-colors hover:bg-primary-soft focus-within:outline-3 focus-within:outline-primary-dark"
+                      className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-2 rounded-control border border-border px-3 text-sm font-semibold transition-colors hover:bg-primary-soft has-[:checked]:border-primary-dark has-[:checked]:bg-primary-soft has-[:checked]:text-primary-dark focus-within:outline-3 focus-within:outline-primary-dark"
                     >
                       <input
                         type="radio"
@@ -133,7 +133,7 @@ export function ScorecardForm({
                   }}
                 />
               )}
-              <label className="mt-4 block text-sm font-semibold">
+              <label className="mt-4 grid gap-2 text-sm font-semibold">
                 {c.label} comment (optional)
                 <Textarea
                   value={r?.comment ?? ''}
@@ -155,7 +155,7 @@ export function ScorecardForm({
           {choices.map((v) => (
             <label
               key={v}
-              className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-control border border-border px-3 text-sm font-semibold transition-colors hover:bg-primary-soft focus-within:outline-3 focus-within:outline-primary-dark"
+              className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-control border border-border px-3 text-sm font-semibold transition-colors hover:bg-primary-soft has-[:checked]:border-primary-dark has-[:checked]:bg-primary-soft has-[:checked]:text-primary-dark focus-within:outline-3 focus-within:outline-primary-dark"
             >
               <input
                 type="radio"
@@ -170,7 +170,7 @@ export function ScorecardForm({
             </label>
           ))}
         </div>
-        <label className="mt-4 block font-semibold">
+        <label className="mt-4 grid gap-2 text-sm font-semibold">
           Overall Comments
           <Textarea
             value={comment}

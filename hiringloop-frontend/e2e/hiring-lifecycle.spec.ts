@@ -9,6 +9,7 @@ import {
   login,
   mutate,
   organization,
+  orgName,
   register,
 } from './support.ts'
 
@@ -456,13 +457,25 @@ test('organization switching, invited member restrictions and cross-tenant denia
   browser,
 }) => {
   const admin = email('owner'),
-    member = email('interviewer')
+    member = email('interviewer'),
+    primaryName = orgName('Roles'),
+    foreignName = orgName('Private')
   await register(page, admin)
   await login(page, admin)
   const primary = await organization(page, 'Roles'),
     foreign = await organization(page, 'Private')
-  await page.getByLabel('Switch organization').selectOption(primary.id)
-  await expect(page).toHaveURL(new RegExp(primary.id))
+  await page
+    .getByRole('button', { name: `Switch workspace: ${foreignName}` })
+    .click()
+  await expect(page.getByRole('menu', { name: 'Workspaces' })).toBeVisible()
+  await page.getByRole('menuitem', { name: primaryName, exact: true }).click()
+  await expect(page).toHaveURL(new RegExp(`/app/organizations/${primary.id}$`))
+  await expect(
+    page.getByRole('button', { name: `Switch workspace: ${primaryName}` }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: 'Jobs', exact: true }),
+  ).toHaveAttribute('href', `/app/organizations/${primary.id}/jobs`)
   await page.goto(`/app/organizations/${primary.id}/team`)
   await page.getByRole('button', { name: 'Invite member', exact: true }).click()
   await page.getByLabel(/^Email/).fill(member)

@@ -24,7 +24,7 @@ import { useCreateNote, useDeleteNote, useUpdateNote } from '../hooks/mutations'
 import { recommendationLabel } from '../utils/recommendation'
 import { ScorecardReadOnly } from './ScorecardReadOnly'
 
-const card = 'rounded-card border border-border bg-surface p-5 shadow-sm sm:p-6'
+const card = 'rounded-card border border-border bg-surface p-4 shadow-sm sm:p-5'
 
 function SubmittedScorecardDialog({
   organizationId,
@@ -335,7 +335,7 @@ export function InternalNotes({
   return (
     <section className={card}>
       <h2 className="text-lg font-bold">Internal Notes</h2>
-      <label className="mt-4 block font-semibold">
+      <label className="mt-4 grid gap-2 text-sm font-semibold">
         Add note
         <Textarea
           value={body}

@@ -49,7 +49,7 @@ export function ResetPasswordPage() {
             description="This password reset link is missing required information."
           />
           <Link
-            className="inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary-dark"
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary-dark px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-primary-dark focus-visible:outline-offset-2"
             to="/forgot-password"
           >
             Request a new reset link
@@ -64,7 +64,7 @@ export function ResetPasswordPage() {
       <AuthLayout>
         <div className="grid min-w-0 justify-items-start gap-6">
           <span
-            className="grid h-12 w-12 place-items-center rounded-full bg-emerald-100 text-xl font-extrabold text-success"
+            className="grid h-12 w-12 place-items-center rounded-full bg-success-soft text-xl font-extrabold text-success"
             aria-hidden="true"
           >
             ✓
@@ -74,7 +74,7 @@ export function ResetPasswordPage() {
             description="Your password has been changed successfully. Please sign in again."
           />
           <Link
-            className="inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary-dark"
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary-dark px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-primary-dark focus-visible:outline-offset-2"
             to="/login"
           >
             Sign in
@@ -93,7 +93,7 @@ export function ResetPasswordPage() {
             description="The password reset link is invalid or has expired."
           />
           <Link
-            className="inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary-dark"
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary-dark px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-primary-dark focus-visible:outline-offset-2"
             to="/forgot-password"
           >
             Request a new reset link
@@ -117,11 +117,7 @@ export function ResetPasswordPage() {
               : 'We could not update your password right now. Please try again.')}
         </AuthAlert>
       ) : null}
-      <form
-        className="grid min-w-0 gap-[1.125rem]"
-        onSubmit={submit}
-        noValidate
-      >
+      <form className="grid min-w-0 gap-5" onSubmit={submit} noValidate>
         <PasswordField
           autoComplete="new-password"
           disabled={reset.isPending}

@@ -279,7 +279,7 @@ export function ApplicationFormBuilderPage() {
           You have view-only access to this application form.
         </div>
       ) : null}
-      <div className="grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,.85fr)]">
         <div className="grid gap-6">
           <Card className="overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4 sm:px-6">
@@ -563,7 +563,7 @@ function QuestionDialog({
   return (
     <Dialog open onOpenChange={(open) => !open && !busy && onCancel()}>
       <DialogContent aria-describedby="question-dialog-description">
-        <DialogTitle className="pr-8 text-lg font-bold">{title}</DialogTitle>
+        <DialogTitle>{title}</DialogTitle>
         <DialogDescription
           id="question-dialog-description"
           className="mt-2 text-sm text-text-secondary"

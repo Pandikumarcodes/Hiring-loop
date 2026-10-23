@@ -80,7 +80,7 @@ export function TeamPage() {
     members.error.status === 403
   )
     return (
-      <PageContainer className="py-10 lg:py-14">
+      <PageContainer>
         <ErrorState
           title="Team access unavailable"
           description="You do not have permission to view this workspace team."
@@ -89,7 +89,7 @@ export function TeamPage() {
     )
   if (members.isError)
     return (
-      <PageContainer className="py-10 lg:py-14">
+      <PageContainer>
         <ErrorState
           description={teamErrorMessage(
             members.error,
@@ -101,7 +101,7 @@ export function TeamPage() {
     )
   if (!allowed)
     return (
-      <PageContainer className="py-10 lg:py-14">
+      <PageContainer>
         <ErrorState
           title="Team access unavailable"
           description="You do not have permission to view this workspace team."
@@ -121,7 +121,7 @@ export function TeamPage() {
             )
           : ''
   return (
-    <PageContainer className="py-10 lg:py-14">
+    <PageContainer>
       <PageHeader
         title="Team"
         description="Manage people and workspace access"
@@ -202,16 +202,21 @@ export function TeamPage() {
         </form>
       ) : null}
       <TeamSection title="Members">
-        <div className="hidden overflow-x-auto md:block">
-          <table className="w-full table-fixed border-collapse">
+        <div
+          className="ui-table-scroll relative hidden min-w-0 overflow-x-auto xl:block"
+          role="region"
+          aria-label="Workspace members"
+          tabIndex={0}
+        >
+          <table className="ui-data-table w-full min-w-[56rem] table-fixed border-collapse text-left text-sm">
             <caption className="sr-only">Workspace members</caption>
             <colgroup>
-              <col className="w-[42%]" />
+              <col className="w-[34%]" />
               <col className="w-[16%]" />
               <col className="w-[16%]" />
-              <col className="w-[26%]" />
+              <col className="w-[34%]" />
             </colgroup>
-            <thead>
+            <thead className="bg-surface-muted text-text-secondary [&_th]:px-4 [&_th]:py-3 [&_th]:font-semibold">
               <tr>
                 <th scope="col">Member / Email</th>
                 <th scope="col">Role</th>
@@ -238,7 +243,7 @@ export function TeamPage() {
             </tbody>
           </table>
         </div>
-        <div className="grid gap-3 px-3 pb-3 md:hidden">
+        <div className="grid gap-3 px-3 pb-3 xl:hidden">
           {members.data.length ? (
             members.data.map((member) => (
               <MemberCard
@@ -269,8 +274,13 @@ export function TeamPage() {
           />
         ) : invitations.data.length ? (
           <>
-            <div className="hidden overflow-x-auto md:block">
-              <table className="w-full table-fixed border-collapse">
+            <div
+              className="ui-table-scroll relative hidden min-w-0 overflow-x-auto xl:block"
+              role="region"
+              aria-label="Workspace invitations"
+              tabIndex={0}
+            >
+              <table className="ui-data-table w-full min-w-[56rem] table-fixed border-collapse text-left text-sm">
                 <caption className="sr-only">Workspace invitations</caption>
                 <colgroup>
                   <col className="w-[34%]" />
@@ -279,7 +289,7 @@ export function TeamPage() {
                   <col className="w-[16%]" />
                   <col className="w-[16%]" />
                 </colgroup>
-                <thead>
+                <thead className="bg-surface-muted text-text-secondary [&_th]:px-4 [&_th]:py-3 [&_th]:font-semibold">
                   <tr>
                     <th scope="col">Email</th>
                     <th scope="col">Role</th>
@@ -297,21 +307,21 @@ export function TeamPage() {
                         key={i.id}
                       >
                         <td
-                          className="break-words px-6 py-4"
+                          className="break-words px-4 py-4"
                           data-label="Email"
                         >
                           {i.email}
                         </td>
-                        <td className="px-6 py-4" data-label="Role">
+                        <td className="px-4 py-4" data-label="Role">
                           <Badge>{roleLabel(i.role)}</Badge>
                         </td>
-                        <td className="px-6 py-4" data-label="Expires">
+                        <td className="px-4 py-4" data-label="Expires">
                           {formatDate(i.expiresAt)}
                         </td>
-                        <td className="px-6 py-4" data-label="Status">
+                        <td className="px-4 py-4" data-label="Status">
                           {state}
                         </td>
-                        <td className="px-6 py-4" data-label="Actions">
+                        <td className="px-4 py-4" data-label="Actions">
                           {state === 'Pending' ? (
                             <Button
                               variant="ghost"
@@ -332,7 +342,7 @@ export function TeamPage() {
                 </tbody>
               </table>
             </div>
-            <div className="grid gap-3 px-3 pb-3 md:hidden">
+            <div className="grid gap-3 px-3 pb-3 xl:hidden">
               {invitations.data.map((i) => {
                 const state = invitationState(i)
                 return (
@@ -449,25 +459,25 @@ function MemberRow({
   return (
     <tr className="border-t border-border align-middle hover:bg-primary-soft/40 max-md:mx-3 max-md:my-3 max-md:block max-md:rounded-control max-md:border max-md:p-3 max-md:shadow-sm">
       <td
-        className="break-words px-6 py-4 max-md:block max-md:px-1 max-md:py-2"
+        className="break-words px-4 py-4 max-md:block max-md:px-1 max-md:py-2"
         data-label="Member / Email"
       >
         <strong className="block break-words">{member.user.email}</strong>
       </td>
       <td
-        className="px-6 py-4 max-md:flex max-md:items-center max-md:justify-between max-md:gap-3 max-md:px-1 max-md:py-2"
+        className="px-4 py-4 max-md:flex max-md:items-center max-md:justify-between max-md:gap-3 max-md:px-1 max-md:py-2"
         data-label="Role"
       >
         <Badge>{roleLabel(member.role)}</Badge>
       </td>
       <td
-        className="px-6 py-4 max-md:flex max-md:items-center max-md:justify-between max-md:gap-3 max-md:px-1 max-md:py-2"
+        className="px-4 py-4 max-md:flex max-md:items-center max-md:justify-between max-md:gap-3 max-md:px-1 max-md:py-2"
         data-label="Joined"
       >
         {formatDate(member.joinedAt)}
       </td>
       <td
-        className="px-6 py-4 max-md:block max-md:px-1 max-md:py-2"
+        className="px-4 py-4 max-md:block max-md:px-1 max-md:py-2"
         data-label="Actions"
       >
         <div className="flex flex-wrap items-center justify-end gap-2 max-md:mt-2 max-md:grid max-md:w-full">

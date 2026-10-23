@@ -46,7 +46,7 @@ export function ApplicationOutcomeSection({
   const history = application.outcomeHistory ?? []
   const revision = application.outcomeRevision ?? 1
   return (
-    <section className="rounded-card border border-border bg-surface p-5 shadow-sm sm:p-6">
+    <section className="rounded-card border border-border bg-surface p-4 shadow-sm sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold">Application outcome</h2>

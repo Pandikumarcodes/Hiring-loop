@@ -17,6 +17,7 @@ afterEach(() => {
 
 function renderRoutes(initialEntry = '/') {
   const queryClient = createTestQueryClient()
+  queryClient.setQueryData(authKeys.currentUser(), null)
   if (initialEntry.startsWith('/app')) {
     queryClient.setQueryData(authKeys.currentUser(), {
       id: 'test-user',
@@ -35,12 +36,10 @@ function renderRoutes(initialEntry = '/') {
 }
 
 describe('application routes', () => {
-  test('renders the neutral foundation route with a main landmark', () => {
+  test('renders the ATS landing route with a main landmark', () => {
     renderRoutes()
 
-    expect(
-      screen.getByRole('heading', { name: 'HiringLoop frontend foundation' }),
-    ).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'HiringLoop' })).toBeVisible()
     expect(screen.getByRole('main')).toBeVisible()
     expect(
       screen.getByRole('link', { name: 'Skip to main content' }),
@@ -48,11 +47,13 @@ describe('application routes', () => {
     expect(screen.getAllByRole('main')).toHaveLength(1)
   })
 
-  test('composes the application layout around its child route', () => {
+  test('composes the application layout around its child route', async () => {
     renderRoutes('/app')
 
     expect(
-      screen.getByRole('heading', { name: 'Create your first organization' }),
+      await screen.findByRole('heading', {
+        name: 'Create your first organization',
+      }),
     ).toBeVisible()
     expect(
       screen.getByRole('navigation', { name: 'Application shell navigation' }),
@@ -66,7 +67,7 @@ describe('application routes', () => {
     ).toBeVisible()
     expect(
       screen.getByRole('button', { name: /Open account menu/ }),
-    ).not.toHaveTextContent('test@example.test')
+    ).toHaveTextContent('test@example.test')
     expect(
       screen.getByRole('button', { name: /Open account menu/ }),
     ).toHaveTextContent('T')
@@ -94,22 +95,16 @@ describe('application routes', () => {
     expect(
       screen.getByRole('heading', { name: 'Page not found' }),
     ).toBeVisible()
-    expect(
-      screen.getByRole('link', { name: 'Return to foundation home' }),
-    ).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Return to home' })).toBeVisible()
   })
 
-  test('recovers from not-found navigation through the foundation link', async () => {
+  test('recovers from not-found navigation through the home link', async () => {
     const user = userEvent.setup()
     renderRoutes('/missing')
 
-    await user.click(
-      screen.getByRole('link', { name: 'Return to foundation home' }),
-    )
+    await user.click(screen.getByRole('link', { name: 'Return to home' }))
 
-    expect(
-      screen.getByRole('heading', { name: 'HiringLoop frontend foundation' }),
-    ).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'HiringLoop' })).toBeVisible()
   })
 })
 

@@ -136,6 +136,45 @@ afterEach(() => {
 })
 
 describe('AnalyticsPage', () => {
+  test('aligned date controls retain URL dates and inclusive UTC query boundaries', () => {
+    setup()
+    render(
+      <MemoryRouter
+        initialEntries={[
+          `/app/organizations/${organizationId}/analytics?from=2026-09-01&to=2026-09-30&jobId=job-1`,
+        ]}
+      >
+        <AnalyticsPage />
+        <LocationOutput />
+      </MemoryRouter>,
+    )
+    expect(screen.getByLabelText('Analytics start date')).toHaveValue(
+      '2026-09-01',
+    )
+    expect(screen.getByLabelText('Analytics end date')).toHaveValue(
+      '2026-09-30',
+    )
+    expect(
+      screen.getByRole('group', { name: 'Analytics filters' }),
+    ).toHaveTextContent('end date inclusive')
+    expect(queryMock).toHaveBeenCalledWith(
+      'overview',
+      expect.any(String),
+      {
+        from: '2026-09-01T00:00:00.000Z',
+        to: '2026-10-01T00:00:00.000Z',
+        jobId: 'job-1',
+      },
+      true,
+    )
+    fireEvent.change(screen.getByLabelText('Analytics end date'), {
+      target: { value: '2026-10-02' },
+    })
+    expect(screen.getByTestId('location')).toHaveTextContent('to=2026-10-02')
+    expect(screen.getByLabelText('Analytics start date')).toHaveValue(
+      '2026-09-01',
+    )
+  })
   test('renders supported populated dashboard metrics and wording', () => {
     setup()
     render(

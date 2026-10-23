@@ -74,13 +74,13 @@ export function JobDetailPage() {
         }
         title={jobTitle(j.title)}
         description={
-          <span className="inline-flex items-center gap-2">
+          <span className="inline-flex max-w-full flex-wrap items-center gap-2">
             <JobStatusBadge status={j.status} />
             <span>{j.department ?? 'No department'}</span>
           </span>
         }
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
             {can(organization.data.permissions, 'pipeline:view') ? (
               <Button
                 variant="secondary"
@@ -151,7 +151,7 @@ export function JobDetailPage() {
           ) : null}
         </div>
       ) : null}
-      <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <div className="grid gap-6">
           <Section title="Overview">
             <dl className="grid gap-5 sm:grid-cols-2">
@@ -213,9 +213,7 @@ export function JobDetailPage() {
   )
 }
 const Wrap = ({ children }: { children: React.ReactNode }) => (
-  <PageContainer width="standard" className="py-8 lg:py-10">
-    {children}
-  </PageContainer>
+  <PageContainer width="standard">{children}</PageContainer>
 )
 const Section = ({
   title,
@@ -224,14 +222,14 @@ const Section = ({
   title: string
   children: React.ReactNode
 }) => (
-  <section className="rounded-card border border-border bg-surface p-5 shadow-sm sm:p-6">
+  <section className="rounded-card border border-border bg-surface p-4 shadow-sm sm:p-5">
     <h2 className="mb-5 text-lg font-bold">{title}</h2>
     {children}
   </section>
 )
 const Meta = ({ k, v }: { k: string; v: string }) => (
-  <div>
+  <div className="min-w-0">
     <dt className="text-sm text-text-secondary">{k}</dt>
-    <dd className="mt-1 font-semibold">{v}</dd>
+    <dd className="mt-1 font-semibold [overflow-wrap:anywhere]">{v}</dd>
   </div>
 )

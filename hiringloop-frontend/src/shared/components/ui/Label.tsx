@@ -3,7 +3,10 @@ import { cn } from '../../utils/cn'
 export function Label({ className, ...props }: RadixLabel.LabelProps) {
   return (
     <RadixLabel.Root
-      className={cn('text-sm font-semibold text-text-primary', className)}
+      className={cn(
+        'text-sm font-medium leading-5 text-text-primary',
+        className,
+      )}
       {...props}
     />
   )

@@ -13,14 +13,14 @@ export function AuthAlert({ children, title, tone = 'error' }: AuthAlertProps) {
 
   return (
     <div
-      className={`rounded-control border px-4 py-3 text-sm leading-6 [&_strong]:mb-1 [&_strong]:block ${
+      className={`my-5 grid min-w-0 gap-1.5 break-words rounded-control border px-4 py-3 text-sm leading-6 [overflow-wrap:anywhere] [&_strong]:block [&_strong]:font-semibold ${
         tone === 'error'
-          ? 'border-red-200 bg-red-50 text-red-800'
+          ? 'border-error-border bg-error-soft text-error'
           : tone === 'warning'
-            ? 'border-amber-200 bg-amber-50 text-amber-800'
+            ? 'border-warning-border bg-warning-soft text-warning'
             : tone === 'success'
-              ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-              : 'border-teal-200 bg-primary-soft text-teal-900'
+              ? 'border-success-border bg-success-soft text-success'
+              : 'border-info-border bg-info-soft text-info'
       }`}
       role={isLiveStatus ? 'status' : 'alert'}
     >
